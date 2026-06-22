@@ -11,6 +11,8 @@ import ProjetBudget from './pages/ProjetBudget';
 import ProjetKanban from './pages/ProjetKanban';
 import ProjetRisques from './pages/ProjetRisques';
 import ProjetParametres from './pages/ProjetParametres';
+import ProjetStakeholders from './pages/ProjetStakeholders';
+import ProjetFacturation from './pages/ProjetFacturation';
 import CongesEquipe from './pages/CongesEquipe';
 
 export const router = createBrowserRouter([
@@ -26,13 +28,15 @@ export const router = createBrowserRouter([
         path: 'projet/:id',
         element: <ProjetLayout />,
         children: [
-          { path: 'wbs', element: <ProjetWBS /> },
-          { path: 'planning', element: <ProjetPlanning /> },
-          { path: 'gantt', element: <ProjetGantt /> },
-          { path: 'budget', element: <ProjetBudget /> },
-          { path: 'kanban', element: <ProjetKanban /> },
-          { path: 'risques', element: <ProjetRisques /> },
-          { path: 'parametres', element: <ProjetParametres /> },
+          { path: 'wbs',            element: <ProjetWBS /> },
+          { path: 'planning',       element: <ProjetPlanning /> },
+          { path: 'gantt',          element: <ProjetGantt /> },
+          { path: 'budget',         element: <ProjetBudget /> },
+          { path: 'kanban',         element: <ProjetKanban /> },
+          { path: 'risques',        element: <ProjetRisques /> },
+          { path: 'stakeholders',   element: <ProjetStakeholders /> },
+          { path: 'facturation',    element: <ProjetFacturation /> },
+          { path: 'parametres',     element: <ProjetParametres /> },
         ],
       },
     ],

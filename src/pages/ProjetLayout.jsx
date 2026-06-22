@@ -1,15 +1,17 @@
 import { NavLink, Outlet, useParams, Navigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
-import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays } from 'lucide-react';
+import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt } from 'lucide-react';
 
 const TABS = [
-  { path: 'wbs',        label: 'WBS',       icon: GitBranch },
-  { path: 'planning',   label: 'Planning',  icon: CalendarDays },
-  { path: 'gantt',      label: 'Gantt',     icon: BarChart2 },
-  { path: 'budget',     label: 'Budget',    icon: DollarSign },
-  { path: 'kanban',     label: 'Kanban',    icon: Columns },
-  { path: 'risques',    label: 'Risques',   icon: AlertTriangle },
-  { path: 'parametres', label: 'Paramètres',icon: Settings },
+  { path: 'wbs',          label: 'WBS',              icon: GitBranch },
+  { path: 'planning',     label: 'Planning',         icon: CalendarDays },
+  { path: 'gantt',        label: 'Gantt',            icon: BarChart2 },
+  { path: 'budget',       label: 'Budget',           icon: DollarSign },
+  { path: 'kanban',       label: 'Kanban',           icon: Columns },
+  { path: 'risques',      label: 'Risques',          icon: AlertTriangle },
+  { path: 'stakeholders', label: 'Parties prenantes',icon: Users },
+  { path: 'facturation',  label: 'Facturation',      icon: Receipt },
+  { path: 'parametres',   label: 'Paramètres',       icon: Settings },
 ];
 
 export default function ProjetLayout() {
@@ -20,10 +22,11 @@ export default function ProjetLayout() {
 
   const tabLink = ({ isActive }) => ({
     display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '8px 14px', textDecoration: 'none', fontSize: 13, fontWeight: 500,
+    padding: '8px 12px', textDecoration: 'none', fontSize: 13, fontWeight: 500,
     color: isActive ? '#1A1A18' : '#5F5E5A',
     borderBottom: isActive ? `2px solid ${projet.couleur}` : '2px solid transparent',
     transition: 'color 0.15s',
+    whiteSpace: 'nowrap',
   });
 
   return (
@@ -39,10 +42,10 @@ export default function ProjetLayout() {
             </span>
           )}
         </div>
-        <nav style={{ display: 'flex', gap: 0 }}>
+        <nav style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
           {TABS.map(({ path, label, icon: Icon }) => (
             <NavLink key={path} to={`/projet/${id}/${path}`} style={tabLink}>
-              <Icon size={14} />
+              <Icon size={13} />
               {label}
             </NavLink>
           ))}

@@ -6,8 +6,96 @@ import PageHeader from '../components/layout/PageHeader';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import Modal from '../components/ui/Modal';
-import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+
+// ── Saisie mensuelle des jours réalisés ──────────────────────────
+function JoursRealisesParMois({ projetId, nodeId, affId, jours_realises_par_mois = {}, jours_realises }) {
+  const setChargeRealiseMois = useAppStore((s) => s.setChargeRealiseMois);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newMois, setNewMois] = useState('');
+
+  const entries = Object.entries(jours_realises_par_mois).sort(([a], [b]) => a.localeCompare(b));
+  const hasMonthly = entries.length > 0;
+
+  const today = new Date();
+  const defaultMois = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  return (
+    <div style={{ marginTop: 6, paddingLeft: 0 }}>
+      {/* Total */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, color: '#888780', fontWeight: 500 }}>
+          J. réalisés : <strong style={{ color: '#1A1A18' }}>{jours_realises} j</strong>
+          {hasMonthly && <span style={{ color: '#888780', fontWeight: 400 }}> (Σ mensuel)</span>}
+        </span>
+        {!showAdd && (
+          <button
+            onClick={() => { setShowAdd(true); setNewMois(defaultMois); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' }}
+          >
+            <Calendar size={10} /> + Mois
+          </button>
+        )}
+      </div>
+
+      {/* Liste des mois */}
+      {entries.map(([mois, jours]) => {
+        const [year, month] = mois.split('-');
+        const label = new Date(year, month - 1, 1).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+        return (
+          <div key={mois} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+            <span style={{ fontSize: 11, color: '#5F5E5A', width: 72, flexShrink: 0 }}>{label}</span>
+            <input
+              type="number" min={0} step={0.5}
+              defaultValue={jours}
+              onBlur={(e) => setChargeRealiseMois(projetId, nodeId, affId, mois, parseFloat(e.target.value) || 0)}
+              style={{ width: 52, padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', fontSize: 11, outline: 'none' }}
+            />
+            <span style={{ fontSize: 11, color: '#888780' }}>j</span>
+            <button
+              onClick={() => setChargeRealiseMois(projetId, nodeId, affId, mois, 0)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D85A30', padding: 2, display: 'flex' }}
+            >
+              <Trash2 size={10} />
+            </button>
+          </div>
+        );
+      })}
+
+      {!hasMonthly && !showAdd && jours_realises > 0 && (
+        <p style={{ fontSize: 10, color: '#888780', margin: '2px 0 0', fontStyle: 'italic' }}>
+          Valeur héritée V1 — ajoutez des mois pour la facturation
+        </p>
+      )}
+
+      {showAdd && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+          <input
+            type="month"
+            value={newMois}
+            onChange={(e) => setNewMois(e.target.value)}
+            style={{ padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', fontSize: 11, outline: 'none' }}
+          />
+          <button
+            onClick={() => {
+              if (newMois && !jours_realises_par_mois[newMois]) {
+                setChargeRealiseMois(projetId, nodeId, affId, newMois, 0);
+              }
+              setShowAdd(false);
+            }}
+            style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: 'none', background: '#1A1A18', color: '#fff', cursor: 'pointer' }}
+          >
+            OK
+          </button>
+          <button onClick={() => setShowAdd(false)} style={{ fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer' }}>
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', termine: 'Terminé', bloque: 'Bloqué' };
 
@@ -19,6 +107,7 @@ function DetailPanel({ projetId, nodeId, numeros }) {
   const addAffectation = useAppStore((s) => s.addAffectation);
   const updateAffectation = useAppStore((s) => s.updateAffectation);
   const deleteAffectation = useAppStore((s) => s.deleteAffectation);
+  const setChargeRealiseMois = useAppStore((s) => s.setChargeRealiseMois);
 
   const [addingCollab, setAddingCollab] = useState(false);
   const [newCollabId, setNewCollabId] = useState('');
@@ -124,31 +213,37 @@ function DetailPanel({ projetId, nodeId, numeros }) {
         </div>
 
         {affectees.map((a) => a.collab && (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '8px 10px', background: '#F8F8F7', borderRadius: 8 }}>
-            <Avatar collaborateur={a.collab} size={28} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{a.collab.prenom} {a.collab.nom}</p>
-              <p style={{ margin: 0, fontSize: 11, color: '#888780' }}>TJM : {a.tjm} €/j</p>
+          <div key={a.id} style={{ marginBottom: 8, background: '#F8F8F7', borderRadius: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
+              <Avatar collaborateur={a.collab} size={28} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{a.collab.prenom} {a.collab.nom}</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#888780' }}>TJM : {a.tjm} €/j</p>
+              </div>
+              <label style={{ ...labelStyle, width: 68, flexShrink: 0 }}>
+                <span style={{ fontSize: 10 }}>J. prév.</span>
+                <input type="number" min={0} step={0.5} style={{ ...inputStyle, padding: '4px 6px' }}
+                  value={a.jours_prev}
+                  onChange={(e) => updateAffectation(projetId, node.id, a.id, { jours_prev: parseFloat(e.target.value) || 0 })} />
+              </label>
+              <div style={{ flexShrink: 0 }}>
+                <p style={{ margin: 0, fontSize: 10, color: '#888780' }}>Coût prév.</p>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{formatCurrency(a.jours_prev * a.tjm)}</p>
+              </div>
+              <button onClick={() => deleteAffectation(projetId, node.id, a.id)} style={{ ...iconBtnStyle, color: '#D85A30', flexShrink: 0 }}>
+                <Trash2 size={13} />
+              </button>
             </div>
-            <label style={{ ...labelStyle, width: 68, flexShrink: 0 }}>
-              <span style={{ fontSize: 10 }}>J. prév.</span>
-              <input type="number" min={0} step={0.5} style={{ ...inputStyle, padding: '4px 6px' }}
-                value={a.jours_prev}
-                onChange={(e) => updateAffectation(projetId, node.id, a.id, { jours_prev: parseFloat(e.target.value) || 0 })} />
-            </label>
-            <label style={{ ...labelStyle, width: 68, flexShrink: 0 }}>
-              <span style={{ fontSize: 10 }}>J. réels</span>
-              <input type="number" min={0} step={0.5} style={{ ...inputStyle, padding: '4px 6px' }}
-                value={a.jours_realises}
-                onChange={(e) => updateAffectation(projetId, node.id, a.id, { jours_realises: parseFloat(e.target.value) || 0 })} />
-            </label>
-            <div style={{ flexShrink: 0 }}>
-              <p style={{ margin: 0, fontSize: 10, color: '#888780' }}>Coût prév.</p>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{formatCurrency(a.jours_prev * a.tjm)}</p>
+            {/* Saisie mensuelle des jours réalisés */}
+            <div style={{ padding: '0 10px 8px', borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <JoursRealisesParMois
+                projetId={projetId}
+                nodeId={node.id}
+                affId={a.id}
+                jours_realises_par_mois={a.jours_realises_par_mois || {}}
+                jours_realises={a.jours_realises}
+              />
             </div>
-            <button onClick={() => deleteAffectation(projetId, node.id, a.id)} style={{ ...iconBtnStyle, color: '#D85A30', flexShrink: 0 }}>
-              <Trash2 size={13} />
-            </button>
           </div>
         ))}
 

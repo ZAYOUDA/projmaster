@@ -3,6 +3,32 @@ import { v4 as uuidv4 } from 'uuid';
 import { loadData, saveData } from '../data/storage';
 import { defaultData } from '../data/defaultData';
 
+function calculerQuadrant(influence, interet) {
+  if (influence >= 3 && interet >= 3) return 'gerer_activement';
+  if (influence >= 3 && interet < 3)  return 'garder_satisfait';
+  if (influence < 3  && interet >= 3) return 'informer';
+  return 'surveiller';
+}
+
+// V1 → V2 migration: add missing fields without destroying existing data
+function migrateData(data) {
+  const projets = (data.projets || []).map((p) => ({
+    stakeholders: [],
+    factures: [],
+    commandes: [],
+    facturation_params: { tva: 20, delai_paiement: 30, prochain_numero: 1 },
+    ...p,
+    wbs: (p.wbs || []).map((n) => ({
+      ...n,
+      affectations: (n.affectations || []).map((a) => ({
+        jours_realises_par_mois: {},
+        ...a,
+      })),
+    })),
+  }));
+  return { ...data, projets };
+}
+
 const useAppStore = create((set, get) => ({
   collaborateurs: [],
   projets: [],
@@ -11,10 +37,12 @@ const useAppStore = create((set, get) => ({
   init: async () => {
     const data = await loadData();
     if (data && (data.collaborateurs?.length || data.projets?.length)) {
-      set({ collaborateurs: data.collaborateurs || [], projets: data.projets || [] });
+      const migrated = migrateData(data);
+      set({ collaborateurs: migrated.collaborateurs || [], projets: migrated.projets || [] });
     } else {
-      const saved = await saveData(defaultData);
-      set({ collaborateurs: defaultData.collaborateurs, projets: defaultData.projets, savedAt: saved.meta.lastSaved });
+      const d = migrateData(defaultData);
+      const saved = await saveData(d);
+      set({ collaborateurs: d.collaborateurs, projets: d.projets, savedAt: saved.meta.lastSaved });
     }
   },
 
@@ -83,6 +111,10 @@ const useAppStore = create((set, get) => ({
       milestones: [],
       risques: [],
       tjm: [],
+      stakeholders: [],
+      factures: [],
+      commandes: [],
+      facturation_params: { tva: 20, delai_paiement: 30, prochain_numero: 1 },
       ...projet,
     };
     set((s) => ({ projets: [...s.projets, newProjet] }));
@@ -167,7 +199,6 @@ const useAppStore = create((set, get) => ({
     set((s) => ({
       projets: s.projets.map((p) => {
         if (p.id !== projetId) return p;
-        // Remove node and all descendants
         const toDelete = new Set();
         const collect = (id) => {
           toDelete.add(id);
@@ -182,7 +213,15 @@ const useAppStore = create((set, get) => ({
 
   // ── Affectations ────────────────────────────────────────────────
   addAffectation: (projetId, nodeId, affectation) => {
-    const newAff = { id: uuidv4(), jours_prev: 0, jours_realises: 0, planning: {}, planning_reel: {}, ...affectation };
+    const newAff = {
+      id: uuidv4(),
+      jours_prev: 0,
+      jours_realises: 0,
+      jours_realises_par_mois: {},
+      planning: {},
+      planning_reel: {},
+      ...affectation,
+    };
     set((s) => ({
       projets: s.projets.map((p) =>
         p.id !== projetId ? p : {
@@ -213,6 +252,31 @@ const useAppStore = create((set, get) => ({
     get()._save();
   },
 
+  // Saisie mensuelle des jours réalisés (V2)
+  setChargeRealiseMois: (projetId, nodeId, affId, mois, jours) => {
+    set((s) => ({
+      projets: s.projets.map((p) => {
+        if (p.id !== projetId) return p;
+        return {
+          ...p,
+          wbs: p.wbs.map((n) => {
+            if (n.id !== nodeId) return n;
+            const affectations = n.affectations.map((a) => {
+              if (a.id !== affId) return a;
+              const jours_realises_par_mois = { ...(a.jours_realises_par_mois || {}) };
+              if (!jours || jours === 0) delete jours_realises_par_mois[mois];
+              else jours_realises_par_mois[mois] = jours;
+              const jours_realises = Object.values(jours_realises_par_mois).reduce((acc, v) => acc + v, 0);
+              return { ...a, jours_realises_par_mois, jours_realises };
+            });
+            return { ...n, affectations };
+          }),
+        };
+      }),
+    }));
+    get()._save();
+  },
+
   setChargePlanningReel: (projetId, nodeId, affId, date, valeur) => {
     set((s) => ({
       projets: s.projets.map((p) => {
@@ -226,8 +290,7 @@ const useAppStore = create((set, get) => ({
               const planning_reel = { ...(a.planning_reel || {}) };
               if (!valeur || valeur === 0) delete planning_reel[date];
               else planning_reel[date] = valeur;
-              const jours_realises = Object.values(planning_reel).reduce((s, v) => s + v, 0);
-              return { ...a, planning_reel, jours_realises };
+              return { ...a, planning_reel };
             });
             return { ...n, affectations };
           }),
@@ -253,11 +316,9 @@ const useAppStore = create((set, get) => ({
               } else {
                 planning[date] = valeur;
               }
-              // Recalcul jours_prev = somme de toutes les valeurs
-              const jours_prev = Object.values(planning).reduce((s, v) => s + v, 0);
+              const jours_prev = Object.values(planning).reduce((acc, v) => acc + v, 0);
               return { ...a, planning, jours_prev };
             });
-            // Recalcul dates prévisionnelles depuis TOUTES les affectations
             const allDates = affectations.flatMap((a) => Object.keys(a.planning || {})).filter(Boolean);
             const date_debut_prev = allDates.length > 0 ? allDates.sort()[0] : n.date_debut_prev;
             const date_fin_prev   = allDates.length > 0 ? allDates.sort().at(-1) : n.date_fin_prev;
@@ -347,9 +408,161 @@ const useAppStore = create((set, get) => ({
     get()._save();
   },
 
+  // ── Stakeholders ────────────────────────────────────────────────
+  addStakeholder: (projetId, stakeholder) => {
+    const sh = {
+      id: uuidv4(),
+      ordre: 999,
+      role: '',
+      nom: '',
+      organisation: '',
+      influence: 3,
+      interet: 3,
+      success_definition: '',
+      communication_strategy: '',
+      empathy_notes: '',
+      checkin_frequency: 'mensuel',
+      derniere_interaction: null,
+      notes_generales: '',
+      statut: 'actif',
+      ...stakeholder,
+    };
+    sh.quadrant = calculerQuadrant(sh.influence, sh.interet);
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : { ...p, stakeholders: [...(p.stakeholders || []), sh] }
+      ),
+    }));
+    get()._save();
+    return sh;
+  },
+
+  updateStakeholder: (projetId, stakeholderId, updates) => {
+    set((s) => ({
+      projets: s.projets.map((p) => {
+        if (p.id !== projetId) return p;
+        return {
+          ...p,
+          stakeholders: (p.stakeholders || []).map((sh) => {
+            if (sh.id !== stakeholderId) return sh;
+            const updated = { ...sh, ...updates };
+            updated.quadrant = calculerQuadrant(updated.influence, updated.interet);
+            return updated;
+          }),
+        };
+      }),
+    }));
+    get()._save();
+  },
+
+  deleteStakeholder: (projetId, stakeholderId) => {
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : {
+          ...p,
+          stakeholders: (p.stakeholders || []).filter((sh) => sh.id !== stakeholderId),
+        }
+      ),
+    }));
+    get()._save();
+  },
+
+  // ── Commandes (Bons de commande) ────────────────────────────────
+  addCommande: (projetId, commande) => {
+    const c = { id: uuidv4(), numero: '', collaborateur_ids: [], notes: '', ...commande };
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : { ...p, commandes: [...(p.commandes || []), c] }
+      ),
+    }));
+    get()._save();
+    return c;
+  },
+
+  updateCommande: (projetId, commandeId, updates) => {
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : {
+          ...p,
+          commandes: (p.commandes || []).map((c) => c.id === commandeId ? { ...c, ...updates } : c),
+        }
+      ),
+    }));
+    get()._save();
+  },
+
+  deleteCommande: (projetId, commandeId) => {
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : {
+          ...p,
+          commandes: (p.commandes || []).filter((c) => c.id !== commandeId),
+        }
+      ),
+    }));
+    get()._save();
+  },
+
+  // ── Factures ────────────────────────────────────────────────────
+  addFacture: (projetId, facture) => {
+    set((s) => ({
+      projets: s.projets.map((p) => {
+        if (p.id !== projetId) return p;
+        const params = p.facturation_params || { tva: 20, delai_paiement: 30, prochain_numero: 1 };
+        const year = new Date().getFullYear();
+        const numero = `FAC-${year}-${String(params.prochain_numero).padStart(3, '0')}`;
+        const f = {
+          id: uuidv4(),
+          numero,
+          statut: 'brouillon',
+          lignes: [],
+          tva: params.tva,
+          date_emission: null,
+          date_echeance: null,
+          date_paiement: null,
+          reference_client: '',
+          notes: '',
+          created_at: new Date().toISOString(),
+          ...facture,
+        };
+        return {
+          ...p,
+          factures: [...(p.factures || []), f],
+          facturation_params: { ...params, prochain_numero: params.prochain_numero + 1 },
+        };
+      }),
+    }));
+    get()._save();
+  },
+
+  updateFacture: (projetId, factureId, updates) => {
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : {
+          ...p,
+          factures: (p.factures || []).map((f) => f.id === factureId ? { ...f, ...updates } : f),
+        }
+      ),
+    }));
+    get()._save();
+  },
+
+  deleteFacture: (projetId, factureId) => {
+    set((s) => ({
+      projets: s.projets.map((p) =>
+        p.id !== projetId ? p : {
+          ...p,
+          factures: (p.factures || []).filter((f) => f.id !== factureId),
+        }
+      ),
+    }));
+    get()._save();
+  },
+
   // ── Import/Export ────────────────────────────────────────────────
   importAll: (data) => {
-    set({ collaborateurs: data.collaborateurs || [], projets: data.projets || [] });
+    const migrated = migrateData({ collaborateurs: data.collaborateurs || [], projets: data.projets || [] });
+    set({ collaborateurs: migrated.collaborateurs, projets: migrated.projets });
     get()._save();
   },
 }));
