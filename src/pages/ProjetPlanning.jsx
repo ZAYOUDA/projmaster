@@ -132,6 +132,13 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
   );
 }
 
+const STATUT_OPTIONS = [
+  { value: 'non_demarre', label: 'Non démarré', color: '#888780' },
+  { value: 'en_cours',    label: 'En cours',    color: '#378ADD' },
+  { value: 'termine',     label: 'Terminé',     color: '#1D9E75' },
+  { value: 'bloque',      label: 'Bloqué',      color: '#D85A30' },
+];
+
 // ── Lignes d'une tâche ────────────────────────────────────────────
 function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, collaborateurs, showPrev, showReel, chargeParCollabJour, congesParCollab }) {
   const [expanded, setExpanded] = useState(true);
@@ -139,6 +146,28 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
   const [fillVal, setFillVal] = useState('1');
   const setChargePlanning = useAppStore((s) => s.setChargePlanning);
   const setChargePlanningReel = useAppStore((s) => s.setChargePlanningReel);
+  const updateWBSNode = useAppStore((s) => s.updateWBSNode);
+  const addAffectation = useAppStore((s) => s.addAffectation);
+  const updateAffectation = useAppStore((s) => s.updateAffectation);
+  const deleteAffectation = useAppStore((s) => s.deleteAffectation);
+
+  const handleCollabChange = (newCollabId) => {
+    const affs = node.affectations || [];
+    if (!newCollabId) {
+      // Supprimer toutes les affectations existantes
+      affs.forEach((a) => deleteAffectation(projetId, node.id, a.id));
+      return;
+    }
+    if (affs.length === 0) {
+      addAffectation(projetId, node.id, { collaborateur_id: newCollabId, jours_prev: 0, jours_realises: 0 });
+    } else if (affs.length === 1) {
+      updateAffectation(projetId, node.id, affs[0].id, { collaborateur_id: newCollabId });
+    } else {
+      // Plusieurs affectations : on garde la première et on supprime les autres
+      updateAffectation(projetId, node.id, affs[0].id, { collaborateur_id: newCollabId });
+      affs.slice(1).forEach((a) => deleteAffectation(projetId, node.id, a.id));
+    }
+  };
 
   const doFill = (affId, collabId, val) => {
     const v = Math.min(1, Math.max(0, parseFloat(String(val).replace(',', '.')) || 0));
@@ -182,10 +211,42 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
               </button>
             ) : <span style={{ width: 16, flexShrink: 0 }} />}
             <span style={{ fontSize: 10, color: '#888780', fontFamily: 'monospace', marginRight: 4, flexShrink: 0 }}>{numero}</span>
-            <span style={{ fontSize: 12, fontWeight: depth === 0 ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 12, fontWeight: depth === 0 ? 700 : 500 }}>
               {node.nom}
             </span>
           </div>
+        </td>
+        {/* Colonne Collab (picklist) */}
+        <td style={{ ...collabCol, background: headerBg }}>
+          {isLeaf && (
+            <select
+              value={(node.affectations || [])[0]?.collaborateur_id || ''}
+              onChange={(e) => handleCollabChange(e.target.value)}
+              style={collabSelectStyle}
+            >
+              <option value="">— Aucun —</option>
+              {collaborateurs.map((c) => (
+                <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
+              ))}
+            </select>
+          )}
+        </td>
+        {/* Colonne Statut */}
+        <td style={{ ...statutCol, background: headerBg }}>
+          {(() => {
+            const s = STATUT_OPTIONS.find((o) => o.value === node.statut) || STATUT_OPTIONS[0];
+            return (
+              <select
+                value={node.statut || 'non_demarre'}
+                onChange={(e) => updateWBSNode(projetId, node.id, { statut: e.target.value })}
+                style={{ ...statutSelectStyle, color: s.color, borderColor: s.color + '55' }}
+              >
+                {STATUT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            );
+          })()}
         </td>
         {/* Total */}
         <td style={{ ...totalCol, background: headerBg }}>
@@ -252,7 +313,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                       <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                         {collab.initiales}
                       </div>
-                      <span style={{ fontSize: 11, color: '#5F5E5A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.prenom} {collab.nom}</span>
+                      <span style={{ fontSize: 11, color: '#5F5E5A', }}>{collab.prenom} {collab.nom}</span>
                       <span style={{ fontSize: 9, background: '#E6F0FB', color: '#378ADD', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>PRÉ</span>
                       <button
                         onClick={() => { setFilling(aff.id); setFillVal('1'); }}
@@ -262,10 +323,12 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                     </div>
                   )}
                 </td>
+                <td style={{ ...collabCol, background: '#FAFAFE' }} />
+                <td style={{ ...statutCol, background: '#FAFAFE' }} />
                 <td style={{ ...totalCol, background: '#FAFAFE', color: '#378ADD', fontSize: 11, fontWeight: 600 }}>
                   {joursPrev > 0 ? `${joursPrev}j` : ''}
                 </td>
-                {/* Δ sur ligne prév : vide si showReel aussi, sinon rien */}
+                {/* Δ sur ligne prév */}
                 <DeltaCell delta={showReel ? null : null} bg='#FAFAFE' />
                 {days.map((d) => {
                   const iso = toISO(d);
@@ -299,10 +362,12 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                     <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0, opacity: 0.6 }}>
                       {collab.initiales}
                     </div>
-                    <span style={{ fontSize: 11, color: '#888780', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.prenom} {collab.nom}</span>
+                    <span style={{ fontSize: 11, color: '#888780', }}>{collab.prenom} {collab.nom}</span>
                     <span style={{ fontSize: 9, background: '#FFF0E0', color: '#BA7517', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>RÉE</span>
                   </div>
                 </td>
+                <td style={{ ...collabCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
+                <td style={{ ...statutCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
                 <td style={{ ...totalCol, background: '#FFFDF9', fontSize: 11, fontWeight: 600, borderBottom: '1px solid rgba(0,0,0,0.08)', color: joursReel > joursPrev ? '#C0391B' : joursReel > 0 ? '#0E7A45' : '#CCC' }}>
                   {joursReel > 0 ? `${joursReel}j` : ''}
                 </td>
@@ -340,10 +405,10 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 // ── Styles ────────────────────────────────────────────────────────
 const frozenLeft = (depth) => ({
   position: 'sticky', left: 0, zIndex: 2, background: 'inherit',
-  width: 290, minWidth: 290,
-  padding: `0 8px 0 ${8 + depth * 14}px`,
+  width: 340, minWidth: 340,
+  padding: `4px 8px 4px ${8 + depth * 14}px`,
   fontSize: 12, borderRight: '1px solid rgba(0,0,0,0.1)',
-  whiteSpace: 'nowrap', overflow: 'hidden', height: 26,
+  whiteSpace: 'normal', wordBreak: 'break-word',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
 });
 const totalCol = {
@@ -481,6 +546,8 @@ export default function ProjetPlanning() {
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ background: '#EEEDF5' }}>
               <th style={{ ...thFixed, background: '#EEEDF5' }}>Tâche / Collaborateur</th>
+              <th style={{ ...thCollab, background: '#EEEDF5' }}>Affecté à</th>
+              <th style={{ ...thStatut, background: '#EEEDF5' }}>Statut</th>
               <th style={{ ...thTotal, background: '#EEEDF5' }}>Total</th>
               <th style={{ ...thDelta, background: '#EEEDF5' }}>Δ</th>
               {monthGroups.map((g) => (
@@ -491,6 +558,8 @@ export default function ProjetPlanning() {
             </tr>
             <tr style={{ background: '#F5F4FB' }}>
               <th style={{ ...thFixed, background: '#F5F4FB' }} />
+              <th style={{ ...thCollab, background: '#F5F4FB' }} />
+              <th style={{ ...thStatut, background: '#F5F4FB' }} />
               <th style={{ ...thTotal, background: '#F5F4FB' }} />
               <th style={{ ...thDelta, background: '#F5F4FB', fontSize: 9, color: '#888780' }}>Prév−Réel</th>
               {days.map((d) => {
@@ -524,6 +593,8 @@ export default function ProjetPlanning() {
             {/* Ligne total global */}
             <tr style={{ background: '#EEEDF5', position: 'sticky', bottom: 0, zIndex: 5 }}>
               <td style={{ ...frozenLeft(0), background: '#EEEDF5', fontWeight: 700, fontSize: 12 }}>Total / jour</td>
+              <td style={{ ...collabCol, background: '#EEEDF5' }} />
+              <td style={{ ...statutCol, background: '#EEEDF5' }} />
               <td style={{ ...totalCol, background: '#EEEDF5' }}>
                 {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 700 }}>{grandTotalPrev}j</div>}
                 {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? '#C0391B' : '#0E7A45', fontWeight: 700 }}>{grandTotalReel}j</div>}
@@ -552,8 +623,14 @@ export default function ProjetPlanning() {
   );
 }
 
-const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 290, minWidth: 290, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thCollab = { width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thStatut = { width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
 const thTotal = { width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
 const thDelta = { width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
+const collabCol = { width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const statutCol = { width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
+const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
 const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };
 const navBtn = { padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#5F5E5A' };
