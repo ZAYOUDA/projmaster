@@ -73,32 +73,75 @@ const deltaCellStyle = (bg) => ({
 });
 
 // ── Cellule charge éditable ───────────────────────────────────────
+function navigateCell(currentTd, direction) {
+  const table = currentTd.closest('table');
+  if (!table) return;
+  const rows = [...table.querySelectorAll('tbody tr')];
+  const cells = [...currentTd.parentElement.querySelectorAll('td[data-charge]')];
+  const colIdx = cells.indexOf(currentTd);
+  const rowIdx = rows.indexOf(currentTd.parentElement);
+
+  let targetTd = null;
+  if (direction === 'left' && colIdx > 0) targetTd = cells[colIdx - 1];
+  else if (direction === 'right' && colIdx < cells.length - 1) targetTd = cells[colIdx + 1];
+  else if (direction === 'up' || direction === 'down') {
+    const step = direction === 'up' ? -1 : 1;
+    let r = rowIdx + step;
+    while (r >= 0 && r < rows.length) {
+      const candidateCells = [...rows[r].querySelectorAll('td[data-charge]')];
+      if (candidateCells[colIdx]) { targetTd = candidateCells[colIdx]; break; }
+      r += step;
+    }
+  }
+  if (targetTd) targetTd.focus();
+}
+
 function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const tdRef = React.useRef(null);
 
   const startEdit = () => { setDraft(value > 0 ? String(value).replace('.', ',') : ''); setEditing(true); };
-  const commit = () => { onChange(Math.min(1, Math.max(0, parseFloat(draft.replace(',', '.')) || 0))); setEditing(false); };
+  const commit = (dir) => {
+    onChange(Math.min(1, Math.max(0, parseFloat(draft.replace(',', '.')) || 0)));
+    setEditing(false);
+    // Après commit, on navigue si direction précisée
+    if (dir && tdRef.current) setTimeout(() => navigateCell(tdRef.current, dir), 0);
+  };
 
-  // Conflit : bordure orange avec petit indicateur
   const conflictStyle = conflict ? {
-    outline: '1.5px solid #E8A020',
-    outlineOffset: '-1.5px',
+    outline: '1.5px solid #E8A020', outlineOffset: '-1.5px',
     background: value > 0 ? bg : '#FFF8EC',
   } : {};
 
   return (
     <td
+      ref={tdRef}
+      data-charge="1"
+      tabIndex={0}
       onClick={startEdit}
+      onKeyDown={(e) => {
+        if (!editing) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(); }
+          else if (e.key === 'ArrowRight') { e.preventDefault(); navigateCell(tdRef.current, 'right'); }
+          else if (e.key === 'ArrowLeft')  { e.preventDefault(); navigateCell(tdRef.current, 'left'); }
+          else if (e.key === 'ArrowUp')    { e.preventDefault(); navigateCell(tdRef.current, 'up'); }
+          else if (e.key === 'ArrowDown')  { e.preventDefault(); navigateCell(tdRef.current, 'down'); }
+          else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); onChange(0); }
+          else if (/^[0-9,.]$/.test(e.key)) { setDraft(e.key); setEditing(true); }
+        }
+      }}
       title={conflict ? `⚠️ ${conflict} déjà planifié(e) ce jour sur une autre tâche` : undefined}
       style={{
         width: colWidth, minWidth: colWidth, maxWidth: colWidth,
         height: 26, padding: 0,
         border: '0.5px solid rgba(0,0,0,0.07)',
         background: bg, cursor: 'pointer', textAlign: 'center', verticalAlign: 'middle',
-        position: 'relative',
+        position: 'relative', outline: 'none',
         ...conflictStyle,
       }}
+      onFocus={(e) => { e.currentTarget.style.boxShadow = 'inset 0 0 0 2px #378ADD'; }}
+      onBlur={(e) => { if (!editing) e.currentTarget.style.boxShadow = 'none'; }}
     >
       {conflict && !editing && (
         <span style={{
@@ -112,9 +155,14 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
+          onBlur={() => commit()}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); commit(); }
+            if (e.key === 'Enter')  { e.preventDefault(); commit('down'); }
+            if (e.key === 'Tab')    { e.preventDefault(); commit(e.shiftKey ? 'left' : 'right'); }
+            if (e.key === 'ArrowRight' && draft === '') { commit('right'); }
+            if (e.key === 'ArrowLeft'  && draft === '') { commit('left'); }
+            if (e.key === 'ArrowDown')  { e.preventDefault(); commit('down'); }
+            if (e.key === 'ArrowUp')    { e.preventDefault(); commit('up'); }
             if (e.key === 'Escape') setEditing(false);
           }}
           style={{

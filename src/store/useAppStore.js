@@ -281,20 +281,48 @@ const useAppStore = create((set, get) => ({
     set((s) => ({
       projets: s.projets.map((p) => {
         if (p.id !== projetId) return p;
-        return {
-          ...p,
-          wbs: p.wbs.map((n) => {
-            if (n.id !== nodeId) return n;
-            const affectations = n.affectations.map((a) => {
-              if (a.id !== affId) return a;
-              const planning_reel = { ...(a.planning_reel || {}) };
-              if (!valeur || valeur === 0) delete planning_reel[date];
-              else planning_reel[date] = valeur;
-              return { ...a, planning_reel };
-            });
-            return { ...n, affectations };
-          }),
+
+        // 1. Mettre à jour la cellule réelle
+        let wbs = p.wbs.map((n) => {
+          if (n.id !== nodeId) return n;
+          const affectations = n.affectations.map((a) => {
+            if (a.id !== affId) return a;
+            const planning_reel = { ...(a.planning_reel || {}) };
+            if (!valeur || valeur === 0) delete planning_reel[date];
+            else planning_reel[date] = valeur;
+            return { ...a, planning_reel };
+          });
+          return { ...n, affectations };
+        });
+
+        // 2. Recalculer le statut de la sous-tâche modifiée
+        wbs = wbs.map((n) => {
+          if (n.id !== nodeId) return n;
+          const totalReel = n.affectations.reduce((s, a) =>
+            s + Object.values(a.planning_reel || {}).reduce((sv, v) => sv + v, 0), 0);
+          if (totalReel > 0 && n.statut === 'non_demarre') return { ...n, statut: 'en_cours' };
+          return n;
+        });
+
+        // 3. Remonter le statut au(x) parent(s)
+        const node = wbs.find((n) => n.id === nodeId);
+        const propagerStatutParent = (childId) => {
+          const parent = wbs.find((n) => wbs.some((c) => c.id === childId && c.parent_id === n.id));
+          if (!parent) return;
+          const enfants = wbs.filter((n) => n.parent_id === parent.id);
+          const tousTermines = enfants.length > 0 && enfants.every((e) => e.statut === 'termine');
+          const unEnCours = enfants.some((e) => e.statut === 'en_cours' || e.statut === 'termine');
+          let newStatut = parent.statut;
+          if (tousTermines) newStatut = 'termine';
+          else if (unEnCours && parent.statut === 'non_demarre') newStatut = 'en_cours';
+          if (newStatut !== parent.statut) {
+            wbs = wbs.map((n) => n.id === parent.id ? { ...n, statut: newStatut } : n);
+            propagerStatutParent(parent.id); // remonte encore si besoin
+          }
         };
+        if (node) propagerStatutParent(nodeId);
+
+        return { ...p, wbs };
       }),
     }));
     get()._save();

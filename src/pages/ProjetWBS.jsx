@@ -176,6 +176,15 @@ function DetailPanel({ projetId, nodeId, numeros }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
         <label style={labelStyle}>
+          Type
+          <select style={inputStyle} value={node.type || 'tache'}
+            onChange={(e) => updateWBSNode(projetId, node.id, { type: e.target.value })}>
+            <option value="tache">Tâche</option>
+            <option value="livrable">Livrable</option>
+            <option value="jalon">Jalon 🔷</option>
+          </select>
+        </label>
+        <label style={labelStyle}>
           Statut
           <select style={inputStyle} value={node.statut}
             onChange={(e) => updateWBSNode(projetId, node.id, { statut: e.target.value })}>
