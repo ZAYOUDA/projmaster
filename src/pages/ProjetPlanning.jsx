@@ -168,7 +168,7 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
           style={{
             width: '100%', height: '100%', border: '2px solid #378ADD',
             textAlign: 'center', fontSize: 11, outline: 'none',
-            background: '#EBF7FF', fontFamily: 'inherit', padding: 0,
+            background: '#fff', fontFamily: 'inherit', padding: 0,
           }}
         />
       ) : (
@@ -188,7 +188,8 @@ const STATUT_OPTIONS = [
 ];
 
 // ── Lignes d'une tâche ────────────────────────────────────────────
-function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, collaborateurs, showPrev, showReel, chargeParCollabJour, congesParCollab }) {
+function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, collaborateurs, showPrev, showReel, chargeParCollabJour, congesParCollab, visibleIds }) {
+  if (visibleIds && !visibleIds.has(node.id)) return null;
   const [expanded, setExpanded] = useState(true);
   const [filling, setFilling] = useState(null); // affId en cours de remplissage
   const [fillVal, setFillVal] = useState('1');
@@ -273,8 +274,11 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
               style={collabSelectStyle}
             >
               <option value="">— Aucun —</option>
-              {collaborateurs.map((c) => (
+              {collaborateurs.filter((c) => c.actif).map((c) => (
                 <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
+              ))}
+              {collaborateurs.filter((c) => !c.actif && (node.affectations || []).some((a) => a.collaborateur_id === c.id)).map((c) => (
+                <option key={c.id} value={c.id} style={{ color: '#888780' }}>{c.prenom} {c.nom} (inactif)</option>
               ))}
             </select>
           )}
@@ -444,7 +448,8 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         <TaskRows key={child.id} node={child} projetId={projetId} depth={depth + 1}
           allNodes={allNodes} days={days} colWidth={colWidth} numeros={numeros}
           collaborateurs={collaborateurs} showPrev={showPrev} showReel={showReel}
-          chargeParCollabJour={chargeParCollabJour} congesParCollab={congesParCollab} />
+          chargeParCollabJour={chargeParCollabJour} congesParCollab={congesParCollab}
+          visibleIds={visibleIds} />
       ))}
     </>
   );
@@ -468,10 +473,11 @@ const chevronBtn = { background: 'none', border: 'none', cursor: 'pointer', padd
 
 // ── Page ─────────────────────────────────────────────────────────
 const ZOOM_OPTIONS = [
-  { key: '4w', label: '4 sem.',  days: 28 },
-  { key: '2m', label: '2 mois', days: 62 },
-  { key: '3m', label: '3 mois', days: 92 },
-  { key: '6m', label: '6 mois', days: 184 },
+  { key: '4w',  label: '4 sem.',   days: 28 },
+  { key: '2m',  label: '2 mois',  days: 62 },
+  { key: '3m',  label: '3 mois',  days: 92 },
+  { key: '6m',  label: '6 mois',  days: 184 },
+  { key: '12m', label: '12 mois', days: 365 },
 ];
 const COL_WIDTH = 34;
 const today = toISO(new Date());
@@ -484,6 +490,36 @@ export default function ProjetPlanning() {
   const [startDate, setStartDate] = useState(() => startOfWeek(new Date()));
   const [zoom, setZoom] = useState('2m');
   const [vue, setVue] = useState('les deux');
+  const [filterCollab, setFilterCollab] = useState('');
+  const [filterStatut, setFilterStatut] = useState('');
+  const [filterDelta, setFilterDelta] = useState('');
+
+  const hasFilter = filterCollab || filterStatut || filterDelta;
+
+  const visibleIds = useMemo(() => {
+    if (!hasFilter) return null;
+    const matchesLeaf = (node) => {
+      if (projet.wbs.some((n) => n.parent_id === node.id)) return false;
+      if (filterCollab && !(node.affectations || []).some((a) => a.collaborateur_id === filterCollab)) return false;
+      if (filterStatut && node.statut !== filterStatut) return false;
+      if (filterDelta) {
+        const prev = (node.affectations || []).reduce((s, a) => s + (a.jours_prev || 0), 0);
+        const reel = (node.affectations || []).reduce((s, a) => s + (a.jours_realises || 0), 0);
+        const delta = prev - reel;
+        if (filterDelta === 'avance' && delta <= 0) return false;
+        if (filterDelta === 'depasse' && delta >= 0) return false;
+      }
+      return true;
+    };
+    const visible = new Set();
+    const addWithParents = (nodeId) => {
+      visible.add(nodeId);
+      const node = projet.wbs.find((n) => n.id === nodeId);
+      if (node?.parent_id) addWithParents(node.parent_id);
+    };
+    projet.wbs.forEach((node) => { if (matchesLeaf(node)) addWithParents(node.id); });
+    return visible;
+  }, [projet.wbs, filterCollab, filterStatut, filterDelta, hasFilter]);
 
   const showPrev = vue === 'prévisionnel' || vue === 'les deux';
   const showReel = vue === 'réel' || vue === 'les deux';
@@ -588,6 +624,43 @@ export default function ProjetPlanning() {
         </span>
       </div>
 
+      {/* Barre de filtres */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#FAFAF9', flexShrink: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: '#888780', marginRight: 4 }}>Filtrer :</span>
+        <select value={filterCollab} onChange={(e) => setFilterCollab(e.target.value)}
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterCollab ? '#EFF6FF' : '#fff', color: filterCollab ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          <option value="">Affecté à : Tous</option>
+          {collaborateurs.filter((c) => c.actif).map((c) => (
+            <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
+          ))}
+        </select>
+        <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterStatut ? '#EFF6FF' : '#fff', color: filterStatut ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          <option value="">Statut : Tous</option>
+          <option value="non_demarre">Non démarré</option>
+          <option value="en_cours">En cours</option>
+          <option value="termine">Terminé</option>
+          <option value="bloque">Bloqué</option>
+        </select>
+        <select value={filterDelta} onChange={(e) => setFilterDelta(e.target.value)}
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterDelta ? '#EFF6FF' : '#fff', color: filterDelta ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          <option value="">Δ Prév−Réel : Tous</option>
+          <option value="avance">En avance (Δ &gt; 0)</option>
+          <option value="depasse">Dépassé (Δ &lt; 0)</option>
+        </select>
+        {hasFilter && (
+          <button onClick={() => { setFilterCollab(''); setFilterStatut(''); setFilterDelta(''); }}
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' }}>
+            ✕ Réinitialiser
+          </button>
+        )}
+        {visibleIds && (
+          <span style={{ fontSize: 11, color: '#888780', marginLeft: 4 }}>
+            {visibleIds.size > 0 ? `${projet.wbs.filter(n => visibleIds.has(n.id) && !projet.wbs.some(c => c.parent_id === n.id)).length} tâche(s)` : 'Aucun résultat'}
+          </span>
+        )}
+      </div>
+
       {/* Grille */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
@@ -635,7 +708,8 @@ export default function ProjetPlanning() {
                 numeros={numeros} collaborateurs={collaborateurs}
                 showPrev={showPrev} showReel={showReel}
                 chargeParCollabJour={chargeParCollabJour}
-                congesParCollab={congesParCollab} />
+                congesParCollab={congesParCollab}
+                visibleIds={visibleIds} />
             ))}
 
             {/* Ligne total global */}

@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ title, onClose, children, width = 520 }) {
+export default function Modal({ title, onClose, children, width = 520, preventClose = false }) {
   useEffect(() => {
-    const handler = (e) => e.key === 'Escape' && onClose();
+    const handler = (e) => e.key === 'Escape' && !preventClose && onClose();
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onClose, preventClose]);
 
   return (
     <div
@@ -15,7 +15,7 @@ export default function Modal({ title, onClose, children, width = 520 }) {
         background: 'rgba(0,0,0,0.35)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && !preventClose && onClose()}
     >
       <div style={{
         background: '#fff', borderRadius: 12, padding: 24,

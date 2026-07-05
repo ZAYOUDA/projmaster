@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    function isCollab() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "collaborateur";
+    }
+
+    function canAccessProjet(projetId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid))
+             .data.projets_autorises.hasAny([projetId]);
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || isAdmin();
+      allow write: if isAdmin();
+      // Permet à chaque user de mettre à jour sa derniere_connexion
+      allow update: if request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['derniere_connexion']);
+    }
+
+    match /collaborateurs/{collabId} {
+      allow read: if isAdmin() || isCollab();
+      allow write: if isAdmin();
+    }
+
+    match /projets/{projetId} {
+      allow read, write: if isAdmin();
+      allow read: if isCollab() && canAccessProjet(projetId);
+      allow update: if isCollab() && canAccessProjet(projetId);
+    }
+
+    match /app_config/{doc} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

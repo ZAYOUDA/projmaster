@@ -1,6 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
+import { useAuth } from '../../hooks/useAuth';
+import { logout } from '../../firebase/auth';
 
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
 
@@ -8,15 +10,20 @@ export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
   const addProjet = useAppStore((s) => s.addProjet);
   const navigate = useNavigate();
+  const { userDoc } = useAuth();
 
-  const handleNewProjet = () => {
-    const p = addProjet({
+  const handleNewProjet = async () => {
+    const newP = await addProjet({
       nom: 'Nouveau projet',
       description: '',
       date_debut: new Date().toISOString().slice(0, 10),
       date_fin_prevue: '',
     });
-    navigate(`/projet/${p.id}/parametres`);
+    if (newP?.id) navigate(`/projet/${newP.id}/parametres`);
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   const linkStyle = ({ isActive }) => ({
@@ -87,7 +94,7 @@ export default function Sidebar() {
           </>
         )}
 
-        <button
+        {userDoc?.role === 'admin' && <button
           onClick={handleNewProjet}
           style={{
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
@@ -100,12 +107,18 @@ export default function Sidebar() {
         >
           <Plus size={14} />
           Nouveau projet
-        </button>
+        </button>}
 
         {/* Outils */}
         <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Outils
         </div>
+        {userDoc?.role === 'admin' && (
+          <NavLink to="/admin" style={linkStyle}>
+            <ShieldCheck size={15} />
+            Console Admin
+          </NavLink>
+        )}
         <NavLink to="/collaborateurs" style={linkStyle}>
           <Users size={15} />
           Collaborateurs
@@ -119,6 +132,38 @@ export default function Sidebar() {
           Paramètres
         </NavLink>
       </nav>
+
+      {/* Déconnexion */}
+      <div style={{ padding: '8px 8px 16px', borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
+        {userDoc && (
+          <div style={{ padding: '4px 12px 8px' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A18', marginBottom: 2 }}>
+              {userDoc.prenom} {userDoc.nom}
+            </div>
+            <span style={{
+              display: 'inline-block', padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600,
+              background: userDoc.role === 'admin' ? '#DBEAFE' : '#F1EFE8',
+              color: userDoc.role === 'admin' ? '#1D4ED8' : '#5F5E5A',
+            }}>
+              {userDoc.role === 'admin' ? 'Admin' : 'Collaborateur'}
+            </span>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+            padding: '6px 12px', borderRadius: 6, border: 'none',
+            background: 'transparent', cursor: 'pointer', fontSize: 13,
+            color: '#888780', fontWeight: 500,
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          <LogOut size={14} />
+          Déconnexion
+        </button>
+      </div>
     </aside>
   );
 }

@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import { calculerNumeroWBS } from '../data/calculations';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
@@ -17,15 +18,22 @@ const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', term
 
 function KanbanCard({ node, projet, numero, collaborateurs }) {
   const updateWBSNode = useAppStore((s) => s.updateWBSNode);
+  const { user, userDoc } = useAuth();
+  const isCollab = userDoc?.role === 'collaborateur';
+  // Cherche le profil collaborateur par user_id (plus fiable que collaborateur_id sur userDoc)
+  const myCollab = collaborateurs.find((c) => c.user_id === user?.uid);
+  const myCollabId = myCollab?.id || userDoc?.collaborateur_id;
+  const canDrag = !isCollab || (node.affectations || []).some((a) => a.collaborateur_id === myCollabId);
   const affs = (node.affectations || []).map((a) => collaborateurs.find((c) => c.id === a.collaborateur_id)).filter(Boolean);
 
   return (
     <div
-      draggable
-      onDragStart={(e) => e.dataTransfer.setData('nodeId', node.id)}
+      draggable={canDrag}
+      onDragStart={(e) => canDrag && e.dataTransfer.setData('nodeId', node.id)}
       style={{
         background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: 12,
-        marginBottom: 8, cursor: 'grab', userSelect: 'none',
+        marginBottom: 8, cursor: canDrag ? 'grab' : 'default', userSelect: 'none',
+        opacity: isCollab && !canDrag ? 0.55 : 1,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
@@ -62,7 +70,27 @@ export default function ProjetKanban() {
   const updateWBSNode = useAppStore((s) => s.updateWBSNode);
 
   const numeros = calculerNumeroWBS(projet.wbs);
-  const taches = projet.wbs.filter((n) => n.type !== 'jalon');
+
+  // Calcule les IDs accessibles depuis les racines (filtre les orphelins)
+  const validIds = new Set();
+  const addValid = (nodeId) => {
+    if (validIds.has(nodeId)) return;
+    validIds.add(nodeId);
+    projet.wbs.filter((n) => n.parent_id === nodeId).forEach((n) => addValid(n.id));
+  };
+  projet.wbs.filter((n) => n.parent_id === null).forEach((n) => addValid(n.id));
+
+  const childIds = new Set(projet.wbs.map((n) => n.parent_id).filter(Boolean));
+  const taches = projet.wbs.filter((n) => n.type !== 'jalon' && validIds.has(n.id) && !childIds.has(n.id));
+
+  // Dérive la colonne Kanban depuis kanban_colonne ou statut (synchro automatique)
+  function getKanbanCol(node) {
+    if (node.kanban_colonne) return node.kanban_colonne;
+    if (node.statut === 'termine') return 'done';
+    if (node.statut === 'en_cours') return 'en_cours';
+    if (node.statut === 'bloque') return 'backlog';
+    return 'backlog';
+  }
 
   const handleDrop = (e, colonne) => {
     const nodeId = e.dataTransfer.getData('nodeId');
@@ -76,7 +104,7 @@ export default function ProjetKanban() {
       <PageHeader title="Kanban" subtitle={`${taches.length} tâches`} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, minHeight: 400 }}>
         {COLONNES.map((col) => {
-          const cards = taches.filter((n) => n.kanban_colonne === col.id);
+          const cards = taches.filter((n) => getKanbanCol(n) === col.id);
           return (
             <div
               key={col.id}

@@ -50,10 +50,20 @@ export default function Dashboard() {
   const risquesOuverts = projets.reduce((s, p) => s + p.risques.filter((r) => r.statut === 'ouvert').length, 0);
   const risquesCritiques = projets.reduce((s, p) => s + p.risques.filter((r) => r.criticite === 'critique' && r.statut === 'ouvert').length, 0);
 
-  // Milestones à venir (10 prochains)
+  // Milestones à venir (10 prochains) — include livrables WBS épinglés
   const today = new Date();
-  const milestones = projets
-    .flatMap((p) => p.milestones.map((m) => ({ ...m, projetNom: p.nom, projetCouleur: p.couleur, projetId: p.id })))
+  const milestones = [
+    ...projets.flatMap((p) => (p.milestones || []).map((m) => ({
+      ...m, projetNom: p.nom, projetCouleur: p.couleur, projetId: p.id, isLivrable: false,
+    }))),
+    ...projets.flatMap((p) => (p.wbs || [])
+      .filter((n) => n.epingle_dashboard && n.date_fin_prev && n.statut !== 'termine')
+      .map((n) => ({
+        id: n.id, nom: n.nom, date_prevue: n.date_fin_prev, statut: n.statut,
+        projetNom: p.nom, projetCouleur: p.couleur, projetId: p.id, isLivrable: true,
+      }))
+    ),
+  ]
     .filter((m) => m.statut !== 'atteint')
     .sort((a, b) => new Date(a.date_prevue) - new Date(b.date_prevue))
     .slice(0, 10);
@@ -71,7 +81,7 @@ export default function Dashboard() {
   // V2 — Stakeholders à contacter
   const stakeholdersAContacter = projets.flatMap((p) =>
     (p.stakeholders || [])
-      .filter((sh) => sh.statut === 'actif' && prochainContact(sh))
+      .filter((sh) => (!sh.statut || sh.statut === 'actif') && prochainContact(sh))
       .map((sh) => ({ ...sh, projetNom: p.nom, projetCouleur: p.couleur, projetId: p.id }))
   );
 
@@ -258,7 +268,12 @@ export default function Dashboard() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: m.projetCouleur, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 500, color: late ? '#D85A30' : '#1A1A18' }}>{m.nom}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: late ? '#D85A30' : '#1A1A18', flex: 1 }}>{m.nom}</span>
+                    {m.isLivrable && (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99, background: '#EFF6FF', color: '#378ADD', flexShrink: 0 }}>
+                        Livrable
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 14 }}>
                     <span style={{ fontSize: 12, color: '#888780' }}>{m.projetNom}</span>
