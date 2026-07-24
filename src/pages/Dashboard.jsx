@@ -1,9 +1,42 @@
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { calculerBudgetProjet, calculerAvancementProjet, formatCurrency } from '../data/calculations';
+import { moisAnnee, calculerSuiviProjetRun, calculerBurnRateEtProjection } from '../utils/runCalculs';
+import { PROBABILITE_LEVELS, IMPACT_LEVELS } from '../utils/riadCalculs';
+
+const PROBA_VALEUR = Object.fromEntries(PROBABILITE_LEVELS.map((p) => [p.key, p.valeur]));
+const IMPACT_VALEUR = Object.fromEntries(IMPACT_LEVELS.map((i) => [i.key, i.valeur]));
 import ProgressBar from '../components/ui/ProgressBar';
 import Badge from '../components/ui/Badge';
 import PageHeader from '../components/layout/PageHeader';
+
+const fmtJours = (n) => (n ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+
+// Suivi RUN de l'année en cours, pour la jauge dashboard et le badge de statut.
+function suiviRunAnneeCourante(projet) {
+  const annee = new Date().getFullYear();
+  const months = moisAnnee(annee);
+  const commandes = (projet.commandes || []).filter((c) => c.annee === annee);
+  const suivi = calculerSuiviProjetRun(commandes, projet.consoMensuelle || {}, months);
+  const { projection } = calculerBurnRateEtProjection(commandes, projet.consoMensuelle || {}, months, new Date().getMonth() + 1);
+  return { ...suivi, projection };
+}
+
+// Total commandé/consommé RUN d'un collaborateur, toutes commandes et années confondues.
+function chargeRunCollab(projets, collabId) {
+  let commande = 0, conso = 0;
+  for (const p of projets) {
+    if (p.type !== 'RUN') continue;
+    for (const cmd of (p.commandes || [])) {
+      for (const l of (cmd.lignes || [])) {
+        if (l.collabId !== collabId) continue;
+        commande += l.nbjCommande || 0;
+        conso += Object.values(p.consoMensuelle || {}).reduce((s, byLigne) => s + (byLigne[l.id] || 0), 0);
+      }
+    }
+  }
+  return { commande, conso };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────
 const FREQ_JOURS = {
@@ -27,9 +60,17 @@ function isEnRetard(f) {
 }
 
 function statutBadge(projet) {
-  const b = calculerBudgetProjet(projet);
   if (projet.statut === 'cloture') return { label: 'Clôturé', variant: 'info' };
   if (projet.statut === 'en_pause') return { label: 'En pause', variant: 'neutral' };
+
+  if (projet.type === 'RUN') {
+    const { reste, projection } = suiviRunAnneeCourante(projet);
+    if (reste < 0) return { label: 'Dépassement', variant: 'danger' };
+    if (projection && !projection.depasseAnnee) return { label: 'Risque', variant: 'warning' };
+    return { label: 'On track', variant: 'success' };
+  }
+
+  const b = calculerBudgetProjet(projet);
   if (b.prev > 0 && b.conso > b.prev) return { label: 'Dépassement', variant: 'danger' };
   if (b.prev > 0 && b.conso / b.prev > 0.8) return { label: 'Risque', variant: 'warning' };
   return { label: 'On track', variant: 'success' };
@@ -47,8 +88,10 @@ export default function Dashboard() {
   const totalConso = projets.reduce((s, p) => s + calculerBudgetProjet(p).conso, 0);
   const totalJours = projets.reduce((s, p) =>
     s + p.wbs.reduce((sn, n) => sn + n.affectations.reduce((sa, a) => sa + a.jours_prev, 0), 0), 0);
-  const risquesOuverts = projets.reduce((s, p) => s + p.risques.filter((r) => r.statut === 'ouvert').length, 0);
-  const risquesCritiques = projets.reduce((s, p) => s + p.risques.filter((r) => r.criticite === 'critique' && r.statut === 'ouvert').length, 0);
+  const risquesOuverts = projets.reduce((s, p) => s + (p.riad?.risques || []).filter((r) => r.status !== 'cloture').length, 0);
+  const risquesCritiques = projets.reduce((s, p) => s + (p.riad?.risques || []).filter((r) =>
+    r.status !== 'cloture' && (PROBA_VALEUR[r.probabilite] || 0) * (IMPACT_VALEUR[r.impact] || 0) > 16
+  ).length, 0);
 
   // Milestones à venir (10 prochains) — include livrables WBS épinglés
   const today = new Date();
@@ -68,14 +111,21 @@ export default function Dashboard() {
     .sort((a, b) => new Date(a.date_prevue) - new Date(b.date_prevue))
     .slice(0, 10);
 
-  // Charge collaborateurs
+  // Charge collaborateurs (BUILD : jours WBS ; RUN : jours des lignes de commande, au mois)
   const chargeCollab = collaborateurs.filter((c) => c.actif).map((c) => {
-    const joursPrev = projets.reduce((s, p) =>
+    const joursPrevBuild = projets.reduce((s, p) =>
       s + p.wbs.reduce((sn, n) => sn + n.affectations.filter((a) => a.collaborateur_id === c.id).reduce((sa, a) => sa + a.jours_prev, 0), 0), 0);
-    const joursReels = projets.reduce((s, p) =>
+    const joursReelsBuild = projets.reduce((s, p) =>
       s + p.wbs.reduce((sn, n) => sn + n.affectations.filter((a) => a.collaborateur_id === c.id).reduce((sa, a) => sa + a.jours_realises, 0), 0), 0);
-    const nbProjets = projets.filter((p) => p.wbs.some((n) => n.affectations.some((a) => a.collaborateur_id === c.id))).length;
-    return { ...c, joursPrev, joursReels, nbProjets };
+    const nbProjetsBuild = projets.filter((p) => p.wbs.some((n) => n.affectations.some((a) => a.collaborateur_id === c.id))).length;
+    const { commande: joursPrevRun, conso: joursReelsRun } = chargeRunCollab(projets, c.id);
+    const nbProjetsRun = projets.filter((p) => p.type === 'RUN' && (p.commandes || []).some((cmd) => (cmd.lignes || []).some((l) => l.collabId === c.id))).length;
+    return {
+      ...c,
+      joursPrev: joursPrevBuild + joursPrevRun,
+      joursReels: joursReelsBuild + joursReelsRun,
+      nbProjets: nbProjetsBuild + nbProjetsRun,
+    };
   });
 
   // V2 — Stakeholders à contacter
@@ -137,13 +187,15 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {projets.map((p) => {
+                  const isRun = p.type === 'RUN';
                   const av = calculerAvancementProjet(p);
                   const b = calculerBudgetProjet(p);
+                  const suiviRun = isRun ? suiviRunAnneeCourante(p) : null;
                   const badge = statutBadge(p);
                   return (
                     <tr
                       key={p.id}
-                      onClick={() => navigate(`/projet/${p.id}/wbs`)}
+                      onClick={() => navigate(`/projet/${p.id}/${isRun ? 'suivi-mensuel' : 'wbs'}`)}
                       style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'background 0.1s' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = '#FAFAF9'}
                       onMouseLeave={(e) => e.currentTarget.style.background = ''}
@@ -155,13 +207,19 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px', width: 160 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <ProgressBar value={av} color={p.couleur} />
-                          <span style={{ fontSize: 12, color: '#5F5E5A', flexShrink: 0 }}>{av}%</span>
-                        </div>
+                        {isRun ? (
+                          <span style={{ fontSize: 12, color: '#BDBCB8' }}>—</span>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <ProgressBar value={av} color={p.couleur} />
+                            <span style={{ fontSize: 12, color: '#5F5E5A', flexShrink: 0 }}>{av}%</span>
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>
-                        {b.prev > 0 ? <>{formatCurrency(b.conso)} / {formatCurrency(b.prev)}</> : '—'}
+                        {isRun
+                          ? (suiviRun.cmdNbj > 0 ? <>{fmtJours(suiviRun.consoNbj)} / {fmtJours(suiviRun.cmdNbj)} j</> : '—')
+                          : (b.prev > 0 ? <>{formatCurrency(b.conso)} / {formatCurrency(b.prev)}</> : '—')}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <Badge label={badge.label} variant={badge.variant} />

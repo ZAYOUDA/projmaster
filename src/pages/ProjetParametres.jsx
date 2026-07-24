@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import PageHeader from '../components/layout/PageHeader';
 import Avatar from '../components/ui/Avatar';
+import CommandesRunSection from '../components/projet/CommandesRunSection';
 import { Plus, Trash2 } from 'lucide-react';
 
 const PALETTE = ['#378ADD', '#1D9E75', '#BA7517', '#D4537E', '#7F77DD', '#D85A30', '#888780', '#5DCAA5', '#EF9F27', '#E24B4A'];
@@ -63,6 +64,15 @@ export default function ProjetParametres() {
       <form onSubmit={handleSave}>
         <section style={cardStyle}>
           <h3 style={h3Style}>Informations générales</h3>
+          <div style={{ marginBottom: 12 }}>
+            <span style={{
+              display: 'inline-block', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+              background: projet.type === 'RUN' ? '#EFF6FF' : '#F1EFE8',
+              color: projet.type === 'RUN' ? '#1D4ED8' : '#5F5E5A',
+            }}>
+              {projet.type === 'RUN' ? 'RUN — TMA / régie' : 'BUILD'}
+            </span>
+          </div>
           <label style={labelStyle}>
             Nom du projet *
             <input style={inputStyle} value={form.nom} onChange={(e) => set('nom', e.target.value)} required />
@@ -109,7 +119,13 @@ export default function ProjetParametres() {
         </div>
       </form>
 
-      {/* TJM */}
+      {/* Bons de commande (RUN) */}
+      {projet.type === 'RUN' && (
+        <CommandesRunSection projet={projet} collaborateurs={collaborateurs} />
+      )}
+
+      {/* TJM (BUILD uniquement — pour RUN le PU est défini par ligne de commande) */}
+      {projet.type !== 'RUN' && (
       <section style={cardStyle}>
         <h3 style={{ ...h3Style, marginBottom: 4 }}>Taux journaliers (TJM)</h3>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: '#5F5E5A' }}>Définissez le TJM de chaque collaborateur pour ce projet.</p>
@@ -178,6 +194,7 @@ export default function ProjetParametres() {
           </button>
         )}
       </section>
+      )}
 
       {/* Zone dangereuse */}
       <section style={{ ...cardStyle, border: '1px solid #FECACA', background: '#FFF5F5' }}>

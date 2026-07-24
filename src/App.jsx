@@ -31,9 +31,13 @@ export default function App() {
   }, [savedAt]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#FFFFFF' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#FFFFFF' }}>
       <Sidebar />
-      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
+      {/* minHeight: 0 est nécessaire pour qu'un enfant flex accepte de se limiter à la hauteur
+          disponible au lieu de grandir avec son contenu — sans ça, overflowY:'auto' ne scrolle
+          jamais (c'est la fenêtre entière qui défile), ce qui empêche tout header "sticky" des
+          pages enfants (ex. ProjetLayout) de rester fixé à l'écran. */}
+      <main style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto' }}>
         <Outlet />
       </main>
       {showSaved && (

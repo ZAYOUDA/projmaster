@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Eye, CheckCircle, Send, Trash2, X, Settings2 } from 'lucide-react';
+import { Plus, Eye, CheckCircle, Send, Trash2, X, Settings2, Download } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import useAppStore from '../store/useAppStore';
 import PageHeader from '../components/layout/PageHeader';
 import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import { formatCurrency, calculerBudgetProjet } from '../data/calculations';
+import { exporterFactureExcel } from '../utils/factureExport';
 
 // ── Helpers ──────────────────────────────────────────────────────
 function formatMois(moisStr) {
@@ -625,6 +626,7 @@ function OngletFactures({ projet, collaborateurs }) {
                   <td style={{ padding: '11px 8px' }}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button onClick={() => setDetailId(f.id)} style={iconBtn} title="Détail"><Eye size={13} /></button>
+                      <button onClick={() => exporterFactureExcel(projet, f)} style={iconBtn} title="Exporter Excel"><Download size={13} /></button>
                       {f.statut === 'brouillon' && <button onClick={() => handleEmettre(f)} style={iconBtn} title="Émettre"><Send size={13} /></button>}
                       {f.statut === 'emise' && <button onClick={() => handlePayer(f)} style={{ ...iconBtn, color: '#1D9E75' }} title="Marquer payée"><CheckCircle size={13} /></button>}
                       {f.statut === 'brouillon' && <button onClick={() => { if (confirm(`Supprimer ${f.numero} ?`)) deleteFacture(projet.id, f.id); }} style={{ ...iconBtn, color: '#D85A30' }}><Trash2 size={13} /></button>}
@@ -668,6 +670,7 @@ function OngletFactures({ projet, collaborateurs }) {
               <div style={{ display: 'flex', gap: 24, borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 5 }}><span style={{ fontSize: 14, fontWeight: 600 }}>TTC</span><span style={{ fontSize: 14, fontWeight: 700, color: '#1D9E75', width: 100, textAlign: 'right' }}>{formatCurrency(montantTTC(detail))}</span></div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '0.5px solid rgba(0,0,0,0.08)', paddingTop: 10 }}>
+              <button onClick={() => exporterFactureExcel(projet, detail)} style={btnSecStyle}><Download size={13} style={{ marginRight: 5 }} /> Exporter Excel</button>
               <button onClick={() => setDetailId(null)} style={btnSecStyle}>Fermer</button>
               {detail.statut === 'brouillon' && <button onClick={() => { handleEmettre(detail); setDetailId(null); }} style={btnPrimStyle}><Send size={13} style={{ marginRight: 5 }} /> Émettre</button>}
               {detail.statut === 'emise' && <button onClick={() => { handlePayer(detail); setDetailId(null); }} style={{ ...btnPrimStyle, background: '#1D9E75' }}><CheckCircle size={13} style={{ marginRight: 5 }} /> Marquer payée</button>}
@@ -684,16 +687,17 @@ export default function ProjetFacturation() {
   const { id } = useParams();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
-  const [onglet, setOnglet] = useState('suivi');
+  const isRun = projet?.type === 'RUN';
+  const [onglet, setOnglet] = useState(isRun ? 'factures' : 'suivi');
 
   return (
     <div style={{ padding: 32 }}>
       <PageHeader title="Facturation" subtitle={projet.nom} />
 
-      {/* Onglets */}
+      {/* Onglets — le suivi WBS ne concerne que les projets BUILD (les RUN ont leur propre écran Suivi mensuel) */}
       <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(0,0,0,0.1)', marginBottom: 24, gap: 0 }}>
         {[
-          { key: 'suivi',    label: 'Suivi mensuel' },
+          ...(isRun ? [] : [{ key: 'suivi', label: 'Suivi mensuel' }]),
           { key: 'factures', label: `Factures (${(projet.factures || []).length})` },
         ].map((t) => (
           <button

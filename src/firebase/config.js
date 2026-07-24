@@ -13,7 +13,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, 'default');
+
+// Base Firestore ciblée : VITE_FIRESTORE_DB_ID sépare dev/preview local (base vide)
+// de la prod (base réelle) — voir .env.local vs .env.deploy.local.
+const dbId = import.meta.env.VITE_FIRESTORE_DB_ID || 'default';
+export const db = dbId === '(default)' ? getFirestore(app) : getFirestore(app, dbId);
 
 // Offline persistence (sync auto au retour en ligne)
 enableIndexedDbPersistence(db).catch(() => {});

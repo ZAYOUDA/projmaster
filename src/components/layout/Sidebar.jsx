@@ -1,25 +1,44 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../firebase/auth';
+import NouveauProjetModal from './NouveauProjetModal';
 
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
+// Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS.
+const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'wbs');
 
 export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
   const addProjet = useAppStore((s) => s.addProjet);
   const navigate = useNavigate();
   const { userDoc } = useAuth();
+  const [showNewProjet, setShowNewProjet] = useState(false);
 
-  const handleNewProjet = async () => {
+  const handleCreateProjet = async (type) => {
     const newP = await addProjet({
       nom: 'Nouveau projet',
       description: '',
+      type,
       date_debut: new Date().toISOString().slice(0, 10),
       date_fin_prevue: '',
     });
+    setShowNewProjet(false);
     if (newP?.id) navigate(`/projet/${newP.id}/parametres`);
+  };
+
+  const handleImportPlanning = async () => {
+    const newP = await addProjet({
+      nom: 'Nouveau projet (import en cours)',
+      description: '',
+      type: 'BUILD',
+      date_debut: new Date().toISOString().slice(0, 10),
+      date_fin_prevue: '',
+    });
+    setShowNewProjet(false);
+    if (newP?.id) navigate(`/projet/${newP.id}/import-wbs?fromCreation=1`);
   };
 
   const handleLogout = async () => {
@@ -77,7 +96,7 @@ export default function Sidebar() {
         </div>
 
         {projets.filter((p) => p.statut !== 'cloture').map((p) => (
-          <NavLink key={p.id} to={`/projet/${p.id}/wbs`} style={linkStyle}>
+          <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={linkStyle}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
           </NavLink>
@@ -86,7 +105,7 @@ export default function Sidebar() {
         {projets.filter((p) => p.statut === 'cloture').length > 0 && (
           <>
             {projets.filter((p) => p.statut === 'cloture').map((p) => (
-              <NavLink key={p.id} to={`/projet/${p.id}/wbs`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })}>
+              <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
               </NavLink>
@@ -95,7 +114,7 @@ export default function Sidebar() {
         )}
 
         {userDoc?.role === 'admin' && <button
-          onClick={handleNewProjet}
+          onClick={() => setShowNewProjet(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
             padding: '6px 12px', borderRadius: 6, border: 'none',
@@ -117,6 +136,12 @@ export default function Sidebar() {
           <NavLink to="/admin" style={linkStyle}>
             <ShieldCheck size={15} />
             Console Admin
+          </NavLink>
+        )}
+        {userDoc?.role === 'admin' && (
+          <NavLink to="/import-cra" style={linkStyle}>
+            <UploadCloud size={15} />
+            Import CRA
           </NavLink>
         )}
         <NavLink to="/collaborateurs" style={linkStyle}>
@@ -164,6 +189,10 @@ export default function Sidebar() {
           Déconnexion
         </button>
       </div>
+
+      {showNewProjet && (
+        <NouveauProjetModal onCreate={handleCreateProjet} onImportPlanning={handleImportPlanning} onClose={() => setShowNewProjet(false)} />
+      )}
     </aside>
   );
 }

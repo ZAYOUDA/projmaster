@@ -55,14 +55,60 @@ export function calculerBudgetProjet(projet) {
   return { prev, conso, reste: prev - conso };
 }
 
-const MATRICE_CRITICITE = {
-  faible:  { faible: 'faible', moyen: 'faible',  eleve: 'moyenne'  },
-  moyenne: { faible: 'faible', moyen: 'moyenne',  eleve: 'elevee'   },
-  elevee:  { faible: 'moyenne', moyen: 'elevee', eleve: 'critique'  },
-};
+// Feuilles descendantes d'un nœud (lui-même s'il n'a pas d'enfants).
+export function getLeaves(node, allNodes) {
+  const children = allNodes.filter((n) => n.parent_id === node.id);
+  if (children.length === 0) return [node];
+  return children.flatMap((c) => getLeaves(c, allNodes));
+}
 
-export function calculerCriticite(probabilite, impact) {
-  return MATRICE_CRITICITE[probabilite]?.[impact] ?? 'faible';
+// Dernier jour du mois "AAAA-MM" (pour borner la période d'un réalisé saisi au mois).
+function dernierJourMois(mois) {
+  const [y, m] = mois.split('-').map(Number);
+  return `${mois}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+}
+
+// Déduit Début réel / Fin réelle d'une tâche à partir de son imputation réelle
+// (planning_reel au jour, jours_realises_par_mois au mois) — évite d'avoir à les
+// saisir manuellement en plus de l'imputation.
+export function deriverDatesReellesNoeud(node) {
+  const dates = [];
+  (node.affectations || []).forEach((a) => {
+    Object.entries(a.planning_reel || {}).forEach(([iso, v]) => { if (v > 0) dates.push(iso); });
+    Object.entries(a.jours_realises_par_mois || {}).forEach(([mois, v]) => {
+      if (v > 0) { dates.push(`${mois}-01`); dates.push(dernierJourMois(mois)); }
+    });
+  });
+  if (dates.length === 0) return { date_debut_reel: null, date_fin_reel: null };
+  dates.sort();
+  return { date_debut_reel: dates[0], date_fin_reel: dates[dates.length - 1] };
+}
+
+// Dates prév./réelles (min début, max fin) et avancement moyen, remontés depuis les feuilles.
+// Pour une feuille, retourne simplement ses propres valeurs.
+export function agregerDatesEtAvancement(node, allNodes) {
+  const leaves = getLeaves(node, allNodes).filter((n) => n.type !== 'jalon');
+  if (leaves.length === 0) {
+    return {
+      date_debut_prev: node.date_debut_prev, date_fin_prev: node.date_fin_prev,
+      date_debut_reel: node.date_debut_reel, date_fin_reel: node.date_fin_reel,
+      avancement: node.avancement || 0,
+    };
+  }
+
+  const prevDebuts = leaves.map((l) => l.date_debut_prev).filter(Boolean).map((d) => new Date(d));
+  const prevFins   = leaves.map((l) => l.date_fin_prev).filter(Boolean).map((d) => new Date(d));
+  const reelDebuts = leaves.map((l) => l.date_debut_reel).filter(Boolean).map((d) => new Date(d));
+  const reelFins   = leaves.map((l) => l.date_fin_reel).filter(Boolean).map((d) => new Date(d));
+  const avancements = leaves.map((l) => l.avancement || 0);
+
+  return {
+    date_debut_prev: prevDebuts.length ? new Date(Math.min(...prevDebuts)).toISOString().slice(0, 10) : null,
+    date_fin_prev:   prevFins.length   ? new Date(Math.max(...prevFins)).toISOString().slice(0, 10)   : null,
+    date_debut_reel: reelDebuts.length ? new Date(Math.min(...reelDebuts)).toISOString().slice(0, 10) : null,
+    date_fin_reel:   reelFins.length   ? new Date(Math.max(...reelFins)).toISOString().slice(0, 10)   : null,
+    avancement: Math.round(avancements.reduce((s, v) => s + v, 0) / avancements.length),
+  };
 }
 
 export function calculerAvancementProjet(projet) {

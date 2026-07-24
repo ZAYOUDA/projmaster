@@ -10,10 +10,13 @@ import ProjetGantt from './pages/ProjetGantt';
 import ProjetPlanning from './pages/ProjetPlanning';
 import ProjetBudget from './pages/ProjetBudget';
 import ProjetKanban from './pages/ProjetKanban';
-import ProjetRisques from './pages/ProjetRisques';
+import ProjetRiad from './pages/ProjetRiad';
 import ProjetParametres from './pages/ProjetParametres';
 import ProjetStakeholders from './pages/ProjetStakeholders';
 import ProjetFacturation from './pages/ProjetFacturation';
+import SuiviMensuelRun from './pages/SuiviMensuelRun';
+import ImportCRA from './pages/ImportCRA';
+import ImportWbsPage from './pages/ImportWbsPage';
 import CongesEquipe from './pages/CongesEquipe';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
@@ -34,9 +37,11 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'admin', element: <AdminRoute><ConsoleAdmin /></AdminRoute> },
+      { path: 'import-cra', element: <AdminRoute><ImportCRA /></AdminRoute> },
       { path: 'collaborateurs', element: <Collaborateurs /> },
       { path: 'conges', element: <CongesEquipe /> },
       { path: 'parametres', element: <Parametres /> },
+      { path: 'projet/:id/import-wbs', element: <AdminRoute><ImportWbsPage /></AdminRoute> },
       {
         path: 'projet/:id',
         element: <ProjetLayout />,
@@ -46,7 +51,8 @@ export const router = createBrowserRouter([
           { path: 'gantt',        element: <ProjetGantt /> },
           { path: 'budget',       element: <ProjetBudget /> },
           { path: 'kanban',       element: <ProjetKanban /> },
-          { path: 'risques',      element: <ProjetRisques /> },
+          { path: 'suivi-mensuel',element: <SuiviMensuelRun /> },
+          { path: 'risques',      element: <ProjetRiad /> },
           { path: 'stakeholders', element: <ProjetStakeholders /> },
           { path: 'facturation',  element: <ProjetFacturation /> },
           { path: 'parametres',   element: <ProjetParametres /> },

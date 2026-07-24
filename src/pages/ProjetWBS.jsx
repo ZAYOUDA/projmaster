@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
-import { calculerNumeroWBS, calculerBudgetNoeud, formatCurrency } from '../data/calculations';
+import { calculerNumeroWBS, calculerBudgetNoeud, formatCurrency, agregerDatesEtAvancement } from '../data/calculations';
 import PageHeader from '../components/layout/PageHeader';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import Modal from '../components/ui/Modal';
-import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare, Calendar, GripVertical } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare, Calendar, GripVertical, Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -168,6 +168,11 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           defaultValue={node.description}
           onBlur={(e) => updateWBSNode(projetId, node.id, { description: e.target.value })} />
       </label>
+      {node.prerequis && (
+        <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: '#F8F8F7', fontSize: 12, color: '#5F5E5A' }}>
+          <strong style={{ color: '#1A1A18' }}>Prérequis :</strong> {node.prerequis}
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
         <label style={labelStyle}>Début prévu
           <input type="date" style={inputStyle} value={node.date_debut_prev || ''}
@@ -327,6 +332,9 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
   const hasChildren = children.length > 0;
   const numero = numeros[node.id] || '';
   const budget = calculerBudgetNoeud(node, allNodes, projet?.tjm || []);
+  // Dates prév. et avancement remontés depuis les sous-tâches (min/max dates, moyenne d'avancement) —
+  // pour une feuille, ça retombe simplement sur ses propres valeurs.
+  const agg = agregerDatesEtAvancement(node, allNodes);
   const totalJours = node.affectations.reduce((s, a) => s + a.jours_prev, 0);
   const affCollab = (node.affectations || []).map((a) => collaborateurs.find((c) => c.id === a.collaborateur_id)).filter(Boolean);
   const isSelected = selectedIds.has(node.id);
@@ -386,18 +394,18 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
             {affCollab.map((c) => <Avatar key={c.id} collaborateur={c} size={22} />)}
           </div>
         </td>
-        {/* Dates */}
+        {/* Dates — remontées des sous-tâches pour un livrable/parent */}
         <td style={{ padding: '8px 8px', fontSize: 12, color: '#5F5E5A', whiteSpace: 'nowrap' }}>
-          {node.date_debut_prev && node.date_fin_prev
-            ? `${fmtDate(node.date_debut_prev)} → ${fmtDate(node.date_fin_prev)}` : '—'}
+          {agg.date_debut_prev && agg.date_fin_prev
+            ? `${fmtDate(agg.date_debut_prev)} → ${fmtDate(agg.date_fin_prev)}` : '—'}
         </td>
-        {/* Avancement */}
+        {/* Avancement — moyenne des sous-tâches pour un livrable/parent */}
         <td style={{ padding: '8px 8px', width: 110 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ flex: 1, height: 4, background: '#E8E7E3', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${node.avancement}%`, background: '#378ADD', borderRadius: 99 }} />
+              <div style={{ height: '100%', width: `${agg.avancement}%`, background: '#378ADD', borderRadius: 99 }} />
             </div>
-            <span style={{ fontSize: 11, color: '#888780', flexShrink: 0 }}>{node.avancement}%</span>
+            <span style={{ fontSize: 11, color: '#888780', flexShrink: 0 }}>{agg.avancement}%</span>
           </div>
         </td>
         {/* Statut */}
@@ -650,6 +658,8 @@ function CreateTaskModal({ projetId, wbs, onClose }) {
 // ── Page principale ──────────────────────────────────────────────
 export default function ProjetWBS() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { headerHeight } = useOutletContext();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const deleteWBSNode = useAppStore((s) => s.deleteWBSNode);
   const deleteWBSNodesBulk = useAppStore((s) => s.deleteWBSNodesBulk);
@@ -749,23 +759,29 @@ export default function ProjetWBS() {
 
   return (
     <div style={{ padding: 32 }}>
-      <PageHeader
-        title="WBS"
-        subtitle={`${projet.wbs.length} tâche${projet.wbs.length > 1 ? 's' : ''}`}
-        actions={!isCollab && (
-          <>
-            <button onClick={() => setShowImport(true)} style={btnSecStyle}>
-              <ClipboardPaste size={14} style={{ marginRight: 6 }} /> Coller depuis Excel
-            </button>
-            <button onClick={() => setShowCreate(true)} style={btnPrimStyle}>
-              <Plus size={14} style={{ marginRight: 4 }} /> Créer une tâche
-            </button>
-          </>
-        )}
-      />
+      {/* Titre + actions + filtres figés sous le header du projet, pour garder les filtres
+          accessibles même en scrollant une longue liste de tâches. */}
+      <div style={{ position: 'sticky', top: headerHeight, zIndex: 15, background: '#fff', paddingBottom: 4 }}>
+        <PageHeader
+          title="WBS"
+          subtitle={`${projet.wbs.length} tâche${projet.wbs.length > 1 ? 's' : ''}`}
+          actions={!isCollab && (
+            <>
+              <button onClick={() => setShowImport(true)} style={btnSecStyle}>
+                <ClipboardPaste size={14} style={{ marginRight: 6 }} /> Coller depuis Excel
+              </button>
+              <button onClick={() => navigate(`/projet/${id}/import-wbs`)} style={btnSecStyle}>
+                <Upload size={14} style={{ marginRight: 6 }} /> Importer un planning
+              </button>
+              <button onClick={() => setShowCreate(true)} style={btnPrimStyle}>
+                <Plus size={14} style={{ marginRight: 4 }} /> Créer une tâche
+              </button>
+            </>
+          )}
+        />
 
-      {/* Barre de filtres */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {/* Barre de filtres */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, fontWeight: 500, color: '#888780', marginRight: 4 }}>Filtrer :</span>
         <select value={filterCollab} onChange={(e) => setFilterCollab(e.target.value)}
           style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterCollab ? '#EFF6FF' : '#fff', color: filterCollab ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
@@ -799,6 +815,7 @@ export default function ProjetWBS() {
             {projet.wbs.filter((n) => visibleIds.has(n.id) && !projet.wbs.some((c) => c.parent_id === n.id)).length} tâche(s)
           </span>
         )}
+        </div>
       </div>
 
       {parentIds.length > 0 && (

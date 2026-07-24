@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
-import { calculerBudgetNoeud, formatCurrency } from '../data/calculations';
+import { calculerBudgetNoeud, formatCurrency, agregerDatesEtAvancement } from '../data/calculations';
 import PageHeader from '../components/layout/PageHeader';
 
 // ── Zoom levels ───────────────────────────────────────────────────
@@ -46,37 +47,12 @@ function weeksInRange(start, end) {
   return weeks;
 }
 
-// ── Agrégation niveau 1 ───────────────────────────────────────────
-function getLeaves(node, allNodes) {
-  const children = allNodes.filter((n) => n.parent_id === node.id);
-  if (children.length === 0) return [node];
-  return children.flatMap((c) => getLeaves(c, allNodes));
+// Enfants directs affichables dans le Gantt (les jalons WBS ne sont pas rendus comme des barres)
+function getChildren(node, allNodes) {
+  return allNodes.filter((n) => n.parent_id === node.id && n.type !== 'jalon').sort((a, b) => a.ordre - b.ordre);
 }
 
-function agregerNiveau1(node, allNodes) {
-  const leaves = getLeaves(node, allNodes).filter((n) => n.type !== 'jalon');
-  if (leaves.length === 0) return {
-    date_debut_prev: node.date_debut_prev,
-    date_fin_prev:   node.date_fin_prev,
-    date_debut_reel: node.date_debut_reel,
-    date_fin_reel:   node.date_fin_reel,
-    avancement:      node.avancement || 0,
-  };
-
-  const prevDebuts = leaves.map((l) => l.date_debut_prev).filter(Boolean).map((d) => new Date(d));
-  const prevFins   = leaves.map((l) => l.date_fin_prev).filter(Boolean).map((d) => new Date(d));
-  const reelDebuts = leaves.map((l) => l.date_debut_reel).filter(Boolean).map((d) => new Date(d));
-  const reelFins   = leaves.map((l) => l.date_fin_reel).filter(Boolean).map((d) => new Date(d));
-  const avancemnts = leaves.map((l) => l.avancement || 0);
-
-  return {
-    date_debut_prev: prevDebuts.length ? new Date(Math.min(...prevDebuts)).toISOString().slice(0, 10) : null,
-    date_fin_prev:   prevFins.length   ? new Date(Math.max(...prevFins)).toISOString().slice(0, 10)   : null,
-    date_debut_reel: reelDebuts.length ? new Date(Math.min(...reelDebuts)).toISOString().slice(0, 10) : null,
-    date_fin_reel:   reelFins.length   ? new Date(Math.max(...reelFins)).toISOString().slice(0, 10)   : null,
-    avancement: Math.round(avancemnts.reduce((s, v) => s + v, 0) / avancemnts.length),
-  };
-}
+const agregerNoeud = agregerDatesEtAvancement;
 
 // ── Tooltip ───────────────────────────────────────────────────────
 function Tooltip({ node, agg, budget, couleur, x, y }) {
@@ -121,10 +97,14 @@ function Tooltip({ node, agg, budget, couleur, x, y }) {
 }
 
 // ── Barre Gantt ───────────────────────────────────────────────────
-function GanttBar({ node, agg, minDate, pxPerDay, couleur, tjm, allNodes, onHover }) {
+function GanttBar({ node, agg, minDate, pxPerDay, couleur, tjm, allNodes, depth = 0, onHover }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const budget = calculerBudgetNoeud(node, allNodes, tjm);
+  const opacite = Math.max(0.55, 0.9 - depth * 0.15);
+  const barHeight = depth === 0 ? 16 : 12;
+  const barYPrev = depth === 0 ? 6 : 8;
+  const barYReel = depth === 0 ? 26 : 26;
 
   const barX = (d) => Math.max(0, diffDays(minDate, new Date(d)) * pxPerDay);
   const barW = (s, e) => Math.max(2, diffDays(new Date(s), new Date(e)) * pxPerDay);
@@ -162,36 +142,29 @@ function GanttBar({ node, agg, minDate, pxPerDay, couleur, tjm, allNodes, onHove
       onMouseLeave={handleMouseLeave}
       style={{ cursor: 'default' }}
     >
-      {/* Prévisionnelle */}
+      {/* Prévisionnelle — claire */}
       {hasPrev && (
         <rect
-          x={prevX} y={6} width={prevW} height={16}
-          rx={4} fill={couleur} opacity={0.9}
+          x={prevX} y={barYPrev} width={prevW} height={barHeight}
+          rx={4} fill={couleur} opacity={opacite * 0.35}
         />
       )}
-      {/* Réelle */}
+      {/* Réelle — foncée (pleine opacité) */}
       {hasReel && (
         <>
           <rect
-            x={reelX} y={26} width={reelW} height={16}
+            x={reelX} y={barYReel} width={reelW} height={barHeight}
             rx={4}
             fill={isLate ? '#D85A30' : couleur}
-            opacity={0.6}
+            opacity={Math.min(1, opacite + 0.1)}
           />
-          {/* Hachures sur barre réelle */}
-          <rect
-            x={reelX} y={26} width={reelW} height={16}
-            rx={4}
-            fill={`url(#hatch-${isLate ? 'red' : 'blue'})`}
-            opacity={0.3}
-          />
-          {/* Indicateur avancement */}
+          {/* Indicateur avancement — trait clair pour ressortir sur la barre pleine */}
           {agg.avancement > 0 && (
             <rect
               x={reelX + reelW * agg.avancement / 100 - 1}
-              y={24} width={2} height={20}
-              fill={isLate ? '#D85A30' : couleur}
-              opacity={0.9}
+              y={barYReel - 2} width={2} height={barHeight + 4}
+              fill="#fff"
+              opacity={0.85}
               rx={1}
             />
           )}
@@ -207,6 +180,7 @@ export default function ProjetGantt() {
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const [zoom, setZoom] = useState('mois');
   const [hovering, setHovering] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
 
   const { pxPerDay } = ZOOMS[zoom];
 
@@ -221,16 +195,43 @@ export default function ProjetGantt() {
     [projet.milestones]
   );
 
-  // Agréger les dates/avancement depuis les enfants
-  const tasksWithAgg = useMemo(
-    () => racines.map((n) => ({ node: n, agg: agregerNiveau1(n, projet.wbs) })),
+  // Agrégation des racines (sert de référence stable pour la plage temporelle globale,
+  // indépendamment de ce qui est déplié)
+  const racinesAvecAgg = useMemo(
+    () => racines.map((n) => ({ node: n, agg: agregerNoeud(n, projet.wbs) })),
     [racines, projet.wbs]
   );
 
-  // Plage temporelle globale
+  const toggleExpand = (nodeId) => setExpandedIds((prev) => {
+    const next = new Set(prev);
+    next.has(nodeId) ? next.delete(nodeId) : next.add(nodeId);
+    return next;
+  });
+
+  const parentIds = useMemo(
+    () => projet.wbs.filter((n) => getChildren(n, projet.wbs).length > 0).map((n) => n.id),
+    [projet.wbs]
+  );
+  const allExpanded = parentIds.length > 0 && parentIds.every((pid) => expandedIds.has(pid));
+  const toggleExpandAll = () => setExpandedIds(allExpanded ? new Set() : new Set(parentIds));
+
+  // Lignes visibles (livrables + tâches/sous-tâches dépliées), avec leur profondeur pour l'indentation
+  const visibleRows = useMemo(() => {
+    const rows = [];
+    const walk = (node, depth) => {
+      rows.push({ node, depth, agg: agregerNoeud(node, projet.wbs), children: getChildren(node, projet.wbs) });
+      if (expandedIds.has(node.id)) {
+        getChildren(node, projet.wbs).forEach((c) => walk(c, depth + 1));
+      }
+    };
+    racines.forEach((n) => walk(n, 0));
+    return rows;
+  }, [racines, projet.wbs, expandedIds]);
+
+  // Plage temporelle globale (basée sur les racines : leur agrégation couvre déjà tous les descendants)
   const { minDate, maxDate, totalDays } = useMemo(() => {
     const allDates = [
-      ...tasksWithAgg.flatMap(({ agg }) => [agg.date_debut_prev, agg.date_fin_prev, agg.date_debut_reel, agg.date_fin_reel]),
+      ...racinesAvecAgg.flatMap(({ agg }) => [agg.date_debut_prev, agg.date_fin_prev, agg.date_debut_reel, agg.date_fin_reel]),
       ...jalons.map((m) => m.date_prevue),
     ].filter(Boolean).map((d) => new Date(d));
 
@@ -245,10 +246,10 @@ export default function ProjetGantt() {
     min.setDate(min.getDate() - 7);
     max.setDate(max.getDate() + 14);
     return { minDate: min, maxDate: max, totalDays: diffDays(min, max) };
-  }, [tasksWithAgg, jalons]);
+  }, [racinesAvecAgg, jalons]);
 
   const totalW = totalDays * pxPerDay;
-  const svgH = HEADER_H + (racines.length + jalons.length) * ROW_H + 20;
+  const svgH = HEADER_H + (visibleRows.length + jalons.length) * ROW_H + 20;
   const today = new Date();
   const todayX = diffDays(minDate, today) * pxPerDay;
 
@@ -268,35 +269,48 @@ export default function ProjetGantt() {
     <div style={{ padding: 32 }}>
       <PageHeader
         title="Gantt"
-        subtitle="Niveau 1 — livrables"
+        subtitle={parentIds.length > 0 ? 'Livrables — déplie une ligne pour voir ses tâches' : 'Livrables'}
         actions={
-          <div style={{ display: 'flex', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 7, overflow: 'hidden' }}>
-            {Object.entries(ZOOMS).map(([key, z]) => (
+          <>
+            {parentIds.length > 0 && (
               <button
-                key={key}
-                onClick={() => setZoom(key)}
+                onClick={toggleExpandAll}
                 style={{
-                  padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 13,
-                  background: zoom === key ? '#1A1A18' : '#fff',
-                  color: zoom === key ? '#fff' : '#5F5E5A',
-                  borderRight: key !== 'trimestre' ? '1px solid rgba(0,0,0,0.12)' : 'none',
+                  padding: '7px 14px', borderRadius: 7, border: '1px solid rgba(0,0,0,0.12)',
+                  background: '#fff', color: '#5F5E5A', fontSize: 13, cursor: 'pointer',
                 }}
               >
-                {z.label}
+                {allExpanded ? 'Tout replier' : 'Tout déplier'}
               </button>
-            ))}
-          </div>
+            )}
+            <div style={{ display: 'flex', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 7, overflow: 'hidden' }}>
+              {Object.entries(ZOOMS).map(([key, z]) => (
+                <button
+                  key={key}
+                  onClick={() => setZoom(key)}
+                  style={{
+                    padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 13,
+                    background: zoom === key ? '#1A1A18' : '#fff',
+                    color: zoom === key ? '#fff' : '#5F5E5A',
+                    borderRight: key !== 'trimestre' ? '1px solid rgba(0,0,0,0.12)' : 'none',
+                  }}
+                >
+                  {z.label}
+                </button>
+              ))}
+            </div>
+          </>
         }
       />
 
       {/* Légende */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 16, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 0.9 }} />
+          <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 0.35 }} />
           <span style={{ fontSize: 12, color: '#5F5E5A' }}>Prévisionnelle</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 0.5, border: '1px dashed currentColor' }} />
+          <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 1 }} />
           <span style={{ fontSize: 12, color: '#5F5E5A' }}>Réelle</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -317,17 +331,27 @@ export default function ProjetGantt() {
           <div style={{ height: HEADER_H, borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Livrable</span>
           </div>
-          {/* Lignes tâches */}
-          {tasksWithAgg.map(({ node, agg }) => (
+          {/* Lignes tâches (livrables L1, et sous-tâches dépliées en dessous) */}
+          {visibleRows.map(({ node, agg, depth, children }) => (
             <div
               key={node.id}
               style={{
-                height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 16px',
+                height: ROW_H, display: 'flex', alignItems: 'center', gap: 4,
+                padding: `0 16px 0 ${16 + depth * 16}px`,
                 borderBottom: '0.5px solid rgba(0,0,0,0.05)',
               }}
             >
-              <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: '#1A1A18', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 }}>
+              {children.length > 0 ? (
+                <button
+                  onClick={() => toggleExpand(node.id)}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', color: '#888780', flexShrink: 0 }}
+                  title={expandedIds.has(node.id) ? 'Replier' : `Déplier (${children.length})`}
+                >
+                  {expandedIds.has(node.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </button>
+              ) : <span style={{ width: 14, flexShrink: 0 }} />}
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: depth === 0 ? 13 : 12.5, fontWeight: depth === 0 ? 500 : 400, color: depth === 0 ? '#1A1A18' : '#5F5E5A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 - depth * 16 }}>
                   {node.nom}
                 </p>
                 <p style={{ margin: 0, fontSize: 11, color: '#888780' }}>{agg.avancement}%</p>
@@ -352,15 +376,6 @@ export default function ProjetGantt() {
         {/* Panel droit — timeline SVG */}
         <div style={{ flex: 1, overflowX: 'auto' }}>
           <svg width={Math.max(totalW, 600)} height={svgH} style={{ display: 'block' }}>
-            <defs>
-              <pattern id="hatch-blue" patternUnits="userSpaceOnUse" width={8} height={8} patternTransform="rotate(45)">
-                <line x1={0} y1={0} x2={0} y2={8} stroke="#fff" strokeWidth={2} />
-              </pattern>
-              <pattern id="hatch-red" patternUnits="userSpaceOnUse" width={8} height={8} patternTransform="rotate(45)">
-                <line x1={0} y1={0} x2={0} y2={8} stroke="#fff" strokeWidth={2} />
-              </pattern>
-            </defs>
-
             {/* ── Grille verticale mois ── */}
             {months.map((month, i) => {
               const x = Math.max(0, diffDays(minDate, month) * pxPerDay);
@@ -390,8 +405,8 @@ export default function ProjetGantt() {
               </g>
             )}
 
-            {/* ── Tâches niveau 1 ── */}
-            {tasksWithAgg.map(({ node, agg }, i) => {
+            {/* ── Livrables, tâches et sous-tâches (dépliées) ── */}
+            {visibleRows.map(({ node, agg, depth }, i) => {
               const y = HEADER_H + i * ROW_H;
               return (
                 <g key={node.id} transform={`translate(0, ${y})`}>
@@ -405,6 +420,7 @@ export default function ProjetGantt() {
                     couleur={projet.couleur}
                     tjm={projet.tjm}
                     allNodes={projet.wbs}
+                    depth={depth}
                     onHover={(data) => setHovering(data)}
                   />
                 </g>
@@ -413,7 +429,7 @@ export default function ProjetGantt() {
 
             {/* ── Jalons ── */}
             {jalons.map((m, i) => {
-              const y = HEADER_H + tasksWithAgg.length * ROW_H + (jalons.length > 0 ? 28 : 0) + i * ROW_H;
+              const y = HEADER_H + visibleRows.length * ROW_H + (jalons.length > 0 ? 28 : 0) + i * ROW_H;
               if (!m.date_prevue) return null;
               const x = diffDays(minDate, new Date(m.date_prevue)) * pxPerDay;
               const late = new Date(m.date_prevue) < today;

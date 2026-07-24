@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
-import { calculerNumeroWBS } from '../data/calculations';
+import { calculerNumeroWBS, getLeaves } from '../data/calculations';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 // ── Utilitaires date ──────────────────────────────────────────────
@@ -25,6 +25,8 @@ function getDaysInRange(start, end) {
   return days;
 }
 function isWeekend(d) { const day = d.getDay(); return day === 0 || day === 6; }
+// Arrondit à 2 décimales (évite les artefacts flottants type 48.681200000000004) et enlève les zéros inutiles.
+function fmtJours(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
 function groupByMonth(days) {
   const groups = [];
   days.forEach((d) => {
@@ -234,16 +236,23 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
   const isLeaf = !hasChildren;
   const numero = numeros[node.id] || '';
 
-  const totalJoursPrev = (node.affectations || []).reduce((s, a) => s + (a.jours_prev || 0), 0);
-  const totalJoursReel = (node.affectations || []).reduce((s, a) => s + (a.jours_realises || 0), 0);
+  // Remonte les affectations de toutes les sous-tâches (feuilles) pour les livrables/parents —
+  // un livrable n'a lui-même quasiment jamais d'affectation directe.
+  const leafAffectations = useMemo(
+    () => getLeaves(node, allNodes).flatMap((l) => l.affectations || []),
+    [node, allNodes]
+  );
+
+  const totalJoursPrev = leafAffectations.reduce((s, a) => s + (a.jours_prev || 0), 0);
+  const totalJoursReel = leafAffectations.reduce((s, a) => s + (a.jours_realises || 0), 0);
   const delta = (showPrev && showReel) ? totalJoursPrev - totalJoursReel : null;
 
   const totalPrevByDay = {};
   const totalReelByDay = {};
   days.forEach((d) => {
     const iso = toISO(d);
-    totalPrevByDay[iso] = (node.affectations || []).reduce((s, a) => s + ((a.planning || {})[iso] || 0), 0);
-    totalReelByDay[iso] = (node.affectations || []).reduce((s, a) => s + ((a.planning_reel || {})[iso] || 0), 0);
+    totalPrevByDay[iso] = leafAffectations.reduce((s, a) => s + ((a.planning || {})[iso] || 0), 0);
+    totalReelByDay[iso] = leafAffectations.reduce((s, a) => s + ((a.planning_reel || {})[iso] || 0), 0);
   });
 
   const headerBg = depth === 0 ? '#F0EFF9' : '#F8F8FB';
@@ -662,7 +671,10 @@ export default function ProjetPlanning() {
       </div>
 
       {/* Grille */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      {/* contain: 'paint' isole ce tableau (nombreuses colonnes + en-têtes/colonnes sticky) de la
+          recomposition déclenchée par un overlay position:fixed (ex. modale) affiché par-dessus —
+          sans ça Chrome peut afficher un damier gris (« checkerboarding ») le temps de repeindre. */}
+      <div style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
         <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ background: '#EEEDF5' }}>
@@ -718,13 +730,13 @@ export default function ProjetPlanning() {
               <td style={{ ...collabCol, background: '#EEEDF5' }} />
               <td style={{ ...statutCol, background: '#EEEDF5' }} />
               <td style={{ ...totalCol, background: '#EEEDF5' }}>
-                {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 700 }}>{grandTotalPrev}j</div>}
-                {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? '#C0391B' : '#0E7A45', fontWeight: 700 }}>{grandTotalReel}j</div>}
+                {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 700 }}>{fmtJours(grandTotalPrev)}j</div>}
+                {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? '#C0391B' : '#0E7A45', fontWeight: 700 }}>{fmtJours(grandTotalReel)}j</div>}
               </td>
               <td style={{ ...deltaCellStyle('#EEEDF5') }}>
                 {showPrev && showReel && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: grandTotalPrev - grandTotalReel < 0 ? '#C0391B' : '#0E7A45' }}>
-                    {grandTotalPrev - grandTotalReel > 0 ? '+' : ''}{grandTotalPrev - grandTotalReel}
+                    {grandTotalPrev - grandTotalReel > 0 ? '+' : ''}{fmtJours(grandTotalPrev - grandTotalReel)}
                   </span>
                 )}
               </td>
