@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, ChevronRight, Wallet, CalendarClock, AlertTriangle as AlertTriangleIcon } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { calculerBudgetProjet, calculerAvancementProjet, formatCurrency } from '../data/calculations';
 import { moisAnnee, calculerSuiviProjetRun, calculerBurnRateEtProjection } from '../utils/runCalculs';
 import { PROBABILITE_LEVELS, IMPACT_LEVELS } from '../utils/riadCalculs';
+import { useAuth } from '../hooks/useAuth';
+import MesActions from '../components/dashboard/MesActions';
 
 const PROBA_VALEUR = Object.fromEntries(PROBABILITE_LEVELS.map((p) => [p.key, p.valeur]));
 const IMPACT_VALEUR = Object.fromEntries(IMPACT_LEVELS.map((i) => [i.key, i.valeur]));
 import ProgressBar from '../components/ui/ProgressBar';
+import CircularProgress from '../components/ui/CircularProgress';
 import Badge from '../components/ui/Badge';
-import PageHeader from '../components/layout/PageHeader';
 
 const fmtJours = (n) => (n ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
 
@@ -82,6 +86,9 @@ export default function Dashboard() {
   const collaborateurs = useAppStore((s) => s.collaborateurs);
   const updateStakeholder = useAppStore((s) => s.updateStakeholder);
   const navigate = useNavigate();
+  const { userDoc } = useAuth();
+  const isAdmin = userDoc?.role === 'admin';
+  const [chargeOuverte, setChargeOuverte] = useState(true);
 
   // KPIs globaux
   const totalPrev = projets.reduce((s, p) => s + calculerBudgetProjet(p).prev, 0);
@@ -148,27 +155,70 @@ export default function Dashboard() {
     updateStakeholder(sh.projetId, sh.id, { derniere_interaction: new Date().toISOString().slice(0, 10) });
   };
 
+  const pctConso = totalPrev > 0 ? Math.round(totalConso / totalPrev * 100) : 0;
+  const prenom = userDoc?.prenom || '';
+
   return (
     <div style={{ padding: 32 }}>
-      <PageHeader title="Vue d'ensemble" subtitle={`${projets.filter(p => p.statut === 'actif').length} projets actifs`} />
+      {/* En-tête personnalisé */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: '#1A1A18' }}>
+          Bonjour{prenom ? ` ${prenom}` : ''},
+        </h1>
+        <p style={{ margin: '2px 0 0', fontSize: 13, color: '#5F5E5A' }}>
+          {projets.filter((p) => p.statut === 'actif').length} projets actifs — voici où vous en êtes aujourd'hui.
+        </p>
+      </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
-        {[
-          { label: 'Budget prévisionnel', value: formatCurrency(totalPrev), sub: 'tous projets' },
-          { label: 'Budget consommé', value: formatCurrency(totalConso), sub: totalPrev > 0 ? `${Math.round(totalConso / totalPrev * 100)}% consommé` : '—' },
-          { label: 'Charge planifiée', value: `${totalJours} j`, sub: 'jours prévisionnels' },
-          {
-            label: 'Risques ouverts', value: risquesOuverts,
-            sub: risquesCritiques > 0 ? <span style={{ color: '#D85A30' }}>{risquesCritiques} critiques</span> : 'Aucun critique',
-          },
-        ].map((kpi) => (
-          <div key={kpi.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20 }}>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>{kpi.label}</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{kpi.value}</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>{kpi.sub}</p>
+        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Budget prévisionnel</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{formatCurrency(totalPrev)}</p>
+            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>tous projets</p>
           </div>
-        ))}
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Wallet size={18} color="#378ADD" />
+          </div>
+        </div>
+
+        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Budget consommé</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{formatCurrency(totalConso)}</p>
+            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>{totalPrev > 0 ? `${pctConso}% consommé` : '—'}</p>
+          </div>
+          {totalPrev > 0 && <CircularProgress value={pctConso} size={44} strokeWidth={4} />}
+        </div>
+
+        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Charge planifiée</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{totalJours} j</p>
+            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>jours prévisionnels</p>
+          </div>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F1EFFB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <CalendarClock size={18} color="#7F77DD" />
+          </div>
+        </div>
+
+        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Risques ouverts</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{risquesOuverts}</p>
+            <p style={{ margin: 0, fontSize: 12, color: risquesCritiques > 0 ? '#D85A30' : '#5F5E5A' }}>
+              {risquesCritiques > 0 ? `${risquesCritiques} critiques` : 'Aucun critique'}
+            </p>
+          </div>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: risquesCritiques > 0 ? '#FAECE7' : risquesOuverts > 0 ? '#FAEEDA' : '#F1EFE8',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <AlertTriangleIcon size={18} color={risquesCritiques > 0 ? '#D85A30' : risquesOuverts > 0 ? '#BA7517' : '#888780'} />
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
@@ -222,7 +272,10 @@ export default function Dashboard() {
                           : (b.prev > 0 ? <>{formatCurrency(b.conso)} / {formatCurrency(b.prev)}</> : '—')}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <Badge label={badge.label} variant={badge.variant} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <Badge label={badge.label} variant={badge.variant} />
+                          <ChevronRight size={15} color="#BDBCB8" />
+                        </div>
                       </td>
                     </tr>
                   );
@@ -235,33 +288,47 @@ export default function Dashboard() {
           </div>
 
           {/* Charge collaborateurs */}
-          <h3 style={{ margin: '24px 0 12px', fontSize: 14, fontWeight: 600 }}>Charge des collaborateurs</h3>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
-                  {['Collaborateur', 'J. planifiés', 'J. réalisés', 'Projets'].map((h) => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {chargeCollab.map((c) => (
-                  <tr key={c.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 500, color: '#fff' }}>{c.initiales}</div>
-                        <span style={{ fontSize: 13 }}>{c.prenom} {c.nom}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px 16px', fontSize: 13, color: c.joursPrev > 20 ? '#D85A30' : '#1A1A18' }}>{c.joursPrev} j</td>
-                    <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.joursReels} j</td>
-                    <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.nbProjets}</td>
+          <button
+            onClick={() => setChargeOuverte((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+              margin: '24px 0 12px', padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Charge des collaborateurs</h3>
+            {chargeOuverte ? <ChevronUp size={15} color="#888780" /> : <ChevronDown size={15} color="#888780" />}
+          </button>
+          {chargeOuverte && (
+            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+                    {['Collaborateur', 'J. planifiés', 'J. réalisés', 'Projets'].map((h) => (
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {chargeCollab.map((c) => (
+                    <tr key={c.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+                      <td style={{ padding: '10px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 24, height: 24, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 500, color: '#fff' }}>{c.initiales}</div>
+                          <span style={{ fontSize: 13 }}>{c.prenom} {c.nom}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: c.joursPrev > 20 ? '#D85A30' : '#1A1A18', minWidth: 140 }}>
+                        <div style={{ marginBottom: 4 }}>{c.joursPrev} j</div>
+                        {c.joursPrev > 0 && <ProgressBar value={Math.round(c.joursReels / c.joursPrev * 100)} color={c.couleur} height={4} />}
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.joursReels} j</td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.nbProjets}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* V2 — Widget Facturation */}
           {toutesFactures.length > 0 && (
@@ -310,6 +377,9 @@ export default function Dashboard() {
 
         {/* Colonne droite */}
         <div>
+          {/* Mes actions — to-do personnelle du PM, indépendante des projets */}
+          {isAdmin && <MesActions />}
+
           {/* Milestones */}
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Prochains jalons</h3>
           <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>

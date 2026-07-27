@@ -4,6 +4,7 @@ import {
   subscribeCollaborateurs, saveCollaborateur, patchCollaborateur, removeCollaborateur,
   subscribeProjets, saveProjet, patchProjet, removeProjet,
   subscribeUsers, subscribeUserDoc, saveUser, patchUser,
+  subscribeTaches, saveTache, patchTache, removeTache,
 } from '../firebase/firestore';
 import { defaultData } from '../data/defaultData';
 import { exportData, importData } from '../data/storage';
@@ -93,6 +94,7 @@ const useAppStore = create((set, get) => ({
   collaborateurs: [],
   projets: [],
   usersAdmin: [],
+  taches: [],
   savedAt: null,
   _unsubscribers: [],
 
@@ -116,6 +118,12 @@ const useAppStore = create((set, get) => ({
       set({ usersAdmin: items });
     });
 
+    // To-do personnelle du PM : réservée à l'admin (cf. firestore.rules)
+    const unsubTaches = isCollab
+      ? () => {}
+      : subscribeTaches((items) => { set({ taches: items }); });
+    if (isCollab) set({ taches: [] });
+
     // Pour les collabs : re-init si projets_autorises change (admin assigne un nouveau projet)
     let unsubMyDoc = () => {};
     if (isCollab && uid) {
@@ -129,12 +137,12 @@ const useAppStore = create((set, get) => ({
       });
     }
 
-    set({ _unsubscribers: [unsubCollabs, unsubProjets, unsubUsers, unsubMyDoc] });
+    set({ _unsubscribers: [unsubCollabs, unsubProjets, unsubUsers, unsubTaches, unsubMyDoc] });
   },
 
   destroy: () => {
     get()._unsubscribers.forEach((u) => u());
-    set({ _unsubscribers: [], usersAdmin: [] });
+    set({ _unsubscribers: [], usersAdmin: [], taches: [] });
   },
 
   _touch: () => set({ savedAt: new Date().toISOString() }),
@@ -946,6 +954,29 @@ const useAppStore = create((set, get) => ({
     const projets = (data.projets || []).map(migrateProjet);
     await Promise.all(collabs.map((c) => saveCollaborateur(c.id, c)));
     await Promise.all(projets.map((p) => saveProjet(p.id, p)));
+    get()._touch();
+  },
+
+  // ── Tâches (to-do personnelle du PM, 4 statuts + deadline) ────────
+  addTache: async (tache) => {
+    const id = uuidv4();
+    const newTache = {
+      id, titre: '', note: '', statut: 'a_faire', deadline: null,
+      created_at: new Date().toISOString(),
+      ...tache,
+    };
+    await saveTache(id, newTache);
+    get()._touch();
+    return newTache;
+  },
+
+  updateTache: async (id, updates) => {
+    await patchTache(id, updates);
+    get()._touch();
+  },
+
+  deleteTache: async (id) => {
+    await removeTache(id);
     get()._touch();
   },
 

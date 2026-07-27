@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useParams, Navigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
+import { calculerEVMProjet, calculerEarnedSchedule, detecterAvancementNonAJour } from '../utils/evmCalculs';
+import SanteProjetEVM from '../components/projet/SanteProjetEVM';
 import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp } from 'lucide-react';
 
 const ALL_TABS = [
@@ -39,6 +41,9 @@ export default function ProjetLayout() {
 
   if (!projet) return <Navigate to="/" replace />;
 
+  const evm = calculerEVMProjet(projet); // null pour les projets RUN (non applicable)
+  const earnedSchedule = calculerEarnedSchedule(projet);
+  const alertesAvancement = detecterAvancementNonAJour(projet);
   const role = userDoc?.role || 'collaborateur';
   const type = projet.type || 'BUILD';
   const tabs = ALL_TABS.filter((t) => t.roles.includes(role) && t.types.includes(type));
@@ -67,6 +72,7 @@ export default function ProjetLayout() {
             </span>
           )}
         </div>
+        <SanteProjetEVM evm={evm} earnedSchedule={earnedSchedule} alertes={alertesAvancement} />
         <nav style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
           {tabs.map(({ path, label, icon: Icon }) => (
             <NavLink key={path} to={`/projet/${id}/${path}`} style={tabLink}>

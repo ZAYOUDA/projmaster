@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "projmaster-v3"
+  },
+  "targets": {
+    "projmaster-v3": {
+      "firestore": {
+        "dev": ["sandbox"],
+        "prod": ["prod"]
+      }
+    }
+  },
+  "etags": {}
+}

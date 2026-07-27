@@ -68,6 +68,26 @@ export async function removeProjet(id) {
   await deleteDoc(doc(db, 'projets', id));
 }
 
+// ── Tâches (to-do personnelle du PM, indépendante des projets) ────
+export function subscribeTaches(callback) {
+  return onSnapshot(collection(db, 'taches'), (snap) => {
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    callback(items);
+  });
+}
+
+export async function saveTache(id, data) {
+  await setDoc(doc(db, 'taches', id), data);
+}
+
+export async function patchTache(id, updates) {
+  await updateDoc(doc(db, 'taches', id), updates);
+}
+
+export async function removeTache(id) {
+  await deleteDoc(doc(db, 'taches', id));
+}
+
 // ── Users (admin) ─────────────────────────────────────────────────
 export function subscribeUsers(callback) {
   return onSnapshot(collection(db, 'users'), (snap) => {

@@ -46,7 +46,7 @@ export default function Login() {
             </svg>
           </div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1A1A18', letterSpacing: '-0.3px' }}>
-            ProjMaster
+            MisterProject
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#888780' }}>Connectez-vous pour continuer</p>
         </div>

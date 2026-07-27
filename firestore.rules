@@ -40,5 +40,10 @@ service cloud.firestore {
     match /app_config/{doc} {
       allow read, write: if isAdmin();
     }
+
+    // To-do personnelle du PM (indépendante des projets) — réservée à l'admin.
+    match /taches/{tacheId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

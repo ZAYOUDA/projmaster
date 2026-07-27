@@ -1,11 +1,11 @@
 {
   "firestore": [
     {
-      "database": "default",
+      "target": "dev",
       "rules": "firestore.rules"
     },
     {
-      "database": "(default)",
+      "target": "prod",
       "rules": "firestore.rules"
     }
   ],

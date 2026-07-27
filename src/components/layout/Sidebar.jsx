@@ -65,7 +65,7 @@ export default function Sidebar() {
       <div style={{ padding: '20px 16px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <FolderOpen size={18} color="#378ADD" />
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#1A1A18' }}>ProjMaster</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#1A1A18' }}>MisterProject</span>
         </div>
         <div style={{
           marginTop: 8,

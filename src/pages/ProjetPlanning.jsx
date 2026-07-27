@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { calculerNumeroWBS, getLeaves } from '../data/calculations';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
@@ -493,6 +493,7 @@ const today = toISO(new Date());
 
 export default function ProjetPlanning() {
   const { id } = useParams();
+  const { headerHeight } = useOutletContext();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
 
@@ -577,7 +578,7 @@ export default function ProjetPlanning() {
   const grandTotalReel = projet.wbs.reduce((s, n) => s + (n.affectations || []).reduce((sa, a) => sa + (a.jours_realises || 0), 0), 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: `calc(100vh - ${headerHeight}px)`, overflow: 'hidden' }}>
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.1)', flexShrink: 0, background: '#fff', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 600 }}>Planning de charge</span>
