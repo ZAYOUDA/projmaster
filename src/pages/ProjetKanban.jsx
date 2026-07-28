@@ -1,10 +1,83 @@
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
 import { calculerNumeroWBS } from '../data/calculations';
 import Avatar from '../components/ui/Avatar';
 import Badge from '../components/ui/Badge';
 import PageHeader from '../components/layout/PageHeader';
+
+// Filtre à choix multiple (checkboxes) — bouton déclencheur affichant le nombre de valeurs
+// sélectionnées, menu déroulant qui se ferme au clic en dehors.
+function MultiSelectFilter({ label, options, selected, onChange }) {
+  const [ouvert, setOuvert] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!ouvert) return;
+    const onClickOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOuvert(false); };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [ouvert]);
+
+  const toggle = (value) => {
+    const next = new Set(selected);
+    next.has(value) ? next.delete(value) : next.add(value);
+    onChange(next);
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOuvert((v) => !v)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)',
+          background: selected.size > 0 ? '#F1EFE8' : '#fff', color: '#1A1A18',
+          fontSize: 12, fontWeight: 500, cursor: 'pointer',
+        }}
+      >
+        {label}{selected.size > 0 ? ` (${selected.size})` : ''}
+        <ChevronDown size={12} />
+      </button>
+      {ouvert && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30, minWidth: 190,
+          background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto',
+        }}>
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange(new Set())}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px',
+                border: 'none', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff',
+                cursor: 'pointer', fontSize: 12, color: '#D85A30', fontWeight: 500,
+              }}
+            >
+              Réinitialiser
+            </button>
+          )}
+          {options.map((o) => (
+            <label
+              key={o.value}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
+                cursor: 'pointer', fontSize: 12.5, color: '#1A1A18',
+              }}
+            >
+              <input type="checkbox" checked={selected.has(o.value)} onChange={() => toggle(o.value)} />
+              {o.label}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const COLONNES = [
   { id: 'backlog', label: 'Backlog' },
@@ -69,6 +142,9 @@ export default function ProjetKanban() {
   const collaborateurs = useAppStore((s) => s.collaborateurs);
   const updateWBSNode = useAppStore((s) => s.updateWBSNode);
 
+  const [filterCollabs, setFilterCollabs] = useState(new Set());
+  const [filterStatuts, setFilterStatuts] = useState(new Set());
+
   const numeros = calculerNumeroWBS(projet.wbs);
 
   // Calcule les IDs accessibles depuis les racines (filtre les orphelins)
@@ -81,7 +157,10 @@ export default function ProjetKanban() {
   projet.wbs.filter((n) => n.parent_id === null).forEach((n) => addValid(n.id));
 
   const childIds = new Set(projet.wbs.map((n) => n.parent_id).filter(Boolean));
-  const taches = projet.wbs.filter((n) => n.type !== 'jalon' && validIds.has(n.id) && !childIds.has(n.id));
+  const taches = projet.wbs
+    .filter((n) => n.type !== 'jalon' && validIds.has(n.id) && !childIds.has(n.id))
+    .filter((n) => filterCollabs.size === 0 || (n.affectations || []).some((a) => filterCollabs.has(a.collaborateur_id)))
+    .filter((n) => filterStatuts.size === 0 || filterStatuts.has(n.statut));
 
   // Dérive la colonne Kanban depuis kanban_colonne ou statut (synchro automatique)
   function getKanbanCol(node) {
@@ -102,6 +181,20 @@ export default function ProjetKanban() {
   return (
     <div style={{ padding: 32 }}>
       <PageHeader title="Kanban" subtitle={`${taches.length} tâches`} />
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <MultiSelectFilter
+          label="Collaborateur"
+          options={collaborateurs.filter((c) => c.actif).map((c) => ({ value: c.id, label: `${c.prenom} ${c.nom}` }))}
+          selected={filterCollabs}
+          onChange={setFilterCollabs}
+        />
+        <MultiSelectFilter
+          label="Statut"
+          options={Object.entries(STATUT_LABELS).map(([value, label]) => ({ value, label }))}
+          selected={filterStatuts}
+          onChange={setFilterStatuts}
+        />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, minHeight: 400 }}>
         {COLONNES.map((col) => {
           const cards = taches.filter((n) => getKanbanCol(n) === col.id);

@@ -195,7 +195,7 @@ export default function Dashboard() {
         <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Charge planifiée</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{totalJours} j</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{fmtJours(totalJours)} j</p>
             <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>jours prévisionnels</p>
           </div>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F1EFFB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -318,10 +318,10 @@ export default function Dashboard() {
                         </div>
                       </td>
                       <td style={{ padding: '10px 16px', fontSize: 13, color: c.joursPrev > 20 ? '#D85A30' : '#1A1A18', minWidth: 140 }}>
-                        <div style={{ marginBottom: 4 }}>{c.joursPrev} j</div>
+                        <div style={{ marginBottom: 4 }}>{fmtJours(c.joursPrev)} j</div>
                         {c.joursPrev > 0 && <ProgressBar value={Math.round(c.joursReels / c.joursPrev * 100)} color={c.couleur} height={4} />}
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.joursReels} j</td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{fmtJours(c.joursReels)} j</td>
                       <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.nbProjets}</td>
                     </tr>
                   ))}

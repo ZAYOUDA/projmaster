@@ -672,7 +672,11 @@ export default function ProjetWBS() {
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [collapsedIds, setCollapsedIds] = useState(new Set());
+  // Toutes les tâches ayant des sous-tâches démarrent pliées à l'ouverture du projet —
+  // l'utilisateur déplie manuellement (ou via le bouton "tout déplier").
+  const [collapsedIds, setCollapsedIds] = useState(() => new Set(
+    projet.wbs.filter((n) => projet.wbs.some((c) => c.parent_id === n.id)).map((n) => n.id)
+  ));
   const [filterCollab, setFilterCollab] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
   const [filterDelta, setFilterDelta] = useState('');

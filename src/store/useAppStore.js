@@ -40,6 +40,32 @@ function migrerRisqueLegacy(r, escaladeDefault) {
   };
 }
 
+// Fait remonter le statut d'un nœud vers ses ancêtres, niveau par niveau, aussi loin que
+// nécessaire (grand-parent, arrière-grand-parent…) — pas juste le parent direct. Utilisée à la
+// fois par la saisie de charge réelle (setChargePlanningReel) et par le changement manuel de
+// statut (updateWBSNode), pour que la cascade soit cohérente quel que soit le déclencheur.
+// Règles : parent passe à "terminé" si TOUS ses enfants directs sont "terminé" ; passe à
+// "en_cours" si au moins un enfant est "en_cours"/"terminé" et que le parent était "non_demarre".
+// Ne redescend jamais un statut (pas de rétrogradation automatique).
+function propagerStatutWBS(wbs, nodeId) {
+  const propager = (childId) => {
+    const parent = wbs.find((n) => wbs.some((c) => c.id === childId && c.parent_id === n.id));
+    if (!parent) return;
+    const enfants = wbs.filter((n) => n.parent_id === parent.id);
+    const tousTermines = enfants.length > 0 && enfants.every((e) => e.statut === 'termine');
+    const unEnCours = enfants.some((e) => e.statut === 'en_cours' || e.statut === 'termine');
+    let newStatut = parent.statut;
+    if (tousTermines) newStatut = 'termine';
+    else if (unEnCours && parent.statut === 'non_demarre') newStatut = 'en_cours';
+    if (newStatut !== parent.statut) {
+      wbs = wbs.map((n) => n.id === parent.id ? { ...n, statut: newStatut } : n);
+      propager(parent.id);
+    }
+  };
+  propager(nodeId);
+  return wbs;
+}
+
 const DEFAULT_ESCALADE_NIVEAUX = ['Niveau Projet', 'Comité 1', 'Comité 2'];
 
 function migrateProjet(p) {
@@ -275,7 +301,10 @@ const useAppStore = create((set, get) => ({
   updateWBSNode: async (projetId, nodeId, updates) => {
     const p = get().projets.find((p) => p.id === projetId);
     if (!p) return;
-    const wbs = p.wbs.map((n) => n.id === nodeId ? { ...n, ...updates } : n);
+    let wbs = p.wbs.map((n) => n.id === nodeId ? { ...n, ...updates } : n);
+    // Un changement manuel de statut (picklist WBS/Planning/Kanban) doit aussi remonter la
+    // cascade sur tous les niveaux parents, pas seulement le parent direct.
+    if (updates.statut) wbs = propagerStatutWBS(wbs, nodeId);
     await patchProjet(projetId, { wbs });
     get()._touch();
   },
@@ -396,21 +425,7 @@ const useAppStore = create((set, get) => ({
       return n;
     });
 
-    const propagerStatutParent = (childId) => {
-      const parent = wbs.find((n) => wbs.some((c) => c.id === childId && c.parent_id === n.id));
-      if (!parent) return;
-      const enfants = wbs.filter((n) => n.parent_id === parent.id);
-      const tousTermines = enfants.length > 0 && enfants.every((e) => e.statut === 'termine');
-      const unEnCours = enfants.some((e) => e.statut === 'en_cours' || e.statut === 'termine');
-      let newStatut = parent.statut;
-      if (tousTermines) newStatut = 'termine';
-      else if (unEnCours && parent.statut === 'non_demarre') newStatut = 'en_cours';
-      if (newStatut !== parent.statut) {
-        wbs = wbs.map((n) => n.id === parent.id ? { ...n, statut: newStatut } : n);
-        propagerStatutParent(parent.id);
-      }
-    };
-    propagerStatutParent(nodeId);
+    wbs = propagerStatutWBS(wbs, nodeId);
 
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();

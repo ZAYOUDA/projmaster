@@ -68,6 +68,7 @@ function DeltaCell({ delta, bg }) {
   );
 }
 const deltaCellStyle = (bg) => ({
+  position: 'sticky', left: 618, zIndex: 2,
   width: 46, minWidth: 46, textAlign: 'center',
   borderRight: '1px solid rgba(0,0,0,0.12)',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
@@ -190,9 +191,9 @@ const STATUT_OPTIONS = [
 ];
 
 // ── Lignes d'une tâche ────────────────────────────────────────────
-function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, collaborateurs, showPrev, showReel, chargeParCollabJour, congesParCollab, visibleIds }) {
+function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, collaborateurs, showPrev, showReel, chargeParCollabJour, congesParCollab, visibleIds, collapsedIds, onToggleExpand }) {
   if (visibleIds && !visibleIds.has(node.id)) return null;
-  const [expanded, setExpanded] = useState(true);
+  const expanded = !collapsedIds.has(node.id);
   const [filling, setFilling] = useState(null); // affId en cours de remplissage
   const [fillVal, setFillVal] = useState('1');
   const setChargePlanning = useAppStore((s) => s.setChargePlanning);
@@ -245,7 +246,9 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 
   const totalJoursPrev = leafAffectations.reduce((s, a) => s + (a.jours_prev || 0), 0);
   const totalJoursReel = leafAffectations.reduce((s, a) => s + (a.jours_realises || 0), 0);
-  const delta = (showPrev && showReel) ? totalJoursPrev - totalJoursReel : null;
+  // Le delta est affiché dès qu'on a de la donnée, indépendamment de la vue (Prév/Réel/Les deux)
+  // sélectionnée — avant ça n'apparaissait que sur "Les deux".
+  const delta = (totalJoursPrev > 0 || totalJoursReel > 0) ? totalJoursPrev - totalJoursReel : null;
 
   const totalPrevByDay = {};
   const totalReelByDay = {};
@@ -264,7 +267,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         <td style={{ ...frozenLeft(depth), background: headerBg }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {hasChildren ? (
-              <button onClick={() => setExpanded(!expanded)} style={chevronBtn}>
+              <button onClick={() => onToggleExpand(node.id)} style={chevronBtn}>
                 {expanded ? <ChevronDown size={12} /> : <ChevronRightIcon size={12} />}
               </button>
             ) : <span style={{ width: 16, flexShrink: 0 }} />}
@@ -311,9 +314,9 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         </td>
         {/* Total */}
         <td style={{ ...totalCol, background: headerBg }}>
-          {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 600 }}>{totalJoursPrev > 0 ? `${totalJoursPrev}j` : ''}</div>}
+          {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 600 }}>{totalJoursPrev > 0 ? `${fmtJours(totalJoursPrev)}j` : ''}</div>}
           {showReel && totalJoursReel > 0 && (
-            <div style={{ fontSize: 10, color: totalJoursReel > totalJoursPrev ? '#C0391B' : '#0E7A45', fontWeight: 600 }}>{totalJoursReel}j</div>
+            <div style={{ fontSize: 10, color: totalJoursReel > totalJoursPrev ? '#C0391B' : '#0E7A45', fontWeight: 600 }}>{fmtJours(totalJoursReel)}j</div>
           )}
         </td>
         {/* Δ */}
@@ -345,7 +348,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         if (!collab) return null;
         const joursPrev = aff.jours_prev || 0;
         const joursReel = aff.jours_realises || 0;
-        const affDelta = (showPrev && showReel) ? joursPrev - joursReel : null;
+        const affDelta = (joursPrev > 0 || joursReel > 0) ? joursPrev - joursReel : null;
 
         return (
           <React.Fragment key={aff.id}>
@@ -387,10 +390,10 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                 <td style={{ ...collabCol, background: '#FAFAFE' }} />
                 <td style={{ ...statutCol, background: '#FAFAFE' }} />
                 <td style={{ ...totalCol, background: '#FAFAFE', color: '#378ADD', fontSize: 11, fontWeight: 600 }}>
-                  {joursPrev > 0 ? `${joursPrev}j` : ''}
+                  {joursPrev > 0 ? `${fmtJours(joursPrev)}j` : ''}
                 </td>
-                {/* Δ sur ligne prév */}
-                <DeltaCell delta={showReel ? null : null} bg='#FAFAFE' />
+                {/* Δ sur ligne prév — visible quelle que soit la vue sélectionnée */}
+                <DeltaCell delta={affDelta} bg='#FAFAFE' />
                 {days.map((d) => {
                   const iso = toISO(d);
                   const value = (aff.planning || {})[iso] || 0;
@@ -430,17 +433,26 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                 <td style={{ ...collabCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
                 <td style={{ ...statutCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
                 <td style={{ ...totalCol, background: '#FFFDF9', fontSize: 11, fontWeight: 600, borderBottom: '1px solid rgba(0,0,0,0.08)', color: joursReel > joursPrev ? '#C0391B' : joursReel > 0 ? '#0E7A45' : '#CCC' }}>
-                  {joursReel > 0 ? `${joursReel}j` : ''}
+                  {joursReel > 0 ? `${fmtJours(joursReel)}j` : ''}
                 </td>
-                {/* Δ sur ligne réel */}
-                <DeltaCell delta={showPrev ? affDelta : null} bg='#FFFDF9' />
+                {/* Δ sur ligne réel — visible quelle que soit la vue sélectionnée */}
+                <DeltaCell delta={affDelta} bg='#FFFDF9' />
                 {days.map((d) => {
                   const iso = toISO(d);
                   const reel = (aff.planning_reel || {})[iso] || 0;
                   const prev = (aff.planning || {})[iso] || 0;
                   const wknd = isWeekend(d);
+                  const isConge = (congesParCollab[aff.collaborateur_id]?.[iso] || 0) > 0;
                   const bg = wknd ? '#F0EEE8' : reelBg(reel, prev, false);
-                  return (
+                  // Même marquage congé que sur la ligne Prév — avant, seule la ligne Prév le montrait.
+                  return isConge ? (
+                    <td key={iso} title={`Congé — ${collab.prenom} ${collab.nom}`} style={{
+                      width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid rgba(0,0,0,0.07)',
+                      background: '#FEE2E2', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
+                    }}>
+                      <span style={{ fontSize: 10, color: '#DC2626' }}>✕</span>
+                    </td>
+                  ) : (
                     <ChargeCell key={iso} value={reel} isWeekend={wknd} colWidth={colWidth} bg={bg}
                       color={reelColor(reel, prev)}
                       onChange={(v) => setChargePlanningReel(projetId, node.id, aff.id, iso, v)} />
@@ -458,7 +470,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
           allNodes={allNodes} days={days} colWidth={colWidth} numeros={numeros}
           collaborateurs={collaborateurs} showPrev={showPrev} showReel={showReel}
           chargeParCollabJour={chargeParCollabJour} congesParCollab={congesParCollab}
-          visibleIds={visibleIds} />
+          visibleIds={visibleIds} collapsedIds={collapsedIds} onToggleExpand={onToggleExpand} />
       ))}
     </>
   );
@@ -473,7 +485,10 @@ const frozenLeft = (depth) => ({
   whiteSpace: 'normal', wordBreak: 'break-word',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
 });
+// Colonnes figées en plus de la 1ère (Tâche, 340) : Collab (340), Statut (340+130=470),
+// Total (470+100=570), Δ (570+48=618) — offsets cumulés des largeurs qui précèdent.
 const totalCol = {
+  position: 'sticky', left: 570, zIndex: 2, background: 'inherit',
   width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8,
   fontSize: 11, fontWeight: 600,
   borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle',
@@ -483,6 +498,7 @@ const chevronBtn = { background: 'none', border: 'none', cursor: 'pointer', padd
 // ── Page ─────────────────────────────────────────────────────────
 const ZOOM_OPTIONS = [
   { key: '4w',  label: '4 sem.',   days: 28 },
+  { key: '1m',  label: '1 mois',  days: 31 },
   { key: '2m',  label: '2 mois',  days: 62 },
   { key: '3m',  label: '3 mois',  days: 92 },
   { key: '6m',  label: '6 mois',  days: 184 },
@@ -497,12 +513,22 @@ export default function ProjetPlanning() {
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
 
-  const [startDate, setStartDate] = useState(() => startOfWeek(new Date()));
-  const [zoom, setZoom] = useState('2m');
+  // Par défaut : vue "1 mois" démarrant le 1er du mois en cours (plutôt qu'une plage de 2 mois
+  // ancrée sur la semaine courante).
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [zoom, setZoom] = useState('1m');
   const [vue, setVue] = useState('les deux');
   const [filterCollab, setFilterCollab] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
   const [filterDelta, setFilterDelta] = useState('');
+  // Toutes les tâches ayant des sous-tâches démarrent pliées à l'ouverture du projet —
+  // même logique/état que sur WBS, avec un bouton "tout plier / tout déplier".
+  const [collapsedIds, setCollapsedIds] = useState(() => new Set(
+    projet.wbs.filter((n) => projet.wbs.some((c) => c.parent_id === n.id)).map((n) => n.id)
+  ));
 
   const hasFilter = filterCollab || filterStatut || filterDelta;
 
@@ -534,13 +560,27 @@ export default function ProjetPlanning() {
   const showPrev = vue === 'prévisionnel' || vue === 'les deux';
   const showReel = vue === 'réel' || vue === 'les deux';
 
-  const nbDays = ZOOM_OPTIONS.find((z) => z.key === zoom)?.days || 62;
+  // Pour "1 mois", on calcule le nombre exact de jours du mois affiché plutôt qu'une constante
+  // (28-31j selon le mois) pour que la plage colle pile au mois, du 1er au dernier jour.
+  const nbDays = zoom === '1m'
+    ? new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate()
+    : ZOOM_OPTIONS.find((z) => z.key === zoom)?.days || 62;
   const endDate = addDays(startDate, nbDays - 1);
   const days = getDaysInRange(startDate, endDate);
   const monthGroups = groupByMonth(days);
 
   const numeros = calculerNumeroWBS(projet.wbs);
   const racines = projet.wbs.filter((n) => n.parent_id === null).sort((a, b) => a.ordre - b.ordre);
+
+  const parentIds = projet.wbs.filter((n) => projet.wbs.some((c) => c.parent_id === n.id)).map((n) => n.id);
+  const allCollapsed = parentIds.length > 0 && parentIds.every((pid) => collapsedIds.has(pid));
+  const toggleExpand = (nodeId) => setCollapsedIds((prev) => {
+    const next = new Set(prev);
+    next.has(nodeId) ? next.delete(nodeId) : next.add(nodeId);
+    return next;
+  });
+  const collapseAll = () => setCollapsedIds(new Set(parentIds));
+  const expandAll = () => setCollapsedIds(new Set());
 
   // ── Calcul charge totale par collaborateur par jour (toutes tâches) ──
   const chargeParCollabJour = useMemo(() => {
@@ -565,7 +605,13 @@ export default function ProjetPlanning() {
     return map;
   }, [collaborateurs]);
 
-  const nav = (dir) => setStartDate((prev) => addDays(prev, dir * Math.round(nbDays / 2)));
+  // En vue "1 mois", naviguer saute d'un mois calendaire pile (1er → 1er) plutôt que d'un
+  // nombre de jours approximatif, pour rester aligné sur le 1er du mois.
+  const nav = (dir) => setStartDate((prev) => (
+    zoom === '1m'
+      ? new Date(prev.getFullYear(), prev.getMonth() + dir, 1)
+      : addDays(prev, dir * Math.round(nbDays / 2))
+  ));
 
   // Totaux globaux par jour
   const grandPrevByDay = {}, grandReelByDay = {};
@@ -582,6 +628,14 @@ export default function ProjetPlanning() {
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.1)', flexShrink: 0, background: '#fff', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 600 }}>Planning de charge</span>
+
+        {parentIds.length > 0 && (
+          <button onClick={allCollapsed ? expandAll : collapseAll}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888780', padding: 0 }}>
+            {allCollapsed ? <ChevronDown size={13} /> : <ChevronRightIcon size={13} />}
+            {allCollapsed ? 'Tout déplier' : 'Tout plier'}
+          </button>
+        )}
 
         {/* Picklist */}
         <div style={{ display: 'flex', background: '#F1EFE8', borderRadius: 8, padding: 3, gap: 2 }}>
@@ -722,7 +776,7 @@ export default function ProjetPlanning() {
                 showPrev={showPrev} showReel={showReel}
                 chargeParCollabJour={chargeParCollabJour}
                 congesParCollab={congesParCollab}
-                visibleIds={visibleIds} />
+                visibleIds={visibleIds} collapsedIds={collapsedIds} onToggleExpand={toggleExpand} />
             ))}
 
             {/* Ligne total global */}
@@ -735,7 +789,7 @@ export default function ProjetPlanning() {
                 {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? '#C0391B' : '#0E7A45', fontWeight: 700 }}>{fmtJours(grandTotalReel)}j</div>}
               </td>
               <td style={{ ...deltaCellStyle('#EEEDF5') }}>
-                {showPrev && showReel && (
+                {(grandTotalPrev > 0 || grandTotalReel > 0) && (
                   <span style={{ fontSize: 11, fontWeight: 700, color: grandTotalPrev - grandTotalReel < 0 ? '#C0391B' : '#0E7A45' }}>
                     {grandTotalPrev - grandTotalReel > 0 ? '+' : ''}{fmtJours(grandTotalPrev - grandTotalReel)}
                   </span>
@@ -759,12 +813,12 @@ export default function ProjetPlanning() {
 }
 
 const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thCollab = { width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thStatut = { width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thTotal = { width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
-const thDelta = { width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
-const collabCol = { width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
-const statutCol = { width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const thCollab = { position: 'sticky', left: 340, zIndex: 3, width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thStatut = { position: 'sticky', left: 470, zIndex: 3, width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thTotal = { position: 'sticky', left: 570, zIndex: 3, width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
+const thDelta = { position: 'sticky', left: 618, zIndex: 3, width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
+const collabCol = { position: 'sticky', left: 340, zIndex: 2, background: 'inherit', width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const statutCol = { position: 'sticky', left: 470, zIndex: 2, background: 'inherit', width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
 const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
 const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
 const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };
