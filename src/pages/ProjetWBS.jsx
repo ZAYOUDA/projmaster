@@ -823,7 +823,7 @@ export default function ProjetWBS() {
       </div>
 
       {parentIds.length > 0 && (
-        <div style={{ marginTop: -16, marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <button onClick={allCollapsed ? expandAll : collapseAll}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888780', padding: 0 }}>
             {allCollapsed ? <ChevronDown size={13} /> : <ChevronRight size={13} />}

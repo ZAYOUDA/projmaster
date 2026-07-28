@@ -4,7 +4,7 @@ import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
 import { calculerEVMProjet, calculerEarnedSchedule, detecterAvancementNonAJour } from '../utils/evmCalculs';
 import SanteProjetEVM from '../components/projet/SanteProjetEVM';
-import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp } from 'lucide-react';
+import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp, FileSpreadsheet } from 'lucide-react';
 
 const ALL_TABS = [
   { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: ['admin', 'collaborateur'], types: ['BUILD'] },
@@ -16,6 +16,8 @@ const ALL_TABS = [
   { path: 'risques',       label: 'RIAD',             icon: AlertTriangle,roles: ['admin'],                  types: ['BUILD', 'RUN'] },
   { path: 'stakeholders',  label: 'Parties prenantes',icon: Users,        roles: ['admin'],                  types: ['BUILD', 'RUN'] },
   { path: 'facturation',   label: 'Facturation',      icon: Receipt,      roles: ['admin'],                  types: ['BUILD', 'RUN'] },
+  // Vue de synthèse pensée pour être exportée/partagée avec le client — juste avant Paramètres.
+  { path: 'resume',        label: 'Résumé',           icon: FileSpreadsheet, roles: ['admin'],               types: ['BUILD'] },
   { path: 'parametres',    label: 'Paramètres',       icon: Settings,     roles: ['admin'],                  types: ['BUILD', 'RUN'] },
 ];
 

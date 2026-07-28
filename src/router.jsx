@@ -14,6 +14,7 @@ import ProjetRiad from './pages/ProjetRiad';
 import ProjetParametres from './pages/ProjetParametres';
 import ProjetStakeholders from './pages/ProjetStakeholders';
 import ProjetFacturation from './pages/ProjetFacturation';
+import ProjetResume from './pages/ProjetResume';
 import SuiviMensuelRun from './pages/SuiviMensuelRun';
 import ImportCRA from './pages/ImportCRA';
 import ImportWbsPage from './pages/ImportWbsPage';
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
           { path: 'risques',      element: <ProjetRiad /> },
           { path: 'stakeholders', element: <ProjetStakeholders /> },
           { path: 'facturation',  element: <ProjetFacturation /> },
+          { path: 'resume',       element: <ProjetResume /> },
           { path: 'parametres',   element: <ProjetParametres /> },
         ],
       },

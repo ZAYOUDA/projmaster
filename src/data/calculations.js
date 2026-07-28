@@ -20,6 +20,22 @@ export function calculerNumeroWBS(nodes) {
   return numeros;
 }
 
+// Aplatit le WBS (arbre à plat via parent_id) en une liste ordonnée { node, depth } en
+// parcours en profondeur, dans l'ordre d'affichage habituel (racines puis enfants triés par
+// `ordre`) — utile pour toute vue tabulaire indentée (résumé client, export...).
+export function flattenWBS(nodes) {
+  const result = [];
+  const visiter = (list, depth) => {
+    list.sort((a, b) => a.ordre - b.ordre).forEach((node) => {
+      result.push({ node, depth });
+      const enfants = nodes.filter((n) => n.parent_id === node.id);
+      if (enfants.length > 0) visiter(enfants, depth + 1);
+    });
+  };
+  visiter(nodes.filter((n) => n.parent_id === null), 0);
+  return result;
+}
+
 export function calculerBudgetNoeud(node, allNodes, tjmList) {
   const enfants = allNodes.filter((n) => n.parent_id === node.id);
 
