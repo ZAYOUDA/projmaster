@@ -1,50 +1,31 @@
 import { useParams } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
-import { flattenWBS, calculerNumeroWBS, getLeaves } from '../data/calculations';
-import { exporterResumeExcel } from '../utils/resumeExport';
+import { calculerPlageJoursReels, construireLignesResume, exporterResumeExcel } from '../utils/resumeExport';
 import PageHeader from '../components/layout/PageHeader';
 import Badge from '../components/ui/Badge';
 
 const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', termine: 'Terminé', bloque: 'Bloqué' };
 const fmtJours = (n) => (n ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+const isWeekendIso = (iso) => { const day = new Date(iso).getDay(); return day === 0 || day === 6; };
 
-// Charge réelle d'un nœud : directe pour une feuille, somme des feuilles descendantes pour un
-// livrable/parent — même logique que Planning/Budget (voir aussi resumeExport.js pour l'export).
-function chargeReelleNoeud(node, allNodes) {
-  return getLeaves(node, allNodes)
-    .flatMap((l) => l.affectations || [])
-    .reduce((s, a) => s + (a.jours_realises || 0), 0);
-}
-
-function collaborateursNoeud(node, allNodes, collaborateurs) {
-  if (allNodes.some((n) => n.parent_id === node.id)) return null;
-  const affs = (node.affectations || [])
-    .map((a) => collaborateurs.find((c) => c.id === a.collaborateur_id))
-    .filter(Boolean);
-  return affs;
-}
-
-// Vue de synthèse en lecture seule : arbre des tâches indenté par niveau, uniquement la charge
-// réelle (pas de prévisionnel) + collaborateur — pensée pour être exportée et partagée avec le
-// client. Pas d'édition possible ici, volontairement (c'est un export, pas un outil de saisie).
+// Vue de synthèse en lecture seule : arbre des tâches indenté par niveau, avec le détail des
+// imputations réelles jour par jour (comme Planning, mais réel uniquement) + collaborateur.
+// Pensée pour être exportée et partagée avec le client — pas d'édition possible ici.
 export default function ProjetResume() {
   const { id } = useParams();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
 
-  const numeros = calculerNumeroWBS(projet.wbs);
-  const lignes = flattenWBS(projet.wbs);
-  const totalCharge = projet.wbs
-    .filter((n) => !projet.wbs.some((c) => c.parent_id === n.id))
-    .flatMap((n) => n.affectations || [])
-    .reduce((s, a) => s + (a.jours_realises || 0), 0);
+  const jours = calculerPlageJoursReels(projet);
+  const lignes = construireLignesResume(projet, collaborateurs, jours);
+  const totalCharge = lignes.filter((l) => l.isLeaf).reduce((s, l) => s + l.chargeReelle, 0);
 
   return (
     <div style={{ padding: 32 }}>
       <PageHeader
         title="Résumé"
-        subtitle={`${lignes.length} ligne${lignes.length > 1 ? 's' : ''} — ${fmtJours(totalCharge)}j de charge réelle au total`}
+        subtitle={`${lignes.length} ligne${lignes.length > 1 ? 's' : ''} — ${fmtJours(totalCharge)}j de charge réelle au total${jours.length > 0 ? ` — ${jours.length} jour(s) imputé(s)` : ''}`}
         actions={
           <button
             onClick={() => exporterResumeExcel(projet, collaborateurs)}
@@ -59,56 +40,68 @@ export default function ProjetResume() {
         }
       />
 
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'auto', maxWidth: '100%' }}>
+        <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 60 }}>#</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780' }}>Tâche</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 220 }}>Collaborateur</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: 11, fontWeight: 500, color: '#888780', width: 130 }}>Charge réelle</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 130 }}>Statut</th>
+              <th style={{ ...thFixe, left: 0, width: 50 }}>#</th>
+              <th style={{ ...thFixe, left: 50, width: 300, textAlign: 'left' }}>Tâche</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 200 }}>Collaborateur</th>
+              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: 11, fontWeight: 500, color: '#888780', width: 110 }}>Charge réelle</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 110 }}>Statut</th>
+              {jours.map((iso) => (
+                <th key={iso} style={{
+                  padding: '6px 2px', textAlign: 'center', fontSize: 9, fontWeight: 500, color: '#888780', width: 34,
+                  background: isWeekendIso(iso) ? '#EEECE6' : '#F8F8F7',
+                }}>
+                  {new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {lignes.map(({ node, depth }, i) => {
-              const isLeaf = !projet.wbs.some((n) => n.parent_id === node.id);
-              const charge = chargeReelleNoeud(node, projet.wbs);
-              const collabs = collaborateursNoeud(node, projet.wbs, collaborateurs);
-              return (
-                <tr key={node.id} style={{ borderBottom: i < lignes.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
-                  <td style={{ padding: '8px', fontSize: 11, color: '#888780', fontFamily: 'monospace', verticalAlign: 'top' }}>
-                    {numeros[node.id]}
-                  </td>
-                  <td style={{ padding: '8px', paddingLeft: 8 + depth * 20, fontSize: 13, color: '#1A1A18', fontWeight: isLeaf ? 400 : 600, verticalAlign: 'top' }}>
-                    {node.nom}
-                  </td>
-                  <td style={{ padding: '8px', fontSize: 12, color: '#5F5E5A', verticalAlign: 'top' }}>
-                    {collabs && collabs.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {collabs.map((c) => (
-                          <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#F1EFE8', borderRadius: 99, padding: '1px 8px 1px 1px' }}>
-                            <span style={{ width: 16, height: 16, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff' }}>
-                              {c.initiales}
-                            </span>
-                            {c.prenom} {c.nom}
+            {lignes.map((l, i) => (
+              <tr key={l.id} style={{ borderBottom: i < lignes.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>
+                <td style={{ ...tdFixe, left: 0, width: 50, background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>{l.numero}</td>
+                <td style={{ ...tdFixe, left: 50, width: 300, textAlign: 'left', paddingLeft: 8 + l.depth * 20, fontWeight: l.isLeaf ? 400 : 600, background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>
+                  {l.nom}
+                </td>
+                <td style={{ padding: '8px', fontSize: 12, color: '#5F5E5A', verticalAlign: 'top' }}>
+                  {l.collaborateurs.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {l.collaborateurs.map((c) => (
+                        <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#F1EFE8', borderRadius: 99, padding: '1px 8px 1px 1px', whiteSpace: 'nowrap' }}>
+                          <span style={{ width: 16, height: 16, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                            {c.initiales}
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ padding: '8px', fontSize: 13, fontWeight: 600, color: charge > 0 ? '#1A1A18' : '#BDBCB8', textAlign: 'right', verticalAlign: 'top' }}>
-                    {charge > 0 ? `${fmtJours(charge)}j` : '—'}
-                  </td>
-                  <td style={{ padding: '8px', verticalAlign: 'top' }}>
-                    <Badge label={STATUT_LABELS[node.statut] || node.statut} variant={node.statut} />
-                  </td>
-                </tr>
-              );
-            })}
+                          {c.prenom} {c.nom}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td style={{ padding: '8px', fontSize: 13, fontWeight: 600, color: l.chargeReelle > 0 ? '#1A1A18' : '#BDBCB8', textAlign: 'right', verticalAlign: 'top' }}>
+                  {l.chargeReelle > 0 ? `${fmtJours(l.chargeReelle)}j` : '—'}
+                </td>
+                <td style={{ padding: '8px', verticalAlign: 'top' }}>
+                  <Badge label={STATUT_LABELS[l.statut] || l.statut} variant={l.statut} />
+                </td>
+                {jours.map((iso) => {
+                  const v = l.parJour[iso];
+                  return (
+                    <td key={iso} style={{
+                      textAlign: 'center', fontSize: 10, color: '#1A6E9B',
+                      background: isWeekendIso(iso) ? '#F0EEE8' : v > 0 ? '#EBF5FB' : 'transparent',
+                    }}>
+                      {v > 0 ? fmtJours(v) : ''}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
             {lignes.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: '24px 8px', textAlign: 'center', color: '#888780', fontSize: 13 }}>
+                <td colSpan={5 + jours.length} style={{ padding: '24px 8px', textAlign: 'center', color: '#888780', fontSize: 13 }}>
                   Aucune tâche pour ce projet.
                 </td>
               </tr>
@@ -119,3 +112,14 @@ export default function ProjetResume() {
     </div>
   );
 }
+
+const thFixe = {
+  position: 'sticky', zIndex: 2, background: '#F8F8F7',
+  padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 500, color: '#888780',
+  borderRight: '1px solid rgba(0,0,0,0.1)',
+};
+const tdFixe = {
+  position: 'sticky', zIndex: 1,
+  padding: '8px', fontSize: 13, color: '#1A1A18', verticalAlign: 'top',
+  borderRight: '1px solid rgba(0,0,0,0.1)',
+};
