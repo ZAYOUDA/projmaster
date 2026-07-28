@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../firebase/auth';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -8,6 +9,17 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Ne pas naviguer juste après la résolution de login() : onAuthStateChanged (dans useAuth)
+  // fait un aller-retour Firestore supplémentaire (getUserDoc) avant de mettre à jour `user`,
+  // donc naviguer immédiatement faisait courir ProtectedRoute avec un `user` encore périmé
+  // (null) → redirection immédiate vers /login → il fallait se connecter deux fois pour que
+  // le second essai tombe sur un `user` déjà à jour. On attend ici que useAuth() reflète
+  // vraiment la connexion avant de rediriger.
+  useEffect(() => {
+    if (user) navigate('/', { replace: true });
+  }, [user, navigate]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -15,10 +27,10 @@ export default function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/', { replace: true });
+      // Pas de setLoading(false) ici : on reste en "Connexion…" jusqu'à la redirection par
+      // l'effet ci-dessus (le composant sera de toute façon démonté juste après).
     } catch {
       setError('Email ou mot de passe incorrect.');
-    } finally {
       setLoading(false);
     }
   }
