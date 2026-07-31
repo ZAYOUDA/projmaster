@@ -68,11 +68,8 @@ function DeltaCell({ delta, bg }) {
   );
 }
 const deltaCellStyle = (bg) => ({
-  position: 'sticky', left: 618, zIndex: 2,
   width: 46, minWidth: 46, textAlign: 'center',
-  // boxShadow plutôt que borderRight : rend proprement la frontière figé/scrollable même quand
-  // border-collapse ne fusionne pas bien les bordures d'une cellule sticky (voir note frozenLeft).
-  boxShadow: 'inset -1px 0 0 rgba(0,0,0,0.15)',
+  borderRight: '1px solid rgba(0,0,0,0.12)',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
   background: bg || 'inherit', verticalAlign: 'middle',
 });
@@ -479,23 +476,20 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 }
 
 // ── Styles ────────────────────────────────────────────────────────
-// Note : `border-collapse: collapse` (sur le <table>) ne fusionne pas proprement les bordures
-// des cellules `position: sticky` avec leurs voisines — ça produit un léger décalage visuel
-// ("contour décalé") sur la frontière figé/scrollable. On évite les `border` sur cette frontière
-// et on la matérialise avec un unique `boxShadow` sur la dernière colonne figée (Δ), qui rend de
-// façon fiable quel que soit le scroll, contrairement à une bordure classique.
+// Une seule colonne figée (Tâche) — le figeage étendu (Collab/Statut/Total/Δ) a été retiré :
+// il causait un décalage visuel entre l'en-tête des jours et les cellules de charge, sans doute
+// dû à `border-collapse: collapse` qui ne fusionne pas proprement les bordures des cellules
+// `position: sticky` avec leurs voisines. Revenir à une seule colonne figée est le comportement
+// connu-bon d'avant.
 const frozenLeft = (depth) => ({
   position: 'sticky', left: 0, zIndex: 2, background: 'inherit',
   width: 340, minWidth: 340,
   padding: `4px 8px 4px ${8 + depth * 14}px`,
-  fontSize: 12,
+  fontSize: 12, borderRight: '1px solid rgba(0,0,0,0.1)',
   whiteSpace: 'normal', wordBreak: 'break-word',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
 });
-// Colonnes figées en plus de la 1ère (Tâche, 340) : Collab (340), Statut (340+130=470),
-// Total (470+100=570), Δ (570+48=618) — offsets cumulés des largeurs qui précèdent.
 const totalCol = {
-  position: 'sticky', left: 570, zIndex: 2, background: 'inherit',
   width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8,
   fontSize: 11, fontWeight: 600,
   borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle',
@@ -820,12 +814,12 @@ export default function ProjetPlanning() {
 }
 
 const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thCollab = { position: 'sticky', left: 340, zIndex: 3, width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thStatut = { position: 'sticky', left: 470, zIndex: 3, width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thTotal = { position: 'sticky', left: 570, zIndex: 3, width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
-const thDelta = { position: 'sticky', left: 618, zIndex: 3, width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none', boxShadow: 'inset -1px 0 0 rgba(0,0,0,0.15)' };
-const collabCol = { position: 'sticky', left: 340, zIndex: 2, background: 'inherit', width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
-const statutCol = { position: 'sticky', left: 470, zIndex: 2, background: 'inherit', width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const thCollab = { width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thStatut = { width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thTotal = { width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
+const thDelta = { width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
+const collabCol = { width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const statutCol = { width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
 const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
 const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
 const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };
