@@ -8,7 +8,9 @@ import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIco
 const JOURS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 const MOIS_LABELS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 
-function toISO(d) { return d.toISOString().slice(0, 10); }
+// toISOString() convertit en UTC : pour un Date construit à minuit local (fuseau UTC+, ex.
+// France), ça retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
 function addDays(date, n) {
   const d = new Date(date); d.setDate(d.getDate() + n); return d;
@@ -68,10 +70,11 @@ function DeltaCell({ delta, bg }) {
   );
 }
 const deltaCellStyle = (bg) => ({
+  position: 'sticky', left: COL_LEFT.delta, zIndex: 2,
   width: 46, minWidth: 46, textAlign: 'center',
   borderRight: '1px solid rgba(0,0,0,0.12)',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
-  background: bg || 'inherit', verticalAlign: 'middle',
+  background: bg || '#fff', verticalAlign: 'middle',
 });
 
 // ── Cellule charge éditable ───────────────────────────────────────
@@ -476,13 +479,17 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 }
 
 // ── Styles ────────────────────────────────────────────────────────
-// Une seule colonne figée (Tâche) — le figeage étendu (Collab/Statut/Total/Δ) a été retiré :
-// il causait un décalage visuel entre l'en-tête des jours et les cellules de charge, sans doute
-// dû à `border-collapse: collapse` qui ne fusionne pas proprement les bordures des cellules
-// `position: sticky` avec leurs voisines. Revenir à une seule colonne figée est le comportement
-// connu-bon d'avant.
+// Colonnes figées : Tâche / Collab / Statut / Total / Δ (Prév−Réel) — les jours défilent seuls.
+// Le premier essai (session précédente) causait un décalage visuel : la table utilisait
+// `border-collapse: collapse`, qui doit décider laquelle de deux cellules voisines "possède" la
+// bordure partagée au pixel près — logique qui casse quand une des deux cellules est
+// `position: sticky` (peinte dans une couche de composition à part). Le tableau passe donc en
+// `border-collapse: separate` (voir `<table>` plus bas) : chaque cellule garde sa propre bordure,
+// plus de fusion ambiguë. Chaque colonne figée précise son offset `left` cumulé (largeurs
+// 340 / 130 / 100 / 48 / 46) et un `background` explicite (sinon le contenu défilant transparaît).
+const COL_LEFT = { tache: 0, collab: 340, statut: 470, total: 570, delta: 618 };
 const frozenLeft = (depth) => ({
-  position: 'sticky', left: 0, zIndex: 2, background: 'inherit',
+  position: 'sticky', left: COL_LEFT.tache, zIndex: 2, background: 'inherit',
   width: 340, minWidth: 340,
   padding: `4px 8px 4px ${8 + depth * 14}px`,
   fontSize: 12, borderRight: '1px solid rgba(0,0,0,0.1)',
@@ -490,8 +497,10 @@ const frozenLeft = (depth) => ({
   borderBottom: '0.5px solid rgba(0,0,0,0.07)',
 });
 const totalCol = {
+  position: 'sticky', left: COL_LEFT.total, zIndex: 2,
   width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8,
   fontSize: 11, fontWeight: 600,
+  borderRight: '1px solid rgba(0,0,0,0.1)',
   borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle',
 };
 const chevronBtn = { background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#888780', flexShrink: 0 };
@@ -731,7 +740,7 @@ export default function ProjetPlanning() {
           recomposition déclenchée par un overlay position:fixed (ex. modale) affiché par-dessus —
           sans ça Chrome peut afficher un damier gris (« checkerboarding ») le temps de repeindre. */}
       <div style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
-        <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ background: '#EEEDF5' }}>
               <th style={{ ...thFixed, background: '#EEEDF5' }}>Tâche / Collaborateur</th>
@@ -813,13 +822,13 @@ export default function ProjetPlanning() {
   );
 }
 
-const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thCollab = { width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thStatut = { width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thTotal = { width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: 'none' };
-const thDelta = { width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
-const collabCol = { width: 130, minWidth: 130, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
-const statutCol = { width: 100, minWidth: 100, padding: '2px 6px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const thFixed = { position: 'sticky', left: COL_LEFT.tache, zIndex: 4, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thCollab = { position: 'sticky', left: COL_LEFT.collab, zIndex: 4, width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thStatut = { position: 'sticky', left: COL_LEFT.statut, zIndex: 4, width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thTotal = { position: 'sticky', left: COL_LEFT.total, zIndex: 4, width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
+const thDelta = { position: 'sticky', left: COL_LEFT.delta, zIndex: 4, width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
+const collabCol = { position: 'sticky', left: COL_LEFT.collab, zIndex: 2, width: 130, minWidth: 130, padding: '2px 6px', borderRight: '1px solid rgba(0,0,0,0.1)', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
+const statutCol = { position: 'sticky', left: COL_LEFT.statut, zIndex: 2, width: 100, minWidth: 100, padding: '2px 6px', borderRight: '1px solid rgba(0,0,0,0.1)', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
 const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
 const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
 const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };

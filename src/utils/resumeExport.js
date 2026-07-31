@@ -14,7 +14,9 @@ import { calculerNumeroWBS, flattenWBS, getLeaves } from '../data/calculations';
 const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', termine: 'Terminé', bloque: 'Bloqué' };
 const STATUT_COLORS = { non_demarre: 'FF888780', en_cours: 'FF378ADD', termine: 'FF1D9E75', bloque: 'FFD85A30' };
 
-function toISO(d) { return d.toISOString().slice(0, 10); }
+// toISOString() convertit en UTC : pour un Date construit à minuit local (fuseau UTC+, ex.
+// France), ça retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 function addDays(iso, n) { const d = new Date(iso); d.setDate(d.getDate() + n); return toISO(d); }
 function isWeekendIso(iso) { const day = new Date(iso).getDay(); return day === 0 || day === 6; }
 

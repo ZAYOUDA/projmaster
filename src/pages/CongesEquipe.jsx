@@ -6,7 +6,9 @@ import PageHeader from '../components/layout/PageHeader';
 const JOURS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 const MOIS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 
-function toISO(d) { return d.toISOString().slice(0, 10); }
+// toISOString() convertit en UTC : pour un Date construit à minuit local (fuseau UTC+, ex.
+// France), ça retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function startOfWeek(d) { const r = new Date(d); const day = r.getDay(); r.setDate(r.getDate() - (day === 0 ? 6 : day - 1)); return r; }
 function getDays(start, n) { return Array.from({ length: n }, (_, i) => addDays(start, i)); }
