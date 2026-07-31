@@ -18,6 +18,10 @@ function moisCourt(moisStr) {
   const [year, month] = moisStr.split('-');
   return new Date(+year, +month - 1, 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
 }
+// toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
+// retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
 function montantFacture(f) { return f.lignes.reduce((s, l) => s + l.montant, 0); }
 function montantTTC(f) { return montantFacture(f) * (1 + (f.tva || 0) / 100); }
 function isEnRetard(f) { return f.statut === 'emise' && f.date_echeance && new Date(f.date_echeance) < new Date(); }
@@ -480,7 +484,7 @@ function ModalCreation({ projet, collaborateurs, onClose }) {
   const ttc = ht * (1 + tva / 100);
 
   const handleSave = (statut) => {
-    const dateEmission = statut === 'emise' ? new Date().toISOString().slice(0, 10) : null;
+    const dateEmission = statut === 'emise' ? localIso(new Date()) : null;
     const dateEcheance = dateEmission
       ? new Date(new Date(dateEmission).getTime() + delai * 86400000).toISOString().slice(0, 10) : null;
     addFacture(projet.id, { mois, lignes, tva, statut, date_emission: dateEmission, date_echeance: dateEcheance, reference_client: refClient, notes });
@@ -574,12 +578,12 @@ function OngletFactures({ projet, collaborateurs }) {
   const budgetConso = calculerBudgetProjet(projet).conso;
 
   const handleEmettre = (f) => {
-    const date_emission = new Date().toISOString().slice(0, 10);
+    const date_emission = localIso(new Date());
     const delai = projet.facturation_params?.delai_paiement || 30;
     const date_echeance = new Date(new Date(date_emission).getTime() + delai * 86400000).toISOString().slice(0, 10);
     updateFacture(projet.id, f.id, { statut: 'emise', date_emission, date_echeance });
   };
-  const handlePayer = (f) => updateFacture(projet.id, f.id, { statut: 'payee', date_paiement: new Date().toISOString().slice(0, 10) });
+  const handlePayer = (f) => updateFacture(projet.id, f.id, { statut: 'payee', date_paiement: localIso(new Date()) });
 
   return (
     <div>

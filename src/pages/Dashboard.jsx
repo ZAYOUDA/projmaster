@@ -47,6 +47,10 @@ const FREQ_JOURS = {
   quotidien: 1, hebdomadaire: 7, bimensuel: 14, mensuel: 30, trimestriel: 90,
 };
 
+// toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
+// retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
 function prochainContact(sh) {
   if (!sh.derniere_interaction) return true;
   const delai = FREQ_JOURS[sh.checkin_frequency] || 30;
@@ -152,7 +156,7 @@ export default function Dashboard() {
   const factEnRetard = toutesFactures.filter(isEnRetard);
 
   const handleMarquerContacte = (sh) => {
-    updateStakeholder(sh.projetId, sh.id, { derniere_interaction: new Date().toISOString().slice(0, 10) });
+    updateStakeholder(sh.projetId, sh.id, { derniere_interaction: localIso(new Date()) });
   };
 
   const pctConso = totalPrev > 0 ? Math.round(totalConso / totalPrev * 100) : 0;

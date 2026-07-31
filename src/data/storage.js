@@ -3,6 +3,10 @@ import { supabase } from './supabase';
 const STORAGE_KEY = 'projmaster_data';
 const ROW_ID = 'main';
 
+// toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
+// retombe sur la veille. On formate donc à partir des composants locaux du Date.
+function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
 // Use Supabase when env vars are set, otherwise localStorage
 const useSupabase = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 
@@ -42,7 +46,7 @@ export function exportData(data) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `misterproject_export_${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `misterproject_export_${localIso(new Date())}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -9,6 +9,9 @@ import NouveauProjetModal from './NouveauProjetModal';
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
 // Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS.
 const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'wbs');
+// toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
+// retombe sur la veille. On formate donc à partir des composants locaux du Date.
+const localIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
@@ -22,7 +25,7 @@ export default function Sidebar() {
       nom: 'Nouveau projet',
       description: '',
       type,
-      date_debut: new Date().toISOString().slice(0, 10),
+      date_debut: localIso(new Date()),
       date_fin_prevue: '',
     });
     setShowNewProjet(false);
@@ -34,7 +37,7 @@ export default function Sidebar() {
       nom: 'Nouveau projet (import en cours)',
       description: '',
       type: 'BUILD',
-      date_debut: new Date().toISOString().slice(0, 10),
+      date_debut: localIso(new Date()),
       date_fin_prevue: '',
     });
     setShowNewProjet(false);

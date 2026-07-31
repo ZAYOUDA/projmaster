@@ -9,13 +9,21 @@ const REQUIRED_SHEETS = ['PROJET', 'RESSOURCES', 'WBS', 'REALISE_MENSUEL'];
 const STATUTS_VALIDES = ['a_faire', 'en_cours', 'termine', 'bloque'];
 const STATUTS_PROJET_VALIDES = ['en_cours', 'cloture', 'en_pause'];
 
+// toISOString() convertit en UTC. Pour une Date issue de xlsx (cellDates: true), les composants
+// locaux (getFullYear/Month/Date) reflètent le bon jour calendaire de la cellule Excel — c'est
+// vérifié empiriquement, xlsx encode en interne le jour via Date.UTC() mais expose un Date dont
+// les getters locaux tombent pile sur le jour affiché dans Excel. Pareil pour un Date parsé
+// depuis une chaîne non-ISO (ex. "28/07/2026") : new Date(s) l'interprète en local. Dans les deux
+// cas, formater à partir des composants locaux évite le décalage d'un jour en UTC+ (France).
+function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
 function toIsoDate(v) {
   if (v == null || v === '') return null;
-  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (v instanceof Date) return localIso(v);
   const s = String(v).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   const parsed = new Date(s);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+  return Number.isNaN(parsed.getTime()) ? null : localIso(parsed);
 }
 
 function toNumberOrNull(v) {

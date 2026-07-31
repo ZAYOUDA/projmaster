@@ -14,7 +14,12 @@ const STATUTS = [
 const COLOR_BY_STATUT = Object.fromEntries(STATUTS.map((s) => [s.key, s.color]));
 const LABEL_BY_STATUT = Object.fromEntries(STATUTS.map((s) => [s.key, s.label]));
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+// toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
+// retombe sur la veille. On formate donc à partir des composants locaux du Date.
+const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 function isEnRetard(tache) {
   return tache.deadline && tache.statut !== 'termine' && tache.deadline < todayIso();

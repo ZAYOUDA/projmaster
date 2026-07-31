@@ -44,7 +44,9 @@ function pvNoeud(node, tjmList, dateRef) {
   const aPlanningJournalier = affectations.some((a) => Object.keys(a.planning || {}).length > 0);
 
   if (aPlanningJournalier) {
-    const refIso = dateRef.toISOString().slice(0, 10);
+    // toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France),
+    // ça retombe sur la veille — on formate donc à partir des composants locaux.
+    const refIso = `${dateRef.getFullYear()}-${String(dateRef.getMonth() + 1).padStart(2, '0')}-${String(dateRef.getDate()).padStart(2, '0')}`;
     return affectations.reduce((s, a) => {
       const tjm = tjmDe(a.collaborateur_id, tjmList);
       const jours = Object.entries(a.planning || {})
