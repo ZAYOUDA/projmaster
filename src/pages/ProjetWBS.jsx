@@ -30,13 +30,13 @@ function JoursRealisesParMois({ projetId, nodeId, affId, jours_realises_par_mois
   return (
     <div style={{ marginTop: 6 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ fontSize: 11, color: '#888780', fontWeight: 500 }}>
-          J. réalisés : <strong style={{ color: '#1A1A18' }}>{jours_realises} j</strong>
+        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+          J. réalisés : <strong style={{ color: 'var(--color-text-primary)' }}>{jours_realises} j</strong>
         </span>
         {!showAdd && (
           <button
             onClick={() => { setShowAdd(true); setNewMois(defaultMois); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 6px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
           >
             <Calendar size={10} /> + Mois
           </button>
@@ -47,15 +47,15 @@ function JoursRealisesParMois({ projetId, nodeId, affId, jours_realises_par_mois
         const label = new Date(year, month - 1, 1).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
         return (
           <div key={mois} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-            <span style={{ fontSize: 11, color: '#5F5E5A', width: 72, flexShrink: 0 }}>{label}</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', width: 72, flexShrink: 0 }}>{label}</span>
             <input
               type="number" min={0} step={0.5} defaultValue={jours}
               onBlur={(e) => setChargeRealiseMois(projetId, nodeId, affId, mois, parseFloat(e.target.value) || 0)}
-              style={{ width: 52, padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', fontSize: 11, outline: 'none' }}
+              style={{ width: 52, padding: '3px 6px', borderRadius: 5, border: '1px solid var(--color-border)', fontSize: 11, outline: 'none' }}
             />
-            <span style={{ fontSize: 11, color: '#888780' }}>j</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>j</span>
             <button onClick={() => setChargeRealiseMois(projetId, nodeId, affId, mois, 0)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D85A30', padding: 2, display: 'flex' }}>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', padding: 2, display: 'flex' }}>
               <Trash2 size={10} />
             </button>
           </div>
@@ -64,12 +64,12 @@ function JoursRealisesParMois({ projetId, nodeId, affId, jours_realises_par_mois
       {showAdd && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
           <input type="month" value={newMois} onChange={(e) => setNewMois(e.target.value)}
-            style={{ padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', fontSize: 11, outline: 'none' }} />
+            style={{ padding: '3px 6px', borderRadius: 5, border: '1px solid var(--color-border)', fontSize: 11, outline: 'none' }} />
           <button onClick={() => {
             if (newMois && !jours_realises_par_mois[newMois]) setChargeRealiseMois(projetId, nodeId, affId, newMois, 0);
             setShowAdd(false);
-          }} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: 'none', background: '#1A1A18', color: '#fff', cursor: 'pointer' }}>OK</button>
-          <button onClick={() => setShowAdd(false)} style={{ fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer' }}>✕</button>
+          }} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', cursor: 'pointer' }}>OK</button>
+          <button onClick={() => setShowAdd(false)} style={{ fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer' }}>✕</button>
         </div>
       )}
     </div>
@@ -111,8 +111,8 @@ function DetailPanel({ projetId, nodeId, numeros }) {
   if (isCollab && isAssigned) {
     return (
       <div style={{ padding: 4 }}>
-        <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#1A1A18' }}>{node.nom}</p>
-        {node.description && <p style={{ margin: '0 0 12px', fontSize: 12, color: '#5F5E5A' }}>{node.description}</p>}
+        <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{node.nom}</p>
+        {node.description && <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--color-text-secondary)' }}>{node.description}</p>}
         <label style={{ ...labelStyle, marginBottom: 10 }}>Statut
           <select style={inputStyle} value={node.statut}
             onChange={(e) => updateWBSNode(projetId, node.id, { statut: e.target.value })}>
@@ -134,7 +134,7 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           </select>
         </label>
         {myAff && (
-          <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.1)', paddingTop: 12, marginTop: 4 }}>
+          <div style={{ borderTop: '0.5px solid var(--color-border)', paddingTop: 12, marginTop: 4 }}>
             <JoursRealisesParMois projetId={projetId} nodeId={node.id} affId={myAff.id}
               jours_realises_par_mois={myAff.jours_realises_par_mois || {}} jours_realises={myAff.jours_realises} />
           </div>
@@ -147,9 +147,9 @@ function DetailPanel({ projetId, nodeId, numeros }) {
   if (isCollab && !isAssigned) {
     return (
       <div style={{ padding: 4 }}>
-        <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 600, color: '#1A1A18' }}>{node.nom}</p>
-        {node.description && <p style={{ margin: '0 0 10px', fontSize: 12, color: '#5F5E5A' }}>{node.description}</p>}
-        <div style={{ padding: '10px 12px', borderRadius: 8, background: '#F8F8F7', fontSize: 12, color: '#888780' }}>
+        <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{node.nom}</p>
+        {node.description && <p style={{ margin: '0 0 10px', fontSize: 12, color: 'var(--color-text-secondary)' }}>{node.description}</p>}
+        <div style={{ padding: '10px 12px', borderRadius: 8, background: 'var(--color-bg-secondary)', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
           Vous n'êtes pas affecté à cette tâche.
         </div>
       </div>
@@ -169,8 +169,8 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           onBlur={(e) => updateWBSNode(projetId, node.id, { description: e.target.value })} />
       </label>
       {node.prerequis && (
-        <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: '#F8F8F7', fontSize: 12, color: '#5F5E5A' }}>
-          <strong style={{ color: '#1A1A18' }}>Prérequis :</strong> {node.prerequis}
+        <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: 'var(--color-bg-secondary)', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+          <strong style={{ color: 'var(--color-text-primary)' }}>Prérequis :</strong> {node.prerequis}
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
@@ -224,19 +224,19 @@ function DetailPanel({ projetId, nodeId, numeros }) {
 
       {/* Épingler sur dashboard */}
       {(!node.parent_id) && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 14, padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${node.epingle_dashboard ? '#378ADD' : 'rgba(0,0,0,0.10)'}`, background: node.epingle_dashboard ? '#EFF6FF' : '#F8F8F7' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 14, padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${node.epingle_dashboard ? 'var(--color-accent)' : 'rgba(0,0,0,0.10)'}`, background: node.epingle_dashboard ? 'var(--color-accent-soft)' : 'var(--color-bg-secondary)' }}>
           <input type="checkbox" checked={!!node.epingle_dashboard}
             onChange={(e) => updateWBSNode(projetId, node.id, { epingle_dashboard: e.target.checked })}
-            style={{ accentColor: '#378ADD', width: 14, height: 14 }} />
+            style={{ accentColor: 'var(--color-accent)', width: 14, height: 14 }} />
           <div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: '#1A1A18' }}>📌 Afficher sur le dashboard</div>
-            <div style={{ fontSize: 11, color: '#888780' }}>Apparaît dans "Prochains jalons" avec la date de fin prévue</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-primary)' }}>📌 Afficher sur le dashboard</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Apparaît dans "Prochains jalons" avec la date de fin prévue</div>
           </div>
         </label>
       )}
 
       {/* Affectations */}
-      <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.1)', paddingTop: 14, marginTop: 16 }}>
+      <div style={{ borderTop: '0.5px solid var(--color-border)', paddingTop: 14, marginTop: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h4 style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Affectations</h4>
           {disponibles.length > 0 && (
@@ -246,12 +246,12 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           )}
         </div>
         {affectees.map((a) => a.collab && (
-          <div key={a.id} style={{ marginBottom: 8, background: '#F8F8F7', borderRadius: 8 }}>
+          <div key={a.id} style={{ marginBottom: 8, background: 'var(--color-bg-secondary)', borderRadius: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
               <Avatar collaborateur={a.collab} size={28} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{a.collab.prenom} {a.collab.nom}</p>
-                <p style={{ margin: 0, fontSize: 11, color: '#888780' }}>TJM : {a.tjm} €/j</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-tertiary)' }}>TJM : {a.tjm} €/j</p>
               </div>
               <label style={{ ...labelStyle, width: 68, flexShrink: 0 }}>
                 <span style={{ fontSize: 10 }}>J. prév.</span>
@@ -260,14 +260,14 @@ function DetailPanel({ projetId, nodeId, numeros }) {
                   onChange={(e) => updateAffectation(projetId, node.id, a.id, { jours_prev: parseFloat(e.target.value) || 0 })} />
               </label>
               <div style={{ flexShrink: 0 }}>
-                <p style={{ margin: 0, fontSize: 10, color: '#888780' }}>Coût prév.</p>
+                <p style={{ margin: 0, fontSize: 10, color: 'var(--color-text-tertiary)' }}>Coût prév.</p>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 500 }}>{formatCurrency(a.jours_prev * a.tjm)}</p>
               </div>
-              <button onClick={() => deleteAffectation(projetId, node.id, a.id)} style={{ ...iconBtnStyle, color: '#D85A30', flexShrink: 0 }}>
+              <button onClick={() => deleteAffectation(projetId, node.id, a.id)} style={{ ...iconBtnStyle, color: 'var(--color-danger)', flexShrink: 0 }}>
                 <Trash2 size={13} />
               </button>
             </div>
-            <div style={{ padding: '0 10px 8px', borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+            <div style={{ padding: '0 10px 8px', borderTop: '0.5px solid var(--color-border-soft)' }}>
               <JoursRealisesParMois projetId={projetId} nodeId={node.id} affId={a.id}
                 jours_realises_par_mois={a.jours_realises_par_mois || {}} jours_realises={a.jours_realises} />
             </div>
@@ -290,19 +290,19 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           </div>
         )}
         {affectees.length === 0 && !addingCollab && (
-          <p style={{ fontSize: 12, color: '#888780', margin: 0 }}>Aucune affectation.</p>
+          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>Aucune affectation.</p>
         )}
       </div>
 
       {(budget.prev > 0 || budget.conso > 0) && (
-        <div style={{ background: '#F8F8F7', borderRadius: 8, padding: '10px 14px', marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <div style={{ background: 'var(--color-bg-secondary)', borderRadius: 8, padding: '10px 14px', marginTop: 14, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Budget prévu', value: formatCurrency(budget.prev), color: '#1A1A18' },
-            { label: 'Consommé', value: formatCurrency(budget.conso), color: budget.conso > budget.prev ? '#D85A30' : '#1D9E75' },
-            { label: 'Reste', value: formatCurrency(budget.reste), color: budget.reste < 0 ? '#D85A30' : '#5F5E5A' },
+            { label: 'Budget prévu', value: formatCurrency(budget.prev), color: 'var(--color-text-primary)' },
+            { label: 'Consommé', value: formatCurrency(budget.conso), color: budget.conso > budget.prev ? 'var(--color-danger)' : 'var(--color-success)' },
+            { label: 'Reste', value: formatCurrency(budget.reste), color: budget.reste < 0 ? 'var(--color-danger)' : 'var(--color-text-secondary)' },
           ].map((item) => (
             <div key={item.label}>
-              <p style={{ margin: 0, fontSize: 10, color: '#888780' }}>{item.label}</p>
+              <p style={{ margin: 0, fontSize: 10, color: 'var(--color-text-tertiary)' }}>{item.label}</p>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: item.color }}>{item.value}</p>
             </div>
           ))}
@@ -340,9 +340,9 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
   const isSelected = selectedIds.has(node.id);
 
   const trStyle = {
-    borderBottom: '0.5px solid rgba(0,0,0,0.06)',
+    borderBottom: '0.5px solid var(--color-border-soft)',
     cursor: 'pointer',
-    background: isDragging ? '#F0F7FF' : isSelected ? '#EFF6FF' : '',
+    background: isDragging ? 'var(--color-accent-soft)' : isSelected ? 'var(--color-accent-soft)' : '',
     opacity: isDragging ? 0.8 : 1,
     transform: CSS.Transform.toString(transform),
     transition,
@@ -354,13 +354,13 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
         ref={setNodeRef}
         style={{ ...trStyle, opacity: isCollab && !isAssigned ? 0.5 : 1 }}
         onClick={() => (!isCollab || isAssigned) && onSelectNode(node.id)}
-        onMouseEnter={(e) => { if (!isSelected && !isDragging && (!isCollab || isAssigned)) e.currentTarget.style.background = '#F5F4F1'; }}
+        onMouseEnter={(e) => { if (!isSelected && !isDragging && (!isCollab || isAssigned)) e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
         onMouseLeave={(e) => { if (!isSelected && !isDragging) e.currentTarget.style.background = ''; }}
       >
         {/* Drag handle — admin seulement */}
         <td style={{ padding: '8px 4px 8px 8px', width: 24 }} onClick={(e) => e.stopPropagation()}>
           {!isCollab && (
-            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: '#DEDEDC', display: 'flex', alignItems: 'center' }}>
+            <div {...attributes} {...listeners} style={{ cursor: 'grab', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center' }}>
               <GripVertical size={14} />
             </div>
           )}
@@ -369,11 +369,11 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
         <td style={{ padding: '8px 8px', width: 32 }} onClick={(e) => e.stopPropagation()}>
           {!isCollab && (
             <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect(node.id)}
-              style={{ cursor: 'pointer', width: 14, height: 14, accentColor: '#378ADD' }} />
+              style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--color-accent)' }} />
           )}
         </td>
         {/* # WBS */}
-        <td style={{ padding: '8px 12px', width: 70, fontSize: 12, color: '#888780', fontFamily: 'monospace' }} onClick={(e) => e.stopPropagation()}>
+        <td style={{ padding: '8px 12px', width: 70, fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'monospace' }} onClick={(e) => e.stopPropagation()}>
           {numero}
         </td>
         {/* Nom */}
@@ -381,7 +381,7 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: depth * 20 }}>
             {hasChildren ? (
               <button onClick={(e) => { e.stopPropagation(); onToggleExpand(node.id); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: '#888780', flexShrink: 0 }}>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
                 {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </button>
             ) : <span style={{ width: 20, flexShrink: 0 }} />}
@@ -395,17 +395,17 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
           </div>
         </td>
         {/* Dates — remontées des sous-tâches pour un livrable/parent */}
-        <td style={{ padding: '8px 8px', fontSize: 12, color: '#5F5E5A', whiteSpace: 'nowrap' }}>
+        <td style={{ padding: '8px 8px', fontSize: 12, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
           {agg.date_debut_prev && agg.date_fin_prev
             ? `${fmtDate(agg.date_debut_prev)} → ${fmtDate(agg.date_fin_prev)}` : '—'}
         </td>
         {/* Avancement — moyenne des sous-tâches pour un livrable/parent */}
         <td style={{ padding: '8px 8px', width: 110 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ flex: 1, height: 4, background: '#E8E7E3', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${agg.avancement}%`, background: '#378ADD', borderRadius: 99 }} />
+            <div style={{ flex: 1, height: 4, background: 'var(--color-bg-tertiary)', borderRadius: 99 }}>
+              <div style={{ height: '100%', width: `${agg.avancement}%`, background: 'var(--color-accent)', borderRadius: 99 }} />
             </div>
-            <span style={{ fontSize: 11, color: '#888780', flexShrink: 0 }}>{agg.avancement}%</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>{agg.avancement}%</span>
           </div>
         </td>
         {/* Statut */}
@@ -413,14 +413,14 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
           <Badge label={STATUT_LABELS[node.statut] || node.statut} variant={node.statut} />
         </td>
         {/* Charge */}
-        <td style={{ padding: '8px 12px', fontSize: 12, color: '#5F5E5A', textAlign: 'right' }}>
+        <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--color-text-secondary)', textAlign: 'right' }}>
           {totalJours > 0 ? `${totalJours} j` : '—'}
         </td>
         {/* Budget */}
-        <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: '#1A1A18' }}>
+        <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: 'var(--color-text-primary)' }}>
           {budget.prev > 0 ? formatCurrency(budget.prev) : '—'}
         </td>
-        <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: budget.conso > budget.prev && budget.prev > 0 ? '#D85A30' : '#5F5E5A' }}>
+        <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', color: budget.conso > budget.prev && budget.prev > 0 ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>
           {budget.conso > 0 ? formatCurrency(budget.conso) : '—'}
         </td>
         {/* Actions — admin seulement */}
@@ -434,7 +434,7 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
               </button>
               <button title="Supprimer"
                 onClick={() => { if (confirm(`Supprimer "${node.nom}" ?`)) deleteWBSNode(projetId, node.id); }}
-                style={{ ...miniBtn, color: '#D85A30' }}>
+                style={{ ...miniBtn, color: 'var(--color-danger)' }}>
                 <Trash2 size={12} />
               </button>
             </div>
@@ -524,29 +524,29 @@ function ImportModal({ projetId, existingRacinesCount, onClose }) {
 
   return (
     <div>
-      <div style={{ background: '#F8F8F7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#5F5E5A', lineHeight: 1.6 }}>
-        <strong style={{ color: '#1A1A18' }}>Comment coller depuis Excel :</strong><br />
+      <div style={{ background: 'var(--color-bg-secondary)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+        <strong style={{ color: 'var(--color-text-primary)' }}>Comment coller depuis Excel :</strong><br />
         • Sélectionnez vos cellules → Ctrl+C → collez ici (Ctrl+V)<br />
-        • <strong>Colonnes :</strong> <code style={{ background: '#E8E7E3', padding: '1px 4px', borderRadius: 3 }}>Nom [Tab] Date début [Tab] Date fin</code><br />
+        • <strong>Colonnes :</strong> <code style={{ background: 'var(--color-bg-tertiary)', padding: '1px 4px', borderRadius: 3 }}>Nom [Tab] Date début [Tab] Date fin</code><br />
         • <strong>Hiérarchie :</strong> indentez avec des tabulations (niveau 0 = livrable, niveau 1+ = tâche)
       </div>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, fontWeight: 500, color: '#5F5E5A', marginBottom: 16 }}>
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 16 }}>
         Coller ici
         <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)}
           placeholder={"Analyse fonctionnelle\n\tRéunion de cadrage\n\tRédaction CDC\nDéveloppement\n\tModule A"}
-          style={{ fontFamily: 'monospace', fontSize: 12, padding: 10, borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', minHeight: 160, resize: 'vertical', outline: 'none', lineHeight: 1.5 }} />
+          style={{ fontFamily: 'monospace', fontSize: 12, padding: 10, borderRadius: 6, border: '1px solid var(--color-border)', minHeight: 160, resize: 'vertical', outline: 'none', lineHeight: 1.5 }} />
       </label>
       {preview.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#1A1A18' }}>
+          <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)' }}>
             Aperçu — {preview.length} tâche{preview.length > 1 ? 's' : ''} à créer
           </p>
-          <div style={{ background: '#F8F8F7', borderRadius: 8, padding: '8px 12px', maxHeight: 220, overflowY: 'auto', fontSize: 12 }}>
+          <div style={{ background: 'var(--color-bg-secondary)', borderRadius: 8, padding: '8px 12px', maxHeight: 220, overflowY: 'auto', fontSize: 12 }}>
             {preview.map((n, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', paddingLeft: (n.niveau - 1) * 20 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: n.type === 'livrable' ? '#378ADD' : '#888780' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: n.type === 'livrable' ? 'var(--color-accent)' : 'var(--color-text-tertiary)' }} />
                 <span style={{ fontWeight: n.type === 'livrable' ? 600 : 400 }}>{n.nom}</span>
-                {n.date_debut_prev && <span style={{ color: '#888780' }}>{fmtDate(n.date_debut_prev)}{n.date_fin_prev ? ` → ${fmtDate(n.date_fin_prev)}` : ''}</span>}
+                {n.date_debut_prev && <span style={{ color: 'var(--color-text-tertiary)' }}>{fmtDate(n.date_debut_prev)}{n.date_fin_prev ? ` → ${fmtDate(n.date_fin_prev)}` : ''}</span>}
               </div>
             ))}
           </div>
@@ -601,7 +601,7 @@ function CreateTaskModal({ projetId, wbs, onClose }) {
       </label>
 
       <div>
-        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: '#5F5E5A' }}>Type</p>
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>Type</p>
         <div style={{ display: 'flex', gap: 8 }}>
           {[
             { value: 'livrable', label: '📁 Livrable', desc: 'Tâche de niveau 1' },
@@ -609,11 +609,11 @@ function CreateTaskModal({ projetId, wbs, onClose }) {
           ].map((opt) => (
             <button key={opt.value} onClick={() => setType(opt.value)} style={{
               flex: 1, padding: '10px 14px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-              border: `2px solid ${type === opt.value ? '#378ADD' : 'rgba(0,0,0,0.12)'}`,
-              background: type === opt.value ? '#EFF6FF' : '#fff',
+              border: `2px solid ${type === opt.value ? 'var(--color-accent)' : 'var(--color-border)'}`,
+              background: type === opt.value ? 'var(--color-accent-soft)' : 'var(--color-bg-card)',
             }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A18' }}>{opt.label}</div>
-              <div style={{ fontSize: 11, color: '#888780', marginTop: 2 }}>{opt.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 2 }}>{opt.desc}</div>
             </button>
           ))}
         </div>
@@ -628,17 +628,17 @@ function CreateTaskModal({ projetId, wbs, onClose }) {
             ))}
           </select>
           {livrables.length === 0 && (
-            <span style={{ fontSize: 11, color: '#D85A30' }}>Aucun livrable — créez d'abord un livrable.</span>
+            <span style={{ fontSize: 11, color: 'var(--color-danger)' }}>Aucun livrable — créez d'abord un livrable.</span>
           )}
         </label>
       )}
 
       {type === 'livrable' && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${epingle ? '#378ADD' : 'rgba(0,0,0,0.12)'}`, background: epingle ? '#EFF6FF' : '#fff' }}>
-          <input type="checkbox" checked={epingle} onChange={(e) => setEpingle(e.target.checked)} style={{ accentColor: '#378ADD', width: 14, height: 14 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${epingle ? 'var(--color-accent)' : 'var(--color-border)'}`, background: epingle ? 'var(--color-accent-soft)' : 'var(--color-bg-card)' }}>
+          <input type="checkbox" checked={epingle} onChange={(e) => setEpingle(e.target.checked)} style={{ accentColor: 'var(--color-accent)', width: 14, height: 14 }} />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1A18' }}>📌 Afficher sur le dashboard</div>
-            <div style={{ fontSize: 11, color: '#888780' }}>Apparaît dans "Prochains jalons" avec la date de fin prévue</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)' }}>📌 Afficher sur le dashboard</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Apparaît dans "Prochains jalons" avec la date de fin prévue</div>
           </div>
         </label>
       )}
@@ -765,7 +765,7 @@ export default function ProjetWBS() {
     <div style={{ padding: 32 }}>
       {/* Titre + actions + filtres figés sous le header du projet, pour garder les filtres
           accessibles même en scrollant une longue liste de tâches. */}
-      <div style={{ position: 'sticky', top: headerHeight, zIndex: 15, background: '#fff', paddingBottom: 4 }}>
+      <div style={{ position: 'sticky', top: headerHeight, zIndex: 15, background: 'var(--color-bg-primary)', paddingBottom: 4 }}>
         <PageHeader
           title="WBS"
           subtitle={`${projet.wbs.length} tâche${projet.wbs.length > 1 ? 's' : ''}`}
@@ -786,16 +786,16 @@ export default function ProjetWBS() {
 
         {/* Barre de filtres */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, fontWeight: 500, color: '#888780', marginRight: 4 }}>Filtrer :</span>
+        <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', marginRight: 4 }}>Filtrer :</span>
         <select value={filterCollab} onChange={(e) => setFilterCollab(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterCollab ? '#EFF6FF' : '#fff', color: filterCollab ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterCollab ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterCollab ? 'var(--color-accent)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Affecté à : Tous</option>
           {collaborateurs.filter((c) => c.actif).map((c) => (
             <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
           ))}
         </select>
         <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterStatut ? '#EFF6FF' : '#fff', color: filterStatut ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterStatut ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterStatut ? 'var(--color-accent)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Statut : Tous</option>
           <option value="non_demarre">Non démarré</option>
           <option value="en_cours">En cours</option>
@@ -803,19 +803,19 @@ export default function ProjetWBS() {
           <option value="bloque">Bloqué</option>
         </select>
         <select value={filterDelta} onChange={(e) => setFilterDelta(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterDelta ? '#EFF6FF' : '#fff', color: filterDelta ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterDelta ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterDelta ? 'var(--color-accent)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Δ Prév−Réel : Tous</option>
           <option value="avance">En avance (Δ &gt; 0)</option>
           <option value="depasse">Dépassé (Δ &lt; 0)</option>
         </select>
         {hasFilter && (
           <button onClick={() => { setFilterCollab(''); setFilterStatut(''); setFilterDelta(''); }}
-            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' }}>
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', color: 'var(--color-text-secondary)' }}>
             ✕ Réinitialiser
           </button>
         )}
         {visibleIds && (
-          <span style={{ fontSize: 11, color: '#888780' }}>
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
             {projet.wbs.filter((n) => visibleIds.has(n.id) && !projet.wbs.some((c) => c.parent_id === n.id)).length} tâche(s)
           </span>
         )}
@@ -825,7 +825,7 @@ export default function ProjetWBS() {
       {parentIds.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <button onClick={allCollapsed ? expandAll : collapseAll}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888780', padding: 0 }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-tertiary)', padding: 0 }}>
             {allCollapsed ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
             {allCollapsed ? 'Tout développer' : 'Tout réduire'}
           </button>
@@ -833,30 +833,30 @@ export default function ProjetWBS() {
       )}
 
       {!isCollab && selectedIds.size > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '10px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8 }}>
-          <CheckSquare size={16} color="#378ADD" />
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A18', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '10px 16px', background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent)', borderRadius: 8 }}>
+          <CheckSquare size={16} color="var(--color-accent)" />
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', flex: 1 }}>
             {selectedIds.size} tâche{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
           </span>
           <button onClick={() => setSelectedIds(new Set())} style={{ ...btnSecStyle, fontSize: 12, padding: '5px 10px' }}>Désélectionner</button>
-          <button onClick={deleteSelected} style={{ ...btnPrimStyle, background: '#D85A30', fontSize: 12, padding: '5px 12px', gap: 6 }}>
+          <button onClick={deleteSelected} style={{ ...btnPrimStyle, background: 'var(--color-danger)', fontSize: 12, padding: '5px 12px', gap: 6 }}>
             <Trash2 size={13} /> Supprimer
           </button>
         </div>
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+              <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
                 <th style={{ width: 24, padding: '10px 4px 10px 8px' }} />
                 <th style={{ padding: '10px 8px', width: 32 }}>
                   <input type="checkbox" checked={allSelected} onChange={() => setSelectedIds(allSelected ? new Set() : new Set(allIds))}
-                    style={{ cursor: 'pointer', width: 14, height: 14, accentColor: '#378ADD' }} />
+                    style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--color-accent)' }} />
                 </th>
                 {['#', 'Nom', 'Resp.', 'Dates prév.', 'Avancement', 'Statut', 'Charge', 'Budget prév.', 'Budget conso.', ''].map((h) => (
-                  <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -872,7 +872,7 @@ export default function ProjetWBS() {
               </SortableContext>
               {racines.length === 0 && (
                 <tr>
-                  <td colSpan={12} style={{ padding: 48, textAlign: 'center', color: '#888780' }}>
+                  <td colSpan={12} style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>
                     Aucune tâche. Cliquez sur "Créer une tâche" pour commencer.
                   </td>
                 </tr>
@@ -903,9 +903,9 @@ export default function ProjetWBS() {
   );
 }
 
-const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: '#5F5E5A' };
-const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: '#fff' };
-const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: '#1A1A18', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', fontSize: 13, cursor: 'pointer' };
-const iconBtnStyle = { display: 'inline-flex', alignItems: 'center', padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#5F5E5A', gap: 4 };
-const miniBtn = { padding: 4, borderRadius: 4, border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', display: 'flex', color: '#5F5E5A' };
+const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
+const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)' };
+const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, cursor: 'pointer' };
+const iconBtnStyle = { display: 'inline-flex', alignItems: 'center', padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)', gap: 4 };
+const miniBtn = { padding: 4, borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', color: 'var(--color-text-secondary)' };
