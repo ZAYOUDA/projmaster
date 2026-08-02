@@ -67,11 +67,11 @@ export default function CongesEquipe() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.1)', flexShrink: 0, background: '#fff' }}>
+      <div style={{ padding: '12px 24px', borderBottom: '0.5px solid var(--color-border)', flexShrink: 0, background: 'var(--color-bg-primary)' }}>
         <PageHeader title="Congés équipe" subtitle="Cliquez sur une cellule pour saisir 1j / 0,5j / 0" />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
           {/* Légende */}
-          <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#5F5E5A' }}>
+          <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--color-text-secondary)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ display: 'inline-block', width: 16, height: 8, background: '#FEE2E2', borderRadius: 2, border: '0.5px solid #FECACA' }} />1j
             </span>
@@ -83,10 +83,10 @@ export default function CongesEquipe() {
           <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
             {ZOOM_OPTIONS.map((z) => (
               <button key={z.key} onClick={() => setZoom(z.key)} style={{
-                padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)',
+                padding: '5px 10px', borderRadius: 6, border: '1px solid var(--color-border)',
                 fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                background: zoom === z.key ? '#1A1A18' : '#fff',
-                color: zoom === z.key ? '#fff' : '#5F5E5A',
+                background: zoom === z.key ? 'var(--color-text-primary)' : 'var(--color-bg-card)',
+                color: zoom === z.key ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
               }}>{z.label}</button>
             ))}
           </div>
@@ -95,7 +95,7 @@ export default function CongesEquipe() {
             <button onClick={() => setStartDate(startOfWeek(new Date()))} style={{ ...navBtn, fontSize: 11, padding: '5px 8px' }}>Aujourd'hui</button>
             <button onClick={() => nav(1)} style={navBtn}><ChevronRight size={14} /></button>
           </div>
-          <span style={{ fontSize: 11, color: '#888780' }}>
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
             {startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → {endDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
         </div>
@@ -104,29 +104,29 @@ export default function CongesEquipe() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-            <tr style={{ background: '#EEEDF5' }}>
+            <tr style={{ background: 'var(--color-bg-secondary)' }}>
               <th style={thFixed}>Collaborateur</th>
               {monthGroups.map((g) => (
-                <th key={g.key} colSpan={g.days.length} style={{ ...thDay, fontWeight: 700, fontSize: 11, borderLeft: '1px solid rgba(0,0,0,0.15)', background: '#EEEDF5' }}>
+                <th key={g.key} colSpan={g.days.length} style={{ ...thDay, fontWeight: 700, fontSize: 11, borderLeft: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
                   {g.label}
                 </th>
               ))}
             </tr>
-            <tr style={{ background: '#F5F4FB' }}>
-              <th style={{ ...thFixed, background: '#F5F4FB' }} />
+            <tr style={{ background: 'var(--color-bg-secondary)' }}>
+              <th style={{ ...thFixed, background: 'var(--color-bg-secondary)' }} />
               {days.map((d) => {
                 const iso = toISO(d); const wknd = isWeekend(d); const isToday = iso === today;
                 return (
                   <th key={iso} style={{
                     ...thDay,
-                    background: isToday ? '#EBF4FF' : wknd ? '#EEECE6' : '#F5F4FB',
-                    color: isToday ? '#378ADD' : wknd ? '#AAA9A4' : '#5F5E5A',
+                    background: isToday ? 'var(--color-accent-soft)' : wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
+                    color: isToday ? 'var(--color-info)' : wknd ? 'var(--color-text-tertiary)' : 'var(--color-text-secondary)',
                     fontWeight: isToday ? 700 : 400,
-                    borderLeft: d.getDay() === 1 ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                    borderBottom: isToday ? '2px solid #378ADD' : undefined,
+                    borderLeft: d.getDay() === 1 ? '1px solid var(--color-border)' : 'none',
+                    borderBottom: isToday ? '2px solid var(--color-info)' : undefined,
                   }}>
                     <div style={{ fontSize: 10 }}>{JOURS[d.getDay()]}</div>
-                    <div style={{ fontSize: 9, color: isToday ? '#378ADD' : '#AAA9A4' }}>{d.getDate()}</div>
+                    <div style={{ fontSize: 9, color: isToday ? 'var(--color-info)' : 'var(--color-text-tertiary)' }}>{d.getDate()}</div>
                   </th>
                 );
               })}
@@ -134,15 +134,15 @@ export default function CongesEquipe() {
           </thead>
           <tbody>
             {collaborateurs.map((collab) => (
-              <tr key={collab.id} style={{ background: '#fff' }}>
-                <td style={{ ...frozenLeft, background: '#fff' }}>
+              <tr key={collab.id} style={{ background: 'var(--color-bg-card)' }}>
+                <td style={{ ...frozenLeft, background: 'var(--color-bg-card)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>
                       {collab.initiales}
                     </div>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 500 }}>{collab.prenom} {collab.nom}</div>
-                      <div style={{ fontSize: 10, color: '#888780' }}>{collab.profil}</div>
+                      <div style={{ fontSize: 10, color: 'var(--color-text-tertiary)' }}>{collab.profil}</div>
                     </div>
                   </div>
                 </td>
@@ -150,18 +150,20 @@ export default function CongesEquipe() {
                   const iso = toISO(d);
                   const wknd = isWeekend(d);
                   const val = (collab.conges || {})[iso] || 0;
-                  const bg = wknd ? '#F0EEE8' : val === 1 ? '#FEE2E2' : val === 0.5 ? '#FECDD3' : '#fff';
+                  // Les deux teintes de rouge (1j / 0,5j) restent des couleurs fixes — ce sont des
+                  // valeurs de données encodées (comme la heat-map RIAD), pas des surfaces de thème.
+                  const bg = wknd ? 'var(--color-bg-tertiary)' : val === 1 ? '#FEE2E2' : val === 0.5 ? '#FECDD3' : 'var(--color-bg-card)';
                   return (
                     <td
                       key={iso}
                       onClick={() => { if (!wknd) setConge(collab.id, iso, nextVal(val)); }}
                       style={{
                         width: COL_WIDTH, minWidth: COL_WIDTH, height: 28,
-                        border: '0.5px solid rgba(0,0,0,0.07)',
+                        border: '0.5px solid var(--color-border-soft)',
                         background: bg,
                         textAlign: 'center', verticalAlign: 'middle',
                         cursor: wknd ? 'default' : 'pointer',
-                        borderLeft: d.getDay() === 1 ? '1px solid rgba(0,0,0,0.1)' : undefined,
+                        borderLeft: d.getDay() === 1 ? '1px solid var(--color-border)' : undefined,
                       }}
                     >
                       {!wknd && val > 0 && (
@@ -176,12 +178,12 @@ export default function CongesEquipe() {
             ))}
 
             {/* Ligne total */}
-            <tr style={{ background: '#EEEDF5', position: 'sticky', bottom: 0, zIndex: 5 }}>
-              <td style={{ ...frozenLeft, background: '#EEEDF5', fontWeight: 700, fontSize: 12 }}>Total / jour</td>
+            <tr style={{ background: 'var(--color-bg-secondary)', position: 'sticky', bottom: 0, zIndex: 5 }}>
+              <td style={{ ...frozenLeft, background: 'var(--color-bg-secondary)', fontWeight: 700, fontSize: 12 }}>Total / jour</td>
               {days.map((d) => {
                 const iso = toISO(d); const wknd = isWeekend(d); const tot = totalParJour[iso] || 0;
                 return (
-                  <td key={iso} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, border: '0.5px solid rgba(0,0,0,0.1)', background: wknd ? '#EEECE6' : '#EEEDF5', textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#DC2626' }}>
+                  <td key={iso} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, border: '0.5px solid var(--color-border)', background: wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)', textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#DC2626' }}>
                     {tot > 0 ? (tot % 1 === 0 ? tot : tot.toFixed(1)) : ''}
                   </td>
                 );
@@ -194,7 +196,7 @@ export default function CongesEquipe() {
   );
 }
 
-const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 220, minWidth: 220, textAlign: 'left', padding: '6px 12px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', background: '#EEEDF5' };
-const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };
-const frozenLeft = { position: 'sticky', left: 0, zIndex: 2, width: 220, minWidth: 220, padding: '4px 12px', fontSize: 12, borderRight: '1px solid rgba(0,0,0,0.1)', borderBottom: '0.5px solid rgba(0,0,0,0.07)', whiteSpace: 'nowrap', overflow: 'hidden', height: 36 };
-const navBtn = { padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#5F5E5A' };
+const thFixed = { position: 'sticky', left: 0, zIndex: 3, width: 220, minWidth: 220, textAlign: 'left', padding: '6px 12px', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)', background: 'var(--color-bg-secondary)' };
+const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border-soft)' };
+const frozenLeft = { position: 'sticky', left: 0, zIndex: 2, width: 220, minWidth: 220, padding: '4px 12px', fontSize: 12, borderRight: '1px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border-soft)', whiteSpace: 'nowrap', overflow: 'hidden', height: 36 };
+const navBtn = { padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-text-secondary)' };

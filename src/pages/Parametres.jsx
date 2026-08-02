@@ -36,9 +36,9 @@ export default function Parametres() {
     <div style={{ padding: 32, maxWidth: 640 }}>
       <PageHeader title="Paramètres" />
 
-      <section style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+      <section style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
         <h3 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Export / Import des données</h3>
-        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#5F5E5A' }}>
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
           Sauvegardez vos données dans un fichier JSON ou restaurez une sauvegarde précédente.
           {savedAt && <span> Dernière sauvegarde : {new Date(savedAt).toLocaleString('fr-FR')}.</span>}
         </p>
@@ -53,12 +53,12 @@ export default function Parametres() {
         </div>
       </section>
 
-      <section style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 24 }}>
+      <section style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24 }}>
         <h3 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Données d'exemple</h3>
-        <p style={{ margin: '0 0 20px', fontSize: 13, color: '#5F5E5A' }}>
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
           Réinitialiser avec le jeu de données d'exemple ({collaborateurs.length} collaborateurs, {projets.length} projets actuellement).
         </p>
-        <button onClick={handleReset} style={{ ...btnStyle, background: '#FAE0DA', color: '#C0391B', gap: 6 }}>
+        <button onClick={handleReset} style={{ ...btnStyle, background: 'var(--color-critical-soft)', color: 'var(--color-critical)', gap: 6 }}>
           <Trash2 size={14} /> Réinitialiser
         </button>
       </section>
@@ -66,5 +66,5 @@ export default function Parametres() {
   );
 }
 
-const btnStyle = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6, border: 'none', background: '#1A1A18', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { ...btnStyle, background: '#fff', color: '#1A1A18', border: '1px solid rgba(0,0,0,0.15)' };
+const btnStyle = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { ...btnStyle, background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' };
