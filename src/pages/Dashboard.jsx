@@ -166,61 +166,61 @@ export default function Dashboard() {
     <div style={{ padding: 32 }}>
       {/* En-tête personnalisé */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: '#1A1A18' }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, color: 'var(--color-text-primary)' }}>
           Bonjour{prenom ? ` ${prenom}` : ''},
         </h1>
-        <p style={{ margin: '2px 0 0', fontSize: 13, color: '#5F5E5A' }}>
+        <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--color-text-secondary)' }}>
           {projets.filter((p) => p.statut === 'actif').length} projets actifs — voici où vous en êtes aujourd'hui.
         </p>
       </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Budget prévisionnel</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{formatCurrency(totalPrev)}</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>tous projets</p>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>Budget prévisionnel</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)' }}>{formatCurrency(totalPrev)}</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-secondary)' }}>tous projets</p>
           </div>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Wallet size={18} color="#378ADD" />
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-info-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Wallet size={18} color="var(--color-info)" />
           </div>
         </div>
 
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Budget consommé</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{formatCurrency(totalConso)}</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>{totalPrev > 0 ? `${pctConso}% consommé` : '—'}</p>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>Budget consommé</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)' }}>{formatCurrency(totalConso)}</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-secondary)' }}>{totalPrev > 0 ? `${pctConso}% consommé` : '—'}</p>
           </div>
           {totalPrev > 0 && <CircularProgress value={pctConso} size={44} strokeWidth={4} />}
         </div>
 
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Charge planifiée</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{fmtJours(totalJours)} j</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#5F5E5A' }}>jours prévisionnels</p>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>Charge planifiée</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)' }}>{fmtJours(totalJours)} j</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-secondary)' }}>jours prévisionnels</p>
           </div>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F1EFFB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <CalendarClock size={18} color="#7F77DD" />
           </div>
         </div>
 
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: '#888780', fontWeight: 500 }}>Risques ouverts</p>
-            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: '#1A1A18' }}>{risquesOuverts}</p>
-            <p style={{ margin: 0, fontSize: 12, color: risquesCritiques > 0 ? '#D85A30' : '#5F5E5A' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>Risques ouverts</p>
+            <p style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 600, color: 'var(--color-text-primary)' }}>{risquesOuverts}</p>
+            <p style={{ margin: 0, fontSize: 12, color: risquesCritiques > 0 ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>
               {risquesCritiques > 0 ? `${risquesCritiques} critiques` : 'Aucun critique'}
             </p>
           </div>
           <div style={{
             width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-            background: risquesCritiques > 0 ? '#FAECE7' : risquesOuverts > 0 ? '#FAEEDA' : '#F1EFE8',
+            background: risquesCritiques > 0 ? 'var(--color-danger-soft)' : risquesOuverts > 0 ? 'var(--color-warning-soft)' : 'var(--color-bg-tertiary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <AlertTriangleIcon size={18} color={risquesCritiques > 0 ? '#D85A30' : risquesOuverts > 0 ? '#BA7517' : '#888780'} />
+            <AlertTriangleIcon size={18} color={risquesCritiques > 0 ? 'var(--color-danger)' : risquesOuverts > 0 ? 'var(--color-warning)' : 'var(--color-text-tertiary)'} />
           </div>
         </div>
       </div>
@@ -230,12 +230,12 @@ export default function Dashboard() {
         <div>
           {/* Tableau projets */}
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Projets</h3>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+                <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
                   {['Projet', 'Avancement', 'Budget', 'Statut'].map((h) => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -250,8 +250,8 @@ export default function Dashboard() {
                     <tr
                       key={p.id}
                       onClick={() => navigate(`/projet/${p.id}/${isRun ? 'suivi-mensuel' : 'wbs'}`)}
-                      style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'background 0.1s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = '#FAFAF9'}
+                      style={{ borderBottom: '0.5px solid var(--color-border-soft)', cursor: 'pointer', transition: 'background 0.1s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = ''}
                     >
                       <td style={{ padding: '12px 16px' }}>
@@ -262,15 +262,15 @@ export default function Dashboard() {
                       </td>
                       <td style={{ padding: '12px 16px', width: 160 }}>
                         {isRun ? (
-                          <span style={{ fontSize: 12, color: '#BDBCB8' }}>—</span>
+                          <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>—</span>
                         ) : (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <ProgressBar value={av} color={p.couleur} />
-                            <span style={{ fontSize: 12, color: '#5F5E5A', flexShrink: 0 }}>{av}%</span>
+                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', flexShrink: 0 }}>{av}%</span>
                           </div>
                         )}
                       </td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
                         {isRun
                           ? (suiviRun.cmdNbj > 0 ? <>{fmtJours(suiviRun.consoNbj)} / {fmtJours(suiviRun.cmdNbj)} j</> : '—')
                           : (b.prev > 0 ? <>{formatCurrency(b.conso)} / {formatCurrency(b.prev)}</> : '—')}
@@ -278,14 +278,14 @@ export default function Dashboard() {
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                           <Badge label={badge.label} variant={badge.variant} />
-                          <ChevronRight size={15} color="#BDBCB8" />
+                          <ChevronRight size={15} color="var(--color-text-tertiary)" />
                         </div>
                       </td>
                     </tr>
                   );
                 })}
                 {projets.length === 0 && (
-                  <tr><td colSpan={4} style={{ padding: 32, textAlign: 'center', color: '#888780' }}>Aucun projet. Créez-en un depuis la sidebar.</td></tr>
+                  <tr><td colSpan={4} style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>Aucun projet. Créez-en un depuis la sidebar.</td></tr>
                 )}
               </tbody>
             </table>
@@ -300,33 +300,33 @@ export default function Dashboard() {
             }}
           >
             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Charge des collaborateurs</h3>
-            {chargeOuverte ? <ChevronUp size={15} color="#888780" /> : <ChevronDown size={15} color="#888780" />}
+            {chargeOuverte ? <ChevronUp size={15} color="var(--color-text-tertiary)" /> : <ChevronDown size={15} color="var(--color-text-tertiary)" />}
           </button>
           {chargeOuverte && (
-            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+                  <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
                     {['Collaborateur', 'J. planifiés', 'J. réalisés', 'Projets'].map((h) => (
-                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {chargeCollab.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+                    <tr key={c.id} style={{ borderBottom: '0.5px solid var(--color-border-soft)' }}>
                       <td style={{ padding: '10px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ width: 24, height: 24, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 500, color: '#fff' }}>{c.initiales}</div>
                           <span style={{ fontSize: 13 }}>{c.prenom} {c.nom}</span>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 13, color: c.joursPrev > 20 ? '#D85A30' : '#1A1A18', minWidth: 140 }}>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: c.joursPrev > 20 ? 'var(--color-danger)' : 'var(--color-text-primary)', minWidth: 140 }}>
                         <div style={{ marginBottom: 4 }}>{fmtJours(c.joursPrev)} j</div>
                         {c.joursPrev > 0 && <ProgressBar value={Math.round(c.joursReels / c.joursPrev * 100)} color={c.couleur} height={4} />}
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{fmtJours(c.joursReels)} j</td>
-                      <td style={{ padding: '10px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.nbProjets}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{fmtJours(c.joursReels)} j</td>
+                      <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{c.nbProjets}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -338,25 +338,25 @@ export default function Dashboard() {
           {toutesFactures.length > 0 && (
             <>
               <h3 style={{ margin: '24px 0 12px', fontSize: 14, fontWeight: 600 }}>Facturation — Vue globale</h3>
-              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
                 {/* KPIs facturation */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
                   {[
-                    { label: 'Total facturé', value: formatCurrency(factTotalFacture), color: '#1A1A18' },
-                    { label: 'Encaissé', value: formatCurrency(factEncaisse), color: '#1D9E75' },
-                    { label: 'En attente', value: formatCurrency(factEnAttente), color: '#BA7517' },
-                    { label: 'En retard', value: formatCurrency(factEnRetard.reduce((s, f) => s + montantFacture(f), 0)), color: factEnRetard.length > 0 ? '#D85A30' : '#888780' },
+                    { label: 'Total facturé', value: formatCurrency(factTotalFacture), color: 'var(--color-text-primary)' },
+                    { label: 'Encaissé', value: formatCurrency(factEncaisse), color: 'var(--color-success)' },
+                    { label: 'En attente', value: formatCurrency(factEnAttente), color: 'var(--color-warning)' },
+                    { label: 'En retard', value: formatCurrency(factEnRetard.reduce((s, f) => s + montantFacture(f), 0)), color: factEnRetard.length > 0 ? 'var(--color-danger)' : 'var(--color-text-tertiary)' },
                   ].map((kpi, i) => (
-                    <div key={kpi.label} style={{ padding: '14px 16px', borderRight: i < 3 ? '0.5px solid rgba(0,0,0,0.08)' : 'none' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: 11, color: '#888780', fontWeight: 500 }}>{kpi.label}</p>
+                    <div key={kpi.label} style={{ padding: '14px 16px', borderRight: i < 3 ? '0.5px solid var(--color-border-soft)' : 'none' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{kpi.label}</p>
                       <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: kpi.color }}>{kpi.value}</p>
                     </div>
                   ))}
                 </div>
                 {/* Factures en retard */}
                 {factEnRetard.length > 0 && (
-                  <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.08)', padding: '10px 16px' }}>
-                    <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#D85A30' }}>Factures en retard de paiement</p>
+                  <div style={{ borderTop: '0.5px solid var(--color-border-soft)', padding: '10px 16px' }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: 'var(--color-danger)' }}>Factures en retard de paiement</p>
                     {factEnRetard.map((f) => (
                       <div
                         key={f.id}
@@ -364,12 +364,12 @@ export default function Dashboard() {
                         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', cursor: 'pointer', fontSize: 12 }}
                       >
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: f.projetCouleur, flexShrink: 0 }} />
-                        <span style={{ fontFamily: 'monospace', color: '#D85A30', fontWeight: 500 }}>{f.numero}</span>
-                        <span style={{ color: '#5F5E5A' }}>—</span>
-                        <span style={{ color: '#5F5E5A' }}>{f.projetNom}</span>
-                        <span style={{ color: '#5F5E5A' }}>—</span>
-                        <span style={{ fontWeight: 600, color: '#D85A30' }}>{formatCurrency(montantFacture(f))}</span>
-                        <span style={{ color: '#D85A30', marginLeft: 'auto' }}>éch. {new Date(f.date_echeance).toLocaleDateString('fr-FR')} ⚠</span>
+                        <span style={{ fontFamily: 'monospace', color: 'var(--color-danger)', fontWeight: 500 }}>{f.numero}</span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{f.projetNom}</span>
+                        <span style={{ color: 'var(--color-text-secondary)' }}>—</span>
+                        <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>{formatCurrency(montantFacture(f))}</span>
+                        <span style={{ color: 'var(--color-danger)', marginLeft: 'auto' }}>éch. {new Date(f.date_echeance).toLocaleDateString('fr-FR')} ⚠</span>
                       </div>
                     ))}
                   </div>
@@ -386,30 +386,30 @@ export default function Dashboard() {
 
           {/* Milestones */}
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Prochains jalons</h3>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>
             {milestones.length === 0 && (
-              <p style={{ padding: 24, textAlign: 'center', color: '#888780', margin: 0 }}>Aucun jalon à venir</p>
+              <p style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)', margin: 0 }}>Aucun jalon à venir</p>
             )}
             {milestones.map((m, i) => {
               const late = new Date(m.date_prevue) < today && m.statut !== 'atteint';
               return (
                 <div key={m.id} style={{
                   padding: '12px 16px',
-                  borderBottom: i < milestones.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
+                  borderBottom: i < milestones.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none',
                   display: 'flex', flexDirection: 'column', gap: 2,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: m.projetCouleur, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 500, color: late ? '#D85A30' : '#1A1A18', flex: 1 }}>{m.nom}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: late ? 'var(--color-danger)' : 'var(--color-text-primary)', flex: 1 }}>{m.nom}</span>
                     {m.isLivrable && (
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99, background: '#EFF6FF', color: '#378ADD', flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99, background: 'var(--color-info-soft)', color: 'var(--color-info)', flexShrink: 0 }}>
                         Livrable
                       </span>
                     )}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 14 }}>
-                    <span style={{ fontSize: 12, color: '#888780' }}>{m.projetNom}</span>
-                    <span style={{ fontSize: 12, color: late ? '#D85A30' : '#5F5E5A', fontWeight: late ? 500 : 400 }}>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{m.projetNom}</span>
+                    <span style={{ fontSize: 12, color: late ? 'var(--color-danger)' : 'var(--color-text-secondary)', fontWeight: late ? 500 : 400 }}>
                       {new Date(m.date_prevue).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                     </span>
                   </div>
@@ -420,22 +420,22 @@ export default function Dashboard() {
 
           {/* V2 — Stakeholders à contacter */}
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Parties prenantes à contacter</h3>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
             {stakeholdersAContacter.length === 0 && (
-              <p style={{ padding: 20, textAlign: 'center', color: '#888780', margin: 0, fontSize: 12 }}>Aucun contact en attente</p>
+              <p style={{ padding: 20, textAlign: 'center', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 12 }}>Aucun contact en attente</p>
             )}
             {stakeholdersAContacter.slice(0, 8).map((sh, i) => (
               <div key={sh.id} style={{
                 padding: '10px 16px',
-                borderBottom: i < Math.min(stakeholdersAContacter.length, 8) - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
+                borderBottom: i < Math.min(stakeholdersAContacter.length, 8) - 1 ? '0.5px solid var(--color-border-soft)' : 'none',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: sh.projetCouleur, flexShrink: 0, marginTop: 4 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: '#1A1A18' }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)' }}>
                       {sh.role}{sh.nom ? ` · ${sh.nom}` : ''}
                     </p>
-                    <p style={{ margin: '1px 0 0', fontSize: 11, color: '#888780' }}>
+                    <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--color-text-tertiary)' }}>
                       {sh.projetNom} — {sh.checkin_frequency}
                       {sh.derniere_interaction && (
                         <> · Dernier : {new Date(sh.derniere_interaction).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</>
@@ -447,7 +447,7 @@ export default function Dashboard() {
                     onClick={() => handleMarquerContacte(sh)}
                     style={{
                       flexShrink: 0, fontSize: 11, padding: '3px 8px', borderRadius: 5,
-                      border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A',
+                      border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', color: 'var(--color-text-secondary)',
                       whiteSpace: 'nowrap',
                     }}
                     title="Marquer comme contacté aujourd'hui"
@@ -458,7 +458,7 @@ export default function Dashboard() {
               </div>
             ))}
             {stakeholdersAContacter.length > 8 && (
-              <div style={{ padding: '8px 16px', borderTop: '0.5px solid rgba(0,0,0,0.06)', fontSize: 12, color: '#888780', textAlign: 'center' }}>
+              <div style={{ padding: '8px 16px', borderTop: '0.5px solid var(--color-border-soft)', fontSize: 12, color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
                 +{stakeholdersAContacter.length - 8} autres à contacter
               </div>
             )}
