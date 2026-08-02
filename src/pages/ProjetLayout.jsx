@@ -6,19 +6,23 @@ import { calculerEVMProjet, calculerEarnedSchedule, detecterAvancementNonAJour }
 import SanteProjetEVM from '../components/projet/SanteProjetEVM';
 import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp, FileSpreadsheet } from 'lucide-react';
 
+// Rôles avec édition complète sur un projet (WBS/Planning/Gantt/Kanban) : tous sauf Collaborateur,
+// qui garde son accès actuel (assignation, mise à jour de son propre avancement).
+const ROLES_GESTION = ['admin', 'manager', 'chef_projet'];
+
 const ALL_TABS = [
-  { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: ['admin', 'collaborateur'], types: ['BUILD'] },
-  { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: ['admin', 'collaborateur'], types: ['BUILD'] },
-  { path: 'gantt',         label: 'Gantt',            icon: BarChart2,    roles: ['admin', 'collaborateur'], types: ['BUILD'] },
-  { path: 'budget',        label: 'Budget',           icon: DollarSign,   roles: ['admin'],                  types: ['BUILD'] },
-  { path: 'kanban',        label: 'Kanban',           icon: Columns,      roles: ['admin', 'collaborateur'], types: ['BUILD'] },
-  { path: 'suivi-mensuel', label: 'Suivi mensuel',    icon: TrendingUp,   roles: ['admin'],                  types: ['RUN'] },
-  { path: 'risques',       label: 'RIAD',             icon: AlertTriangle,roles: ['admin'],                  types: ['BUILD', 'RUN'] },
-  { path: 'stakeholders',  label: 'Parties prenantes',icon: Users,        roles: ['admin'],                  types: ['BUILD', 'RUN'] },
-  { path: 'facturation',   label: 'Facturation',      icon: Receipt,      roles: ['admin'],                  types: ['BUILD', 'RUN'] },
+  { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  { path: 'gantt',         label: 'Gantt',            icon: BarChart2,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  { path: 'budget',        label: 'Budget',           icon: DollarSign,   roles: ROLES_GESTION,                       types: ['BUILD'] },
+  { path: 'kanban',        label: 'Kanban',           icon: Columns,      roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  { path: 'suivi-mensuel', label: 'Suivi mensuel',    icon: TrendingUp,   roles: ROLES_GESTION,                       types: ['RUN'] },
+  { path: 'risques',       label: 'RIAD',             icon: AlertTriangle,roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
+  { path: 'stakeholders',  label: 'Parties prenantes',icon: Users,        roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
+  { path: 'facturation',   label: 'Facturation',      icon: Receipt,      roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
   // Vue de synthèse pensée pour être exportée/partagée avec le client — juste avant Paramètres.
-  { path: 'resume',        label: 'Résumé',           icon: FileSpreadsheet, roles: ['admin'],               types: ['BUILD'] },
-  { path: 'parametres',    label: 'Paramètres',       icon: Settings,     roles: ['admin'],                  types: ['BUILD', 'RUN'] },
+  { path: 'resume',        label: 'Résumé',           icon: FileSpreadsheet, roles: ROLES_GESTION,                    types: ['BUILD'] },
+  { path: 'parametres',    label: 'Paramètres',       icon: Settings,     roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
 ];
 
 export default function ProjetLayout() {

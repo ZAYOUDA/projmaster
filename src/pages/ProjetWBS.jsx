@@ -904,8 +904,8 @@ export default function ProjetWBS() {
 }
 
 const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
-const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)' };
+const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)' };
 const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, cursor: 'pointer' };
+const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', fontSize: 13, cursor: 'pointer' };
 const iconBtnStyle = { display: 'inline-flex', alignItems: 'center', padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)', gap: 4 };
 const miniBtn = { padding: 4, borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', color: 'var(--color-text-secondary)' };

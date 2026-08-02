@@ -22,6 +22,7 @@ import CongesEquipe from './pages/CongesEquipe';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 import ConsoleAdmin from './pages/ConsoleAdmin';
+import PortfolioFacturation from './pages/PortfolioFacturation';
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'admin', element: <AdminRoute><ConsoleAdmin /></AdminRoute> },
       { path: 'import-cra', element: <AdminRoute><ImportCRA /></AdminRoute> },
+      { path: 'facturation-portefeuille', element: <AdminRoute><PortfolioFacturation /></AdminRoute> },
       { path: 'collaborateurs', element: <Collaborateurs /> },
       { path: 'conges', element: <CongesEquipe /> },
       { path: 'parametres', element: <Parametres /> },

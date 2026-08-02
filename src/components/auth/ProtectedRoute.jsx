@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, userDoc, loading } = useAuth();
+  const { user, loading, hasFullAccess } = useAuth();
 
   if (loading) {
     return (
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (adminOnly && userDoc?.role !== 'admin') return <Navigate to="/" replace />;
+  if (adminOnly && !hasFullAccess) return <Navigate to="/" replace />;
 
   return children;
 }

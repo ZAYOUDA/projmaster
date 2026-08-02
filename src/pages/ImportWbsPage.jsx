@@ -11,9 +11,14 @@ import { telechargerModeleWbsPivot } from '../utils/wbsPivotTemplate';
  * Voir SPEC-V4-IMPORT-WBS.md. 3 étapes : Fichier → Mapping ressources → Aperçu & options.
  */
 
+// Palette alignée sur les variables CSS de thème (voir index.css) — cette page avait été
+// oubliée lors de la migration thème sombre initiale (2026-08), corrigé le 2026-08-02.
 const C = {
-  ink: '#1A1A18', grey: '#6B6B68', line: '#E8E8E6', bg: '#FFFFFF', soft: '#F7F7F5',
-  warn: '#B45309', warnBg: '#FEF3C7', ok: '#166534', okBg: '#DCFCE7', danger: '#B91C1C', dangerBg: '#FEE2E2',
+  ink: 'var(--color-text-primary)', grey: 'var(--color-text-secondary)',
+  line: 'var(--color-border)', bg: 'var(--color-bg-card)', soft: 'var(--color-bg-secondary)',
+  warn: 'var(--color-warning)', warnBg: 'var(--color-warning-soft)',
+  ok: 'var(--color-success)', okBg: 'var(--color-success-soft)',
+  danger: 'var(--color-danger)', dangerBg: 'var(--color-danger-soft)',
 };
 const S = {
   page: { padding: '32px 40px', maxWidth: 1000, color: C.ink },
@@ -21,16 +26,16 @@ const S = {
   sub: { fontSize: 13, color: C.grey, marginTop: 4 },
   card: { border: `1px solid ${C.line}`, borderRadius: 10, padding: 20, marginTop: 20, background: C.bg },
   th: { textAlign: 'left', fontSize: 11, fontWeight: 600, color: C.grey, textTransform: 'uppercase', letterSpacing: 0.4, padding: '8px 10px', borderBottom: `1px solid ${C.line}` },
-  td: { fontSize: 13, padding: '8px 10px', borderBottom: `1px solid ${C.line}`, verticalAlign: 'middle' },
-  select: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6, background: C.bg },
-  input: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6 },
-  btn: { fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.ink, color: '#fff' },
+  td: { fontSize: 13, padding: '8px 10px', borderBottom: `1px solid ${C.line}`, verticalAlign: 'middle', color: C.ink },
+  select: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6, background: C.bg, color: C.ink },
+  input: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6, background: C.bg, color: C.ink },
+  btn: { fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)' },
   btnGhost: { fontSize: 13, fontWeight: 500, padding: '9px 18px', borderRadius: 8, border: `1px solid ${C.line}`, cursor: 'pointer', background: C.bg, color: C.ink },
   stepDot: (active, done) => ({
     width: 26, height: 26, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 12, fontWeight: 700,
-    background: done || active ? C.ink : C.soft, color: done || active ? '#fff' : C.grey,
-    border: `1px solid ${done || active ? C.ink : C.line}`,
+    background: done || active ? 'var(--color-text-primary)' : C.soft, color: done || active ? 'var(--color-bg-primary)' : C.grey,
+    border: `1px solid ${done || active ? 'var(--color-text-primary)' : C.line}`,
   }),
 };
 
@@ -279,7 +284,7 @@ export default function ImportWbsPage() {
           </div>
 
           {parsed.warnings.length > 0 && (
-            <div style={{ ...S.card, background: C.warnBg, borderColor: '#FDE68A' }}>
+            <div style={{ ...S.card, background: C.warnBg, borderColor: C.warn }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.warn, marginBottom: 6 }}>Avertissements (non bloquants)</div>
               {parsed.warnings.map((w, i) => <div key={i} style={{ fontSize: 12.5, color: C.warn }}>• {w}</div>)}
             </div>
@@ -370,7 +375,7 @@ export default function ImportWbsPage() {
 
       {/* ================= ÉTAPE 4 : TERMINÉ ================= */}
       {step === 4 && done && (
-        <div style={{ ...S.card, background: C.okBg, borderColor: '#BBF7D0' }}>
+        <div style={{ ...S.card, background: C.okBg, borderColor: C.ok }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ok }}>✓ Import terminé</div>
           <div style={{ fontSize: 13, color: C.ok, marginTop: 6 }}>
             {done.noeudsL1} nœud(s) L1 · {done.noeudsL2} nœud(s) L2 · {done.taches} tâche(s) · {fmt(done.joursRealises)} j réalisés importés.

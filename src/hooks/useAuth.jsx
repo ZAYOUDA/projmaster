@@ -38,6 +38,27 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Rôles : 'admin' | 'manager' | 'chef_projet' | 'collaborateur'.
+// hasFullAccess (admin/manager) = tous les projets, sans passer par projets_autorises.
+// canAccessProjet = lecture (au minimum) sur ce projet précis.
+// canManageProjet = écriture complète sur ce projet précis (WBS, budget, facturation, RIAD…).
 export function useAuth() {
-  return useContext(AuthContext);
+  const ctx = useContext(AuthContext);
+  const role = ctx?.userDoc?.role;
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
+  const isChefProjet = role === 'chef_projet';
+  const isCollab = role === 'collaborateur';
+  const hasFullAccess = isAdmin || isManager;
+  const canManageUsers = isAdmin || isManager;
+  const projetsAutorises = ctx?.userDoc?.projets_autorises || [];
+
+  const canAccessProjet = (projetId) => hasFullAccess || projetsAutorises.includes(projetId);
+  const canManageProjet = (projetId) => hasFullAccess || (isChefProjet && canAccessProjet(projetId));
+
+  return {
+    ...ctx,
+    role, isAdmin, isManager, isChefProjet, isCollab,
+    hasFullAccess, canManageUsers, canAccessProjet, canManageProjet,
+  };
 }

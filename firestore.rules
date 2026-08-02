@@ -2,48 +2,83 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
     function isAdmin() {
-      return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+      return request.auth != null && getRole() == "admin";
     }
-
+    function isManager() {
+      return request.auth != null && getRole() == "manager";
+    }
+    function isChefProjet() {
+      return request.auth != null && getRole() == "chef_projet";
+    }
     function isCollab() {
-      return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "collaborateur";
+      return request.auth != null && getRole() == "collaborateur";
     }
-
+    // Admin + Manager : accès total, indépendant de projets_autorises.
+    function hasFullAccess() {
+      return isAdmin() || isManager();
+    }
+    // Lecture (au minimum) sur ce projet précis.
     function canAccessProjet(projetId) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid))
-             .data.projets_autorises.hasAny([projetId]);
+      return hasFullAccess() ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.projets_autorises.hasAny([projetId]);
+    }
+    // Écriture complète sur ce projet précis (Chef de Projet sur ses projets).
+    function canManageProjet(projetId) {
+      return hasFullAccess() || (isChefProjet() && canAccessProjet(projetId));
     }
 
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      allow write: if isAdmin();
-      // Permet à chaque user de mettre à jour sa derniere_connexion
-      allow update: if request.auth.uid == userId
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['derniere_connexion']);
+      allow read: if request.auth.uid == userId || hasFullAccess();
+
+      allow create: if isAdmin() || (isManager() && request.resource.data.role != "admin");
+
+      // Un utilisateur peut toujours mettre à jour sa propre derniere_connexion.
+      // Chef de Projet peut mettre à jour son propre projets_autorises (auto-ajout lors de la
+      // création d'un projet — cf. addProjet dans useAppStore.js) et rien d'autre sur son doc.
+      // Admin gère tout le monde. Manager gère tout sauf les comptes Admin (ni cible, ni état actuel).
+      allow update: if (request.auth.uid == userId
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['derniere_connexion']))
+                    || (request.auth.uid == userId && isChefProjet()
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['projets_autorises']))
+                    || isAdmin()
+                    || (isManager() && resource.data.role != "admin" && request.resource.data.role != "admin");
+
+      allow delete: if isAdmin() || (isManager() && resource.data.role != "admin");
     }
 
     match /collaborateurs/{collabId} {
-      allow read: if isAdmin() || isCollab();
-      allow write: if isAdmin();
+      allow read: if hasFullAccess() || isChefProjet() || isCollab();
+      allow write: if hasFullAccess();
     }
 
     match /projets/{projetId} {
-      allow read, write: if isAdmin();
+      // Admin/Manager : accès total, y compris suppression.
+      allow read, write: if hasFullAccess();
+      // Chef de Projet : lecture + modification sur ses projets, mais jamais de suppression.
+      allow read, update: if canManageProjet(projetId);
+      // Chef de Projet : peut créer un nouveau projet (s'auto-ajoute ensuite à son
+      // projets_autorises via la règle /users ci-dessus — voir addProjet dans useAppStore.js).
+      allow create: if isChefProjet();
+      // Collaborateur : lecture + mise à jour limitée (assignation/avancement) sur ses projets.
       allow read: if isCollab() && canAccessProjet(projetId);
       allow update: if isCollab() && canAccessProjet(projetId);
     }
 
     match /app_config/{doc} {
-      allow read, write: if isAdmin();
+      allow read, write: if hasFullAccess();
     }
 
-    // To-do personnelle du PM (indépendante des projets) — réservée à l'admin.
+    // To-do personnelle (Admin/Manager/Chef de Projet) — strictement la sienne, jamais partagée.
     match /taches/{tacheId} {
-      allow read, write: if isAdmin();
+      allow read, update, delete: if (hasFullAccess() || isChefProjet())
+                                   && resource.data.owner_id == request.auth.uid;
+      allow create: if (hasFullAccess() || isChefProjet())
+                    && request.resource.data.owner_id == request.auth.uid;
     }
   }
 }

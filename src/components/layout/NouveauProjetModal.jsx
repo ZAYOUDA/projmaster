@@ -53,18 +53,20 @@ export default function NouveauProjetModal({ onCreate, onImportPlanning, onClose
           );
         })}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-        <button
-          type="button"
-          onClick={onImportPlanning}
-          disabled={creating}
-          style={{
-            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-            fontSize: 12.5, color: '#378ADD', fontWeight: 500, textDecoration: 'underline',
-          }}
-        >
-          Ou créer depuis un fichier d'import de planning (.xlsx) →
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: onImportPlanning ? 'space-between' : 'flex-end', marginTop: 16 }}>
+        {onImportPlanning && (
+          <button
+            type="button"
+            onClick={onImportPlanning}
+            disabled={creating}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+              fontSize: 12.5, color: '#378ADD', fontWeight: 500, textDecoration: 'underline',
+            }}
+          >
+            Ou créer depuis un fichier d'import de planning (.xlsx) →
+          </button>
+        )}
         <button
           type="button"
           onClick={() => telechargerModeleWbsPivot()}

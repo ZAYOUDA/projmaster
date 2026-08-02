@@ -90,8 +90,9 @@ export default function Dashboard() {
   const collaborateurs = useAppStore((s) => s.collaborateurs);
   const updateStakeholder = useAppStore((s) => s.updateStakeholder);
   const navigate = useNavigate();
-  const { userDoc } = useAuth();
-  const isAdmin = userDoc?.role === 'admin';
+  const { userDoc, hasFullAccess, isChefProjet } = useAuth();
+  // Mes actions (todo perso) : Admin/Manager/Chef de Projet, jamais Collaborateur.
+  const canUseTaches = hasFullAccess || isChefProjet;
   const [chargeOuverte, setChargeOuverte] = useState(true);
 
   // KPIs globaux
@@ -382,7 +383,7 @@ export default function Dashboard() {
         {/* Colonne droite */}
         <div>
           {/* Mes actions — to-do personnelle du PM, indépendante des projets */}
-          {isAdmin && <MesActions />}
+          {canUseTaches && <MesActions />}
 
           {/* Milestones */}
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Prochains jalons</h3>

@@ -1,24 +1,30 @@
 import { useState } from 'react';
 import useAppStore from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import { createUserAccount, changeUserPassword } from '../firebase/auth';
 import PageHeader from '../components/layout/PageHeader';
 import Modal from '../components/ui/Modal';
-import { Plus, Shield, User, UserCheck, UserX, Key, Lock } from 'lucide-react';
+import { Plus, Shield, Briefcase, UserCog, User, UserCheck, UserX, Key, Lock } from 'lucide-react';
 
 const COLORS = ['#378ADD', 'var(--color-success)', 'var(--color-danger)', '#BA7517', '#8B5CF6', '#EC4899', '#0EA5E9', '#14B8A6'];
 const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
+// scoped = ce rôle utilise projets_autorises (accès limité à une liste explicite de projets),
+// à l'inverse de admin/manager qui ont accès à tout sans passer par ce champ.
 const ROLE_META = {
-  admin: { label: 'Admin', bg: 'var(--color-info-soft)', color: 'var(--color-info)' },
-  collaborateur: { label: 'Collaborateur', bg: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' },
+  admin:         { label: 'Admin',          plural: 'Admins',           icon: Shield,    bg: 'var(--color-info-soft)',    color: 'var(--color-info)',    scoped: false },
+  manager:       { label: 'Manager',        plural: 'Managers',         icon: Briefcase, bg: 'var(--color-accent-soft)',  color: 'var(--color-accent)',  scoped: false },
+  chef_projet:   { label: 'Chef de Projet', plural: 'Chefs de Projet',  icon: UserCog,   bg: 'var(--color-warning-soft)', color: 'var(--color-warning)', scoped: true },
+  collaborateur: { label: 'Collaborateur',  plural: 'Collaborateurs',   icon: User,      bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)', scoped: true },
 };
+const ROLE_ORDER = ['admin', 'manager', 'chef_projet', 'collaborateur'];
 
 // ── Modal création utilisateur ───────────────────────────────────
-function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) {
+function CreateUserModal({ projets, collaborateurs, allowedRoles, onClose, onLoadingChange }) {
   const addCollaborateur = useAppStore((s) => s.addCollaborateur);
   const updateCollaborateur = useAppStore((s) => s.updateCollaborateur);
   const [form, setForm] = useState({
-    prenom: '', nom: '', email: '', password: '', role: 'collaborateur',
+    prenom: '', nom: '', email: '', password: '', role: allowedRoles.includes('collaborateur') ? 'collaborateur' : allowedRoles[0],
     collaborateur_id: '', projets_autorises: [],
   });
   const [loading, setLoading] = useState(false);
@@ -35,6 +41,8 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
       : [...f.projets_autorises, pid],
   }));
 
+  const scoped = ROLE_META[form.role]?.scoped;
+
   const handleCreate = async () => {
     if (!form.prenom.trim() || !form.nom.trim() || !form.email.trim() || !form.password.trim()) {
       setError('Tous les champs marqués * sont obligatoires.');
@@ -49,7 +57,7 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
     try {
       let collabId = form.collaborateur_id;
 
-      if (form.role === 'collaborateur') {
+      if (scoped) {
         if (collabId) {
           // Lier le compte à un collaborateur existant (user_id sera mis à jour après)
         } else {
@@ -70,7 +78,7 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
         nom: form.nom.trim(),
         role: form.role,
         collaborateur_id: collabId || '',
-        projets_autorises: form.role === 'collaborateur' ? form.projets_autorises : [],
+        projets_autorises: scoped ? form.projets_autorises : [],
       });
 
       // Lier le collaborateur à ce compte Firebase (user_id)
@@ -106,12 +114,11 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
       </label>
       <label style={labelStyle}>Rôle
         <select style={inputStyle} value={form.role} onChange={(e) => upd('role', e.target.value)}>
-          <option value="collaborateur">Collaborateur</option>
-          <option value="admin">Admin</option>
+          {allowedRoles.map((r) => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
         </select>
       </label>
 
-      {form.role === 'collaborateur' && (
+      {scoped && (
         <>
           <label style={labelStyle}>
             Profil collaborateur
@@ -275,6 +282,97 @@ function ChangePasswordModal({ user, onClose }) {
   );
 }
 
+// ── Une ligne compte utilisateur ──────────────────────────────────
+function UserRow({ u, isLast, roleKey, projets, collaborateurs, getProjetNames, locked,
+  onChangePassword, onEditRights, onDeactivate, onActivate, onCreateCollabProfile }) {
+  const meta = ROLE_META[roleKey];
+  const collab = meta.scoped ? collaborateurs.find((c) => c.id === u.collaborateur_id) : null;
+  const projetNames = meta.scoped ? getProjetNames(u.projets_autorises) : [];
+  const Icon = meta.icon;
+
+  return (
+    <div style={{ padding: '14px 16px', borderBottom: isLast ? 'none' : '0.5px solid var(--color-border-soft)', opacity: u.actif === false ? 0.5 : 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {collab ? (
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#FFFFFF' }}>
+            {collab.initiales}
+          </div>
+        ) : (
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon size={16} color={meta.color} />
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.prenom} {u.nom}</p>
+            {u.actif === false && <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 99, background: 'var(--color-bg-secondary)', color: 'var(--color-text-tertiary)', border: '0.5px solid var(--color-border)' }}>Inactif</span>}
+            {collab && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>· lié à {collab.prenom} {collab.nom}</span>}
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>{u.email}</p>
+        </div>
+        {!meta.scoped && (
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: meta.bg, color: meta.color, fontWeight: 600 }}>{meta.label}</span>
+        )}
+        {u.derniere_connexion && (
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
+            Connecté : {new Date(u.derniere_connexion?.seconds ? u.derniere_connexion.seconds * 1000 : u.derniere_connexion).toLocaleDateString('fr-FR')}
+          </span>
+        )}
+        {!locked && (
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            {meta.scoped && !collab && u.actif !== false && (
+              <button
+                title="Créer un profil collaborateur pour cet utilisateur"
+                onClick={() => onCreateCollabProfile(u)}
+                style={{ ...iconBtn, color: 'var(--color-success)', fontSize: 11, padding: '5px 8px', gap: 4, whiteSpace: 'nowrap' }}
+              >
+                <User size={12} /> Créer profil
+              </button>
+            )}
+            <button title="Changer le mot de passe" onClick={() => onChangePassword(u)} style={iconBtn}>
+              <Lock size={13} />
+            </button>
+            {meta.scoped && (
+              <button onClick={() => onEditRights(u)} title="Gérer les accès projets" style={iconBtn}>
+                <Key size={13} />
+              </button>
+            )}
+            {roleKey !== 'admin' && (
+              u.actif !== false ? (
+                <button onClick={() => onDeactivate(u)} title="Désactiver" style={{ ...iconBtn, color: 'var(--color-danger)' }}>
+                  <UserX size={13} />
+                </button>
+              ) : (
+                <button onClick={() => onActivate(u)} title="Réactiver" style={{ ...iconBtn, color: 'var(--color-success)' }}>
+                  <UserCheck size={13} />
+                </button>
+              )
+            )}
+          </div>
+        )}
+      </div>
+      {meta.scoped && projetNames.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 48, marginTop: 6 }}>
+          {projetNames.map((nom) => {
+            const p = projets.find((pr) => pr.nom === nom);
+            return (
+              <span key={nom} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, border: '0.5px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                {p && <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.couleur }} />}
+                {nom}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {meta.scoped && projetNames.length === 0 && u.actif !== false && !locked && (
+        <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 12, color: 'var(--color-danger)' }}>
+          ⚠ Aucun projet assigné — cliquez sur 🔑 pour assigner des projets
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Page principale ──────────────────────────────────────────────
 export default function ConsoleAdmin() {
   const usersAdmin = useAppStore((s) => s.usersAdmin);
@@ -285,17 +383,27 @@ export default function ConsoleAdmin() {
   const addCollaborateur = useAppStore((s) => s.addCollaborateur);
   const updateCollaborateur = useAppStore((s) => s.updateCollaborateur);
   const updateUserAdmin = useAppStore((s) => s.updateUserAdmin);
+  const { isManager } = useAuth();
 
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [changingPassword, setChangingPassword] = useState(null);
   const [creating, setCreating] = useState(false);
 
-  const admins = usersAdmin.filter((u) => u.role === 'admin');
-  const collabs = usersAdmin.filter((u) => u.role === 'collaborateur');
+  // Un Manager ne peut ni créer un Admin, ni agir sur un compte Admin existant
+  // (garde-fou UI — la règle Firestore l'impose de toute façon côté serveur).
+  const allowedRoles = isManager ? ROLE_ORDER.filter((r) => r !== 'admin') : ROLE_ORDER;
 
   const getProjetNames = (ids = []) =>
     ids.map((pid) => projets.find((p) => p.id === pid)?.nom).filter(Boolean);
+
+  const handleCreateCollabProfile = async (u) => {
+    const newCollab = await addCollaborateur({
+      prenom: u.prenom, nom: u.nom, couleur: randomColor(), tjm: 0, poste: '',
+    });
+    await updateCollaborateur(newCollab.id, { user_id: u.uid });
+    await updateUserAdmin(u.uid, { collaborateur_id: newCollab.id });
+  };
 
   return (
     <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
@@ -309,135 +417,47 @@ export default function ConsoleAdmin() {
         }
       />
 
-      {/* Admins */}
-      <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Shield size={15} color="var(--color-info)" /> Administrateurs
-      </h3>
-      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 28 }}>
-        {admins.length === 0 && (
-          <p style={{ padding: '20px 16px', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 13 }}>Aucun admin.</p>
-        )}
-        {admins.map((u, i) => (
-          <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < admins.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-info-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Shield size={16} color="var(--color-info)" />
+      {ROLE_ORDER.map((roleKey) => {
+        const meta = ROLE_META[roleKey];
+        const list = usersAdmin.filter((u) => u.role === roleKey);
+        const locked = isManager && roleKey === 'admin'; // Manager : lecture seule sur les comptes Admin
+        const Icon = meta.icon;
+        return (
+          <div key={roleKey} style={{ marginBottom: 28 }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon size={15} color={meta.color} /> {meta.plural}
+            </h3>
+            <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
+              {list.length === 0 && (
+                <p style={{ padding: '20px 16px', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 13 }}>
+                  Aucun compte {meta.label.toLowerCase()}.
+                </p>
+              )}
+              {list.map((u, i) => (
+                <UserRow
+                  key={u.uid}
+                  u={u}
+                  isLast={i === list.length - 1}
+                  roleKey={roleKey}
+                  projets={projets}
+                  collaborateurs={collaborateurs}
+                  getProjetNames={getProjetNames}
+                  locked={locked}
+                  onChangePassword={setChangingPassword}
+                  onEditRights={setEditingUser}
+                  onDeactivate={(user) => { if (confirm(`Désactiver ${user.prenom} ${user.nom} ?`)) deactivateUserAdmin(user.uid); }}
+                  onActivate={(user) => activateUserAdmin(user.uid)}
+                  onCreateCollabProfile={handleCreateCollabProfile}
+                />
+              ))}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.prenom} {u.nom}</p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>{u.email}</p>
-            </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--color-info-soft)', color: 'var(--color-info)', fontWeight: 600 }}>Admin</span>
-            {u.derniere_connexion && (
-              <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
-                Connecté : {new Date(u.derniere_connexion?.seconds ? u.derniere_connexion.seconds * 1000 : u.derniere_connexion).toLocaleDateString('fr-FR')}
-              </span>
-            )}
-            <button
-              title="Changer le mot de passe"
-              onClick={() => setChangingPassword(u)}
-              style={iconBtn}
-            >
-              <Lock size={13} />
-            </button>
           </div>
-        ))}
-      </div>
-
-      {/* Collaborateurs */}
-      <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <User size={15} color="var(--color-text-secondary)" /> Collaborateurs
-      </h3>
-      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
-        {collabs.length === 0 && (
-          <p style={{ padding: '20px 16px', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 13 }}>
-            Aucun collaborateur. Cliquez sur "Créer un utilisateur" pour en ajouter.
-          </p>
-        )}
-        {collabs.map((u, i) => {
-          const projetNames = getProjetNames(u.projets_autorises);
-          const collab = collaborateurs.find((c) => c.id === u.collaborateur_id);
-          return (
-            <div key={u.uid} style={{ padding: '14px 16px', borderBottom: i < collabs.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none', opacity: u.actif === false ? 0.5 : 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: collab?.couleur || 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#FFFFFF' }}>
-                  {collab?.initiales || `${u.prenom?.[0] || ''}${u.nom?.[0] || ''}`}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.prenom} {u.nom}</p>
-                    {u.actif === false && <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 99, background: 'var(--color-bg-secondary)', color: 'var(--color-text-tertiary)', border: '0.5px solid var(--color-border)' }}>Inactif</span>}
-                    {collab && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>· lié à {collab.prenom} {collab.nom}</span>}
-                  </div>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>{u.email}</p>
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  {!collab && u.actif !== false && (
-                    <button
-                      title="Créer un profil collaborateur pour cet utilisateur"
-                      onClick={async () => {
-                        const newCollab = await addCollaborateur({
-                          prenom: u.prenom, nom: u.nom, couleur: randomColor(), tjm: 0, poste: '',
-                        });
-                        await updateCollaborateur(newCollab.id, { user_id: u.uid });
-                        await updateUserAdmin(u.uid, { collaborateur_id: newCollab.id });
-                      }}
-                      style={{ ...iconBtn, color: 'var(--color-success)', fontSize: 11, padding: '5px 8px', gap: 4, whiteSpace: 'nowrap' }}
-                    >
-                      <User size={12} /> Créer profil
-                    </button>
-                  )}
-                  <button
-                    title="Changer le mot de passe"
-                    onClick={() => setChangingPassword(u)}
-                    style={iconBtn}
-                  >
-                    <Lock size={13} />
-                  </button>
-                  <button onClick={() => setEditingUser(u)} title="Gérer les accès projets" style={iconBtn}>
-                    <Key size={13} />
-                  </button>
-                  {u.actif !== false ? (
-                    <button onClick={() => { if (confirm(`Désactiver ${u.prenom} ${u.nom} ?`)) deactivateUserAdmin(u.uid); }} title="Désactiver" style={{ ...iconBtn, color: 'var(--color-danger)' }}>
-                      <UserX size={13} />
-                    </button>
-                  ) : (
-                    <button onClick={() => activateUserAdmin(u.uid)} title="Réactiver" style={{ ...iconBtn, color: 'var(--color-success)' }}>
-                      <UserCheck size={13} />
-                    </button>
-                  )}
-                </div>
-              </div>
-              {projetNames.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, paddingLeft: 48, marginTop: 6 }}>
-                  {projetNames.map((nom) => {
-                    const p = projets.find((pr) => pr.nom === nom);
-                    return (
-                      <span key={nom} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, border: '0.5px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {p && <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.couleur }} />}
-                        {nom}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-              {projetNames.length === 0 && u.actif !== false && (
-                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 12, color: 'var(--color-danger)' }}>
-                  ⚠ Aucun projet assigné — cliquez sur 🔑 pour assigner des projets
-                </p>
-              )}
-              {u.derniere_connexion && (
-                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-                  Dernière connexion : {new Date(u.derniere_connexion?.seconds ? u.derniere_connexion.seconds * 1000 : u.derniere_connexion).toLocaleDateString('fr-FR')}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+        );
+      })}
 
       {showCreate && (
         <Modal title="Créer un compte utilisateur" onClose={() => { if (!creating) setShowCreate(false); }} width={520} preventClose={creating}>
-          <CreateUserModal projets={projets} collaborateurs={collaborateurs} onClose={() => setShowCreate(false)} onLoadingChange={setCreating} />
+          <CreateUserModal projets={projets} collaborateurs={collaborateurs} allowedRoles={allowedRoles} onClose={() => setShowCreate(false)} onLoadingChange={setCreating} />
         </Modal>
       )}
 
@@ -457,7 +477,7 @@ export default function ConsoleAdmin() {
 }
 
 const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', boxSizing: 'border-box' };
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', boxSizing: 'border-box' };
 const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, cursor: 'pointer' };
+const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', fontSize: 13, cursor: 'pointer' };
 const iconBtn = { padding: '6px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', color: 'var(--color-text-secondary)' };

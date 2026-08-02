@@ -14,29 +14,34 @@ import useAppStore from '../store/useAppStore';
  *   - Panneau « Non affecté » : conso importée du CRA à rattacher à une ligne
  */
 
+// Palette alignée sur les variables CSS de thème (voir index.css) — cette page avait été
+// oubliée lors de la migration thème sombre initiale (2026-08), corrigé le 2026-08-02.
 const C = {
-  ink: '#1A1A18', grey: '#6B6B68', line: '#E8E8E6', soft: '#F7F7F5',
-  warn: '#B45309', warnBg: '#FEF3C7', ok: '#166534', okBg: '#DCFCE7',
-  danger: '#B91C1C', dangerBg: '#FEE2E2',
+  ink: 'var(--color-text-primary)', grey: 'var(--color-text-secondary)',
+  line: 'var(--color-border)', soft: 'var(--color-bg-secondary)',
+  warn: 'var(--color-warning)', warnBg: 'var(--color-warning-soft)',
+  ok: 'var(--color-success)', okBg: 'var(--color-success-soft)',
+  danger: 'var(--color-danger)', dangerBg: 'var(--color-danger-soft)',
 };
 
 const S = {
   page: { padding: '32px 40px', color: C.ink },
   h1: { fontSize: 22, fontWeight: 700, margin: 0 },
   kpis: { display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' },
-  kpi: { border: `1px solid ${C.line}`, borderRadius: 10, padding: '12px 18px', minWidth: 150 },
+  kpi: { border: `1px solid ${C.line}`, borderRadius: 10, padding: '12px 18px', minWidth: 150, background: 'var(--color-bg-card)' },
   kpiLabel: { fontSize: 11, fontWeight: 600, color: C.grey, textTransform: 'uppercase', letterSpacing: 0.4 },
-  kpiValue: { fontSize: 20, fontWeight: 700, marginTop: 4 },
+  kpiValue: { fontSize: 20, fontWeight: 700, marginTop: 4, color: C.ink },
   kpiSub: { fontSize: 11.5, color: C.grey, marginTop: 2 },
-  block: { border: `1px solid ${C.line}`, borderRadius: 10, marginTop: 20, overflow: 'hidden' },
+  block: { border: `1px solid ${C.line}`, borderRadius: 10, marginTop: 20, overflow: 'hidden', background: 'var(--color-bg-card)' },
   blockHead: { padding: '12px 16px', background: C.soft, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' },
   th: { textAlign: 'right', fontSize: 11, fontWeight: 600, color: C.grey, padding: '8px 10px', borderBottom: `1px solid ${C.line}`, whiteSpace: 'nowrap' },
   thL: { textAlign: 'left' },
-  td: { fontSize: 13, padding: '6px 10px', borderBottom: `1px solid ${C.line}`, textAlign: 'right', whiteSpace: 'nowrap' },
+  td: { fontSize: 13, padding: '6px 10px', borderBottom: `1px solid ${C.line}`, textAlign: 'right', whiteSpace: 'nowrap', color: C.ink },
   tdL: { textAlign: 'left' },
-  input: { width: 58, fontSize: 13, padding: '4px 6px', border: `1px solid ${C.line}`, borderRadius: 6, textAlign: 'right', background: '#fff' },
+  input: { width: 58, fontSize: 13, padding: '4px 6px', border: `1px solid ${C.line}`, borderRadius: 6, textAlign: 'right', background: 'var(--color-bg-card)', color: C.ink },
   totalRow: { fontWeight: 700, background: C.soft },
-  btn: { fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.ink, color: '#fff' },
+  btn: { fontSize: 12.5, fontWeight: 600, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)' },
+  select: { fontSize: 13, padding: '6px 10px', border: `1px solid ${C.line}`, borderRadius: 8, background: 'var(--color-bg-card)', color: C.ink },
 };
 
 const MONTH_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
@@ -152,7 +157,7 @@ export default function SuiviMensuelRun() {
           </div>
         </div>
         <select
-          style={{ fontSize: 13, padding: '6px 10px', border: `1px solid ${C.line}`, borderRadius: 8 }}
+          style={S.select}
           value={anneeVue}
           onChange={(e) => setAnneeVue(Number(e.target.value))}
         >
@@ -209,7 +214,7 @@ export default function SuiviMensuelRun() {
 
       {/* Conso importée non affectée */}
       {Object.keys(nonAffectee).length > 0 && (
-        <div style={{ border: `1px solid #FDE68A`, background: C.warnBg, borderRadius: 10, padding: 16, marginTop: 20 }}>
+        <div style={{ border: `1px solid ${C.warn}`, background: C.warnBg, borderRadius: 10, padding: 16, marginTop: 20 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: C.warn }}>
             Consommation importée à rattacher à une ligne de commande
           </div>
@@ -224,7 +229,7 @@ export default function SuiviMensuelRun() {
                     {MONTH_SHORT[Number(m.split('-')[1]) - 1]} · {collabName(collabId)} · <b>{fmt(nbj)} j</b>
                   </span>
                   <select
-                    style={{ fontSize: 12.5, padding: '4px 8px', border: `1px solid #FDE68A`, borderRadius: 6 }}
+                    style={{ fontSize: 12.5, padding: '4px 8px', border: `1px solid ${C.warn}`, borderRadius: 6, background: 'var(--color-bg-card)', color: C.ink }}
                     defaultValue=""
                     onChange={(e) => e.target.value && affecterConso(projet.id, m, collabId, e.target.value)}
                   >
@@ -263,7 +268,7 @@ export default function SuiviMensuelRun() {
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1100 }}>
                 <thead>
                   <tr>
-                    <th style={{ ...S.th, ...S.thL, position: 'sticky', left: 0, background: '#fff' }}>Collaborateur</th>
+                    <th style={{ ...S.th, ...S.thL, position: 'sticky', left: 0, background: 'var(--color-bg-card)' }}>Collaborateur</th>
                     <th style={S.th}>PU</th>
                     <th style={S.th}>NBJ cmd</th>
                     {months.map((m, i) => (
@@ -281,7 +286,7 @@ export default function SuiviMensuelRun() {
                     const k = calc.parLigne[l.id] ?? {};
                     return (
                       <tr key={l.id}>
-                        <td style={{ ...S.td, ...S.tdL, fontWeight: 600, position: 'sticky', left: 0, background: '#fff' }}>
+                        <td style={{ ...S.td, ...S.tdL, fontWeight: 600, position: 'sticky', left: 0, background: 'var(--color-bg-card)' }}>
                           {collabName(l.collabId)}
                         </td>
                         <td style={S.td}>{fmt(l.pu, 0)} €</td>

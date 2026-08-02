@@ -75,9 +75,11 @@ function CollaborateurForm({ initial = {}, onSave, onCancel }) {
 }
 
 const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', width: '100%', fontFamily: 'inherit' };
+// background + color explicites : sinon le <select>/<input> hérite du color: text-secondary
+// du <label> parent tout en gardant un fond blanc natif — illisible en thème sombre.
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', width: '100%', fontFamily: 'inherit', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)' };
 const btnPrimStyle = { padding: '8px 16px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '8px 16px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { padding: '8px 16px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
 
 export default function Collaborateurs() {
   const navigate = useNavigate();

@@ -123,19 +123,26 @@ const useAppStore = create((set, get) => ({
   taches: [],
   savedAt: null,
   _unsubscribers: [],
+  _uid: null,
 
   init: (userDoc) => {
     get()._unsubscribers.forEach((u) => u());
 
-    const isCollab = userDoc?.role === 'collaborateur';
+    const role = userDoc?.role;
     const uid = userDoc?.uid;
+    // Admin + Manager : accès total, indépendant de projets_autorises.
+    const hasFullAccess = role === 'admin' || role === 'manager';
+    // Collaborateur + Chef de Projet : accès limité à leur liste projets_autorises
+    // (le niveau d'accès À L'INTÉRIEUR de ces projets dépend du rôle, géré côté firestore.rules/UI).
+    const isScopedToProjets = role === 'collaborateur' || role === 'chef_projet';
+    // To-do perso : réservée aux rôles "métier PM" (pas Collaborateur), strictement personnelle.
+    const canUseTaches = role === 'admin' || role === 'manager' || role === 'chef_projet';
 
     const unsubCollabs = subscribeCollaborateurs((items) => {
       set({ collaborateurs: items });
     });
 
-    // Pour les collabs : filtre sur leurs projets autorisés uniquement
-    const projetIds = isCollab ? (userDoc.projets_autorises || []) : null;
+    const projetIds = isScopedToProjets ? (userDoc.projets_autorises || []) : null;
     const unsubProjets = subscribeProjets((items) => {
       set({ projets: items.map(migrateProjet) });
     }, projetIds);
@@ -144,15 +151,14 @@ const useAppStore = create((set, get) => ({
       set({ usersAdmin: items });
     });
 
-    // To-do personnelle du PM : réservée à l'admin (cf. firestore.rules)
-    const unsubTaches = isCollab
-      ? () => {}
-      : subscribeTaches((items) => { set({ taches: items }); });
-    if (isCollab) set({ taches: [] });
+    const unsubTaches = canUseTaches
+      ? subscribeTaches(uid, (items) => { set({ taches: items }); })
+      : () => {};
+    if (!canUseTaches) set({ taches: [] });
 
-    // Pour les collabs : re-init si projets_autorises change (admin assigne un nouveau projet)
+    // Re-init si projets_autorises change (admin/manager assigne un nouveau projet)
     let unsubMyDoc = () => {};
-    if (isCollab && uid) {
+    if (isScopedToProjets && uid) {
       let currentIds = JSON.stringify(projetIds || []);
       unsubMyDoc = subscribeUserDoc(uid, (freshDoc) => {
         const newIds = JSON.stringify(freshDoc.projets_autorises || []);
@@ -163,12 +169,12 @@ const useAppStore = create((set, get) => ({
       });
     }
 
-    set({ _unsubscribers: [unsubCollabs, unsubProjets, unsubUsers, unsubTaches, unsubMyDoc] });
+    set({ _uid: uid || null, _unsubscribers: [unsubCollabs, unsubProjets, unsubUsers, unsubTaches, unsubMyDoc] });
   },
 
   destroy: () => {
     get()._unsubscribers.forEach((u) => u());
-    set({ _unsubscribers: [], usersAdmin: [], taches: [] });
+    set({ _unsubscribers: [], usersAdmin: [], taches: [], _uid: null });
   },
 
   _touch: () => set({ savedAt: new Date().toISOString() }),
@@ -240,6 +246,26 @@ const useAppStore = create((set, get) => ({
       ...projet,
     };
     await saveProjet(id, newProjet);
+
+    // Chef de Projet : le projet qu'il vient de créer doit immédiatement entrer dans son
+    // périmètre (projets_autorises), sinon il disparaîtrait aussitôt de sa vue (accès scoped).
+    const uid = get()._uid;
+    const me = get().usersAdmin.find((u) => u.uid === uid);
+    if (me?.role === 'chef_projet') {
+      const current = me.projets_autorises || [];
+      if (!current.includes(id)) {
+        await patchUser(uid, { projets_autorises: [...current, id] });
+      }
+    }
+
+    // Insertion optimiste locale : pour un Chef de Projet, le listener projets (scoped à
+    // projets_autorises) ne recevra ce nouveau projet qu'après que le re-init déclenché par
+    // subscribeUserDoc ait rattrapé le patch ci-dessus — sans ça, la navigation immédiate vers
+    // /projet/{id} qui suit la création renverrait vers "/" (projet introuvable) le temps du
+    // round-trip. Le prochain onSnapshot (Admin/Manager : immédiat déjà ; CDP : après re-init)
+    // remplacera de toute façon ce tableau en entier, donc pas de risque de doublon durable.
+    set((s) => (s.projets.some((p) => p.id === id) ? s : { projets: [...s.projets, migrateProjet(newProjet)] }));
+
     get()._touch();
     return newProjet;
   },
@@ -978,6 +1004,7 @@ const useAppStore = create((set, get) => ({
     const newTache = {
       id, titre: '', note: '', statut: 'a_faire', deadline: null,
       created_at: new Date().toISOString(),
+      owner_id: get()._uid || null,
       ...tache,
     };
     await saveTache(id, newTache);

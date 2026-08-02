@@ -68,9 +68,13 @@ export async function removeProjet(id) {
   await deleteDoc(doc(db, 'projets', id));
 }
 
-// ── Tâches (to-do personnelle du PM, indépendante des projets) ────
-export function subscribeTaches(callback) {
-  return onSnapshot(collection(db, 'taches'), (snap) => {
+// ── Tâches (to-do personnelle, indépendante des projets) ──────────
+// Strictement personnelle : filtrée par owner_id, chacun ne voit jamais celle d'un autre
+// compte (Admin/Manager/Chef de Projet ont chacun la leur — cf. firestore.rules).
+export function subscribeTaches(uid, callback) {
+  if (!uid) { callback([]); return () => {}; }
+  const q = query(collection(db, 'taches'), where('owner_id', '==', uid));
+  return onSnapshot(q, (snap) => {
     const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     callback(items);
   });

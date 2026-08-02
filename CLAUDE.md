@@ -20,6 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 (`<project-id>` is whatever `firebase use --add` set, e.g. `projmaster-v3`.) Once that's in place, `firebase deploy --only firestore:dev` / `:prod` work normally. Note Firestore database IDs must be 4-63 characters (`dev` alone is rejected).
 
+**`npm run fb -- deploy --only firestore:dev` silently deploys to BOTH `dev` and `prod` (discovered 2026-08-02):** `npm`'s own CLI has a reserved global `--only` config flag (historically `--only=prod`/`--only=dev` for filtering dependencies), and it intercepts `--only <value>` even when passed after `--` to a `run-script`. npm prints `npm warn invalid config only="firestore:dev" ... Must be one of: null, prod, production`, silently drops the flag, and runs the bare underlying script — here `firebase deploy` with no `--only` at all, which per `firebase.json`'s array-based firestore target config deploys rules to *both* `dev` and `prod` simultaneously (and triggers a functions deploy check too). This happened live on 2026-08-02 pushing the v6 4-role RBAC `firestore.rules` to prod without a "GO OFFICIEL" — low-impact in that case since the rules change was additive/backward-compatible and no prod user had a `manager`/`chef_projet` role yet, but it's a real gap in the deploy gate. **Never invoke `firebase deploy --only ...` through `npm run fb --`** — call `firebase` directly (or `npx firebase`), e.g. `firebase deploy --only firestore:dev`, which passes the flag through untouched.
+
 ## Commands
 
 ```

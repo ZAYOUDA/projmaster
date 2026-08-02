@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import PageHeader from '../components/layout/PageHeader';
 import Avatar from '../components/ui/Avatar';
 import CommandesRunSection from '../components/projet/CommandesRunSection';
@@ -11,6 +12,7 @@ const PALETTE = ['#378ADD', '#1D9E75', '#BA7517', '#D4537E', '#7F77DD', '#D85A30
 export default function ProjetParametres() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { hasFullAccess } = useAuth();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
   const updateProjet = useAppStore((s) => s.updateProjet);
@@ -196,21 +198,23 @@ export default function ProjetParametres() {
       </section>
       )}
 
-      {/* Zone dangereuse */}
-      <section style={{ ...cardStyle, border: '1px solid var(--color-danger)', background: 'var(--color-danger-soft)' }}>
-        <h3 style={{ ...h3Style, color: 'var(--color-danger)' }}>Zone dangereuse</h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)' }}>Supprimer ce projet</p>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-              Supprime définitivement le projet, tout son WBS, planning, budget et jalons. Action irréversible.
-            </p>
+      {/* Zone dangereuse — suppression réservée à Admin/Manager (Chef de Projet peut éditer mais pas supprimer) */}
+      {hasFullAccess && (
+        <section style={{ ...cardStyle, border: '1px solid var(--color-danger)', background: 'var(--color-danger-soft)' }}>
+          <h3 style={{ ...h3Style, color: 'var(--color-danger)' }}>Zone dangereuse</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)' }}>Supprimer ce projet</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                Supprime définitivement le projet, tout son WBS, planning, budget et jalons. Action irréversible.
+              </p>
+            </div>
+            <button onClick={handleDelete} style={{ ...btnPrimStyle, background: 'var(--color-danger)', color: '#FFFFFF', flexShrink: 0, gap: 6 }}>
+              <Trash2 size={14} /> Supprimer le projet
+            </button>
           </div>
-          <button onClick={handleDelete} style={{ ...btnPrimStyle, background: 'var(--color-danger)', color: '#FFFFFF', flexShrink: 0, gap: 6 }}>
-            <Trash2 size={14} /> Supprimer le projet
-          </button>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
@@ -218,7 +222,10 @@ export default function ProjetParametres() {
 const cardStyle = { background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 24 };
 const h3Style = { margin: '0 0 16px', fontSize: 14, fontWeight: 600 };
 const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%' };
+// background + color explicites : sans ça, le <select> hérite du color: text-secondary du
+// <label> parent tout en gardant un fond blanc natif du navigateur — illisible en thème sombre
+// (texte beige clair sur fond blanc dans la liste déroulante). Cf. remontée utilisateur 2026-08-02.
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)' };
 const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 16px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
 const iconBtnStyle = { padding: 6, borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-danger)' };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon, Receipt } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../firebase/auth';
@@ -8,6 +8,12 @@ import { useTheme } from '../../hooks/useTheme';
 import NouveauProjetModal from './NouveauProjetModal';
 
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
+const ROLE_BADGE = {
+  admin:         { label: 'Admin',          bg: 'var(--color-info-soft)',    color: 'var(--color-info)' },
+  manager:       { label: 'Manager',        bg: 'var(--color-accent-soft)',  color: 'var(--color-accent)' },
+  chef_projet:   { label: 'Chef de Projet', bg: 'var(--color-warning-soft)', color: 'var(--color-warning)' },
+  collaborateur: { label: 'Collaborateur',  bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)' },
+};
 // Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS.
 const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'wbs');
 // toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
@@ -18,7 +24,10 @@ export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
   const addProjet = useAppStore((s) => s.addProjet);
   const navigate = useNavigate();
-  const { userDoc } = useAuth();
+  const { userDoc, hasFullAccess, isChefProjet } = useAuth();
+  // Chef de Projet peut créer des projets (ils s'ajoutent automatiquement à son périmètre),
+  // mais reste sans accès à la Console Admin / Import CRA — voir plus bas.
+  const canCreateProjet = hasFullAccess || isChefProjet;
   const [showNewProjet, setShowNewProjet] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
@@ -118,7 +127,7 @@ export default function Sidebar() {
           </>
         )}
 
-        {userDoc?.role === 'admin' && <button
+        {canCreateProjet && <button
           onClick={() => setShowNewProjet(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
@@ -137,16 +146,22 @@ export default function Sidebar() {
         <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Outils
         </div>
-        {userDoc?.role === 'admin' && (
+        {hasFullAccess && (
           <NavLink to="/admin" style={linkStyle}>
             <ShieldCheck size={15} />
             Console Admin
           </NavLink>
         )}
-        {userDoc?.role === 'admin' && (
+        {hasFullAccess && (
           <NavLink to="/import-cra" style={linkStyle}>
             <UploadCloud size={15} />
             Import CRA
+          </NavLink>
+        )}
+        {hasFullAccess && (
+          <NavLink to="/facturation-portefeuille" style={linkStyle}>
+            <Receipt size={15} />
+            Facturation
           </NavLink>
         )}
         <NavLink to="/collaborateurs" style={linkStyle}>
@@ -187,10 +202,10 @@ export default function Sidebar() {
             </div>
             <span style={{
               display: 'inline-block', padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600,
-              background: userDoc.role === 'admin' ? 'var(--color-info-soft)' : 'var(--color-bg-tertiary)',
-              color: userDoc.role === 'admin' ? 'var(--color-info)' : 'var(--color-text-secondary)',
+              background: ROLE_BADGE[userDoc.role]?.bg || 'var(--color-bg-tertiary)',
+              color: ROLE_BADGE[userDoc.role]?.color || 'var(--color-text-secondary)',
             }}>
-              {userDoc.role === 'admin' ? 'Admin' : 'Collaborateur'}
+              {ROLE_BADGE[userDoc.role]?.label || userDoc.role}
             </span>
           </div>
         )}
@@ -211,7 +226,14 @@ export default function Sidebar() {
       </div>
 
       {showNewProjet && (
-        <NouveauProjetModal onCreate={handleCreateProjet} onImportPlanning={handleImportPlanning} onClose={() => setShowNewProjet(false)} />
+        <NouveauProjetModal
+          onCreate={handleCreateProjet}
+          // Import depuis fichier → /projet/:id/import-wbs, une route réservée à AdminRoute
+          // (hasFullAccess) : un Chef de Projet qui l'emprunterait créerait le projet puis se
+          // ferait rediriger vers "/" sans pouvoir importer. On masque donc ce chemin pour lui.
+          onImportPlanning={hasFullAccess ? handleImportPlanning : undefined}
+          onClose={() => setShowNewProjet(false)}
+        />
       )}
     </aside>
   );

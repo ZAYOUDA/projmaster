@@ -1,8 +1,10 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
+// Malgré son nom (conservé pour ne pas renommer tous les usages), couvre désormais
+// Admin + Manager (hasFullAccess) — les deux rôles à accès total.
 export default function AdminRoute({ children }) {
-  const { user, userDoc, loading } = useAuth();
+  const { user, loading, hasFullAccess } = useAuth();
   if (loading || user === undefined) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#FAFAF9' }}>
@@ -10,6 +12,6 @@ export default function AdminRoute({ children }) {
       </div>
     );
   }
-  if (!user || userDoc?.role !== 'admin') return <Navigate to="/" replace />;
+  if (!user || !hasFullAccess) return <Navigate to="/" replace />;
   return children;
 }

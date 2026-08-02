@@ -9,9 +9,11 @@ const STATUS_VARIANT = { ouvert: 'danger', en_cours: 'warning', cloture: 'succes
 const STATUS_LABEL = Object.fromEntries(STATUS_LEVELS.map((s) => [s.key, s.label]));
 
 const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%' };
+// background + color explicites : sinon le <select>/<input> hérite du color: text-secondary
+// du <label> parent tout en gardant un fond blanc natif — illisible en thème sombre.
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)' };
 const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
 const iconBtnStyle = { padding: 5, borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', color: 'var(--color-text-secondary)' };
 const thStyle = { padding: '10px 12px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' };
 const tdStyle = { padding: '10px 12px', fontSize: 12.5, color: 'var(--color-text-primary)', maxWidth: 220 };
