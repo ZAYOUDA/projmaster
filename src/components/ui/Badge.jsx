@@ -1,19 +1,19 @@
 const VARIANTS = {
-  success:    { bg: '#E1F5EE', color: '#1D9E75' },
-  warning:    { bg: '#FAEEDA', color: '#BA7517' },
-  danger:     { bg: '#FAECE7', color: '#D85A30' },
-  info:       { bg: '#E6F1FB', color: '#378ADD' },
-  neutral:    { bg: '#F1EFE8', color: '#5F5E5A' },
+  success:    { bg: 'var(--color-success-soft)', color: 'var(--color-success)' },
+  warning:    { bg: 'var(--color-warning-soft)', color: 'var(--color-warning)' },
+  danger:     { bg: 'var(--color-danger-soft)', color: 'var(--color-danger)' },
+  info:       { bg: 'var(--color-info-soft)', color: 'var(--color-info)' },
+  neutral:    { bg: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' },
   // statut tâche
-  non_demarre: { bg: '#F1EFE8', color: '#888780' },
-  en_cours:    { bg: '#E6F1FB', color: '#378ADD' },
-  termine:     { bg: '#E1F5EE', color: '#1D9E75' },
-  bloque:      { bg: '#FAECE7', color: '#D85A30' },
+  non_demarre: { bg: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)' },
+  en_cours:    { bg: 'var(--color-info-soft)', color: 'var(--color-info)' },
+  termine:     { bg: 'var(--color-success-soft)', color: 'var(--color-success)' },
+  bloque:      { bg: 'var(--color-danger-soft)', color: 'var(--color-danger)' },
   // criticité risque
-  faible:     { bg: '#E1F5EE', color: '#1D9E75' },
-  moyenne:    { bg: '#FAEEDA', color: '#BA7517' },
-  elevee:     { bg: '#FAECE7', color: '#D85A30' },
-  critique:   { bg: '#FAE0DA', color: '#C0391B' },
+  faible:     { bg: 'var(--color-success-soft)', color: 'var(--color-success)' },
+  moyenne:    { bg: 'var(--color-warning-soft)', color: 'var(--color-warning)' },
+  elevee:     { bg: 'var(--color-danger-soft)', color: 'var(--color-danger)' },
+  critique:   { bg: 'var(--color-critical-soft)', color: 'var(--color-critical)' },
 };
 
 export default function Badge({ label, variant = 'neutral' }) {
