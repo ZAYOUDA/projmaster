@@ -92,25 +92,25 @@ function SuiviRow({ collab, suivi, moisList, highlightMois }) {
   const montantCmd = suivi.montantCommandé;
 
   return (
-    <tr style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)', verticalAlign: 'middle' }}>
+    <tr style={{ borderBottom: '0.5px solid var(--color-border-soft)', verticalAlign: 'middle' }}>
       {/* Collab */}
       <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#fff', flexShrink: 0 }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#FFFFFF', flexShrink: 0 }}>
             {collab.initiales}
           </div>
           <span style={{ fontSize: 12, fontWeight: 500 }}>{collab.prenom} {collab.nom}</span>
         </div>
       </td>
       {/* TJM */}
-      <td style={{ padding: '8px 12px', fontSize: 12, color: '#5F5E5A', textAlign: 'right', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--color-text-secondary)', textAlign: 'right', whiteSpace: 'nowrap' }}>
         {suivi.tjm > 0 ? `${suivi.tjm} €` : '—'}
       </td>
       {/* Cmd initiale */}
-      <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 500, textAlign: 'right', whiteSpace: 'nowrap', background: '#F8F8F7', borderRight: '2px solid rgba(0,0,0,0.08)' }}>
+      <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 500, textAlign: 'right', whiteSpace: 'nowrap', background: 'var(--color-bg-secondary)', borderRight: '2px solid var(--color-border-soft)' }}>
         {suivi.joursCommandés > 0 ? `${suivi.joursCommandés} j` : '—'}
       </td>
-      <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap', background: '#F8F8F7', borderRight: '2px solid rgba(0,0,0,0.1)' }}>
+      <td style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap', background: 'var(--color-bg-secondary)', borderRight: '2px solid var(--color-border)' }}>
         {montantCmd > 0 ? formatCurrency(montantCmd) : '—'}
       </td>
       {/* Colonnes mensuelles */}
@@ -122,25 +122,25 @@ function SuiviRow({ collab, suivi, moisList, highlightMois }) {
         const isHL = mois === highlightMois;
         const depassement = montantCmd > 0 && reste < 0;
         return [
-          <td key={`${mois}-conso-j`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', background: isHL ? '#FFF9EC' : '' }}>
-            {j > 0 ? <span style={{ color: '#D85A30', fontWeight: 500 }}>{j} j</span> : <span style={{ color: '#BDBCB8' }}>—</span>}
+          <td key={`${mois}-conso-j`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', background: isHL ? 'var(--color-warning-soft)' : '' }}>
+            {j > 0 ? <span style={{ color: 'var(--color-danger)', fontWeight: 500 }}>{j} j</span> : <span style={{ color: 'var(--color-text-tertiary)' }}>—</span>}
           </td>,
-          <td key={`${mois}-conso-eur`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', background: isHL ? '#FFF9EC' : '' }}>
-            {montant > 0 ? <span style={{ color: '#D85A30', fontWeight: 500 }}>{formatCurrency(montant)}</span> : <span style={{ color: '#BDBCB8' }}>—</span>}
+          <td key={`${mois}-conso-eur`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', background: isHL ? 'var(--color-warning-soft)' : '' }}>
+            {montant > 0 ? <span style={{ color: 'var(--color-danger)', fontWeight: 500 }}>{formatCurrency(montant)}</span> : <span style={{ color: 'var(--color-text-tertiary)' }}>—</span>}
           </td>,
-          <td key={`${mois}-reste-j`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', borderRight: '1px solid rgba(0,0,0,0.06)', background: isHL ? '#FFF9EC' : '' }}>
+          <td key={`${mois}-reste-j`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', borderRight: '1px solid var(--color-border-soft)', background: isHL ? 'var(--color-warning-soft)' : '' }}>
             {montantCmd > 0 ? (
-              <span style={{ color: depassement ? '#D85A30' : '#1D9E75', fontWeight: 500 }}>
+              <span style={{ color: depassement ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 500 }}>
                 {Math.round((montantCmd - cumulConso) / (suivi.tjm || 1))} j
               </span>
-            ) : <span style={{ color: '#BDBCB8' }}>—</span>}
+            ) : <span style={{ color: 'var(--color-text-tertiary)' }}>—</span>}
           </td>,
-          <td key={`${mois}-reste-eur`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', borderRight: '2px solid rgba(0,0,0,0.08)', background: isHL ? '#FFF9EC' : '' }}>
+          <td key={`${mois}-reste-eur`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', whiteSpace: 'nowrap', borderRight: '2px solid var(--color-border-soft)', background: isHL ? 'var(--color-warning-soft)' : '' }}>
             {montantCmd > 0 ? (
-              <span style={{ color: depassement ? '#D85A30' : '#1D9E75', fontWeight: 600 }}>
+              <span style={{ color: depassement ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 600 }}>
                 {formatCurrency(reste)}
               </span>
-            ) : <span style={{ color: '#BDBCB8' }}>—</span>}
+            ) : <span style={{ color: 'var(--color-text-tertiary)' }}>—</span>}
           </td>,
         ];
       })}
@@ -152,7 +152,7 @@ function SuiviRow({ collab, suivi, moisList, highlightMois }) {
 function TableauSuivi({ projet, commande, collaborateurs, moisList }) {
   const collabs = getCollabsActifs(projet, collaborateurs, commande.collaborateur_ids);
   if (collabs.length === 0) return (
-    <p style={{ fontSize: 12, color: '#888780', padding: '12px 0' }}>
+    <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', padding: '12px 0' }}>
       Aucun collaborateur avec des jours saisis pour cette commande.
     </p>
   );
@@ -175,29 +175,29 @@ function TableauSuivi({ projet, commande, collaborateurs, moisList }) {
       <table style={{ borderCollapse: 'collapse', minWidth: 700, fontSize: 13 }}>
         <thead>
           {/* Header mois */}
-          <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
-            <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#888780', width: 160 }}>Collaborateur</th>
-            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: '#888780', width: 70 }}>TJM</th>
-            <th colSpan={2} style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#5F5E5A', background: '#EFEFED', borderRight: '2px solid rgba(0,0,0,0.1)' }}>
+          <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
+            <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', width: 160 }}>Collaborateur</th>
+            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', width: 70 }}>TJM</th>
+            <th colSpan={2} style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', background: 'var(--color-bg-tertiary)', borderRight: '2px solid var(--color-border)' }}>
               Cmd initiale
             </th>
             {moisList.map((mois) => (
-              <th key={mois} colSpan={4} style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#1A1A18', borderRight: '2px solid rgba(0,0,0,0.08)', background: '#FAFAF9' }}>
+              <th key={mois} colSpan={4} style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--color-text-primary)', borderRight: '2px solid var(--color-border-soft)', background: 'var(--color-bg-secondary)' }}>
                 {moisCourt(mois)}
               </th>
             ))}
           </tr>
           {/* Sous-header */}
-          <tr style={{ background: '#F8F8F7', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+          <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)' }}>
             <th colSpan={2} />
-            <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#888780', background: '#EFEFED' }}>NBJ</th>
-            <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#888780', background: '#EFEFED', borderRight: '2px solid rgba(0,0,0,0.1)' }}>€ HT</th>
+            <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-text-tertiary)', background: 'var(--color-bg-tertiary)' }}>NBJ</th>
+            <th style={{ padding: '6px 12px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-text-tertiary)', background: 'var(--color-bg-tertiary)', borderRight: '2px solid var(--color-border)' }}>€ HT</th>
             {moisList.map((mois) => (
               [
-                <th key={`${mois}-c-j`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#D85A30' }}>NBJ conso.</th>,
-                <th key={`${mois}-c-e`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#D85A30' }}>€ HT</th>,
-                <th key={`${mois}-r-j`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#1D9E75' }}>NBJ reste</th>,
-                <th key={`${mois}-r-e`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: '#1D9E75', borderRight: '2px solid rgba(0,0,0,0.08)' }}>€ HT</th>,
+                <th key={`${mois}-c-j`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-danger)' }}>NBJ conso.</th>,
+                <th key={`${mois}-c-e`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-danger)' }}>€ HT</th>,
+                <th key={`${mois}-r-j`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-success)' }}>NBJ reste</th>,
+                <th key={`${mois}-r-e`} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 500, color: 'var(--color-success)', borderRight: '2px solid var(--color-border-soft)' }}>€ HT</th>,
               ]
             ))}
           </tr>
@@ -223,12 +223,12 @@ function TotalRow({ projet, collabs, moisList }) {
   let cumulConso = 0;
 
   return (
-    <tr style={{ background: '#F8F8F7', borderTop: '2px solid rgba(0,0,0,0.1)', fontWeight: 700 }}>
-      <td colSpan={2} style={{ padding: '8px 12px', fontSize: 12, color: '#1A1A18' }}>TOTAL</td>
-      <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', background: '#EFEFED' }}>
+    <tr style={{ background: 'var(--color-bg-secondary)', borderTop: '2px solid var(--color-border)', fontWeight: 700 }}>
+      <td colSpan={2} style={{ padding: '8px 12px', fontSize: 12, color: 'var(--color-text-primary)' }}>TOTAL</td>
+      <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', background: 'var(--color-bg-tertiary)' }}>
         {totJCmd > 0 ? `${totJCmd} j` : '—'}
       </td>
-      <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', background: '#EFEFED', borderRight: '2px solid rgba(0,0,0,0.1)' }}>
+      <td style={{ padding: '8px 12px', fontSize: 12, textAlign: 'right', background: 'var(--color-bg-tertiary)', borderRight: '2px solid var(--color-border)' }}>
         {totCmd > 0 ? formatCurrency(totCmd) : '—'}
       </td>
       {moisList.map((mois) => {
@@ -241,16 +241,16 @@ function TotalRow({ projet, collabs, moisList }) {
         const reste = totCmd - cumulConso;
         const dep = totCmd > 0 && reste < 0;
         return [
-          <td key={`t-${mois}-cj`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: '#D85A30' }}>
+          <td key={`t-${mois}-cj`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: 'var(--color-danger)' }}>
             {consoMois > 0 ? `${Math.round(consoMois / (totCmd / (totJCmd || 1)))} j` : '—'}
           </td>,
-          <td key={`t-${mois}-ce`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: '#D85A30' }}>
+          <td key={`t-${mois}-ce`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: 'var(--color-danger)' }}>
             {consoMois > 0 ? formatCurrency(consoMois) : '—'}
           </td>,
-          <td key={`t-${mois}-rj`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: dep ? '#D85A30' : '#1D9E75' }}>
+          <td key={`t-${mois}-rj`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: dep ? 'var(--color-danger)' : 'var(--color-success)' }}>
             {totCmd > 0 ? `${Math.round(reste / (totCmd / (totJCmd || 1)))} j` : '—'}
           </td>,
-          <td key={`t-${mois}-re`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: dep ? '#D85A30' : '#1D9E75', borderRight: '2px solid rgba(0,0,0,0.08)' }}>
+          <td key={`t-${mois}-re`} style={{ padding: '8px 10px', fontSize: 12, textAlign: 'right', color: dep ? 'var(--color-danger)' : 'var(--color-success)', borderRight: '2px solid var(--color-border-soft)' }}>
             {totCmd > 0 ? formatCurrency(reste) : '—'}
           </td>,
         ];
@@ -297,9 +297,9 @@ function ModalCommande({ projet, collaborateurs, commande, onClose }) {
       </label>
 
       <div>
-        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: '#5F5E5A' }}>Collaborateurs sur cette commande</p>
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>Collaborateurs sur cette commande</p>
         {collabsProjet.length === 0 && (
-          <p style={{ fontSize: 12, color: '#888780' }}>Aucun collaborateur affecté dans le WBS.</p>
+          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Aucun collaborateur affecté dans le WBS.</p>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {collabsProjet.map((c) => (
@@ -308,9 +308,9 @@ function ModalCommande({ projet, collaborateurs, commande, onClose }) {
                 type="checkbox"
                 checked={selectedIds.has(c.id)}
                 onChange={() => toggle(c.id)}
-                style={{ width: 14, height: 14, accentColor: '#378ADD' }}
+                style={{ width: 14, height: 14, accentColor: 'var(--color-accent)' }}
               />
-              <div style={{ width: 20, height: 20, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#fff' }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#FFFFFF' }}>
                 {c.initiales}
               </div>
               {c.prenom} {c.nom}
@@ -354,7 +354,7 @@ function OngletSuivi({ projet, collaborateurs }) {
         <div>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Suivi de consommation mensuel</h3>
           {!hasMonthlyData && (
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#888780' }}>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
               Aucune saisie mensuelle — ajoutez les jours réalisés par mois dans le WBS (panneau détail d'une tâche).
             </p>
           )}
@@ -369,26 +369,26 @@ function OngletSuivi({ projet, collaborateurs }) {
         commandes.map((cmd) => (
           <div key={cmd.id} style={{ marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{ background: '#1A1A18', color: '#fff', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 5 }}>
+              <div style={{ background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 5 }}>
                 {cmd.numero}
               </div>
-              {cmd.notes && <span style={{ fontSize: 12, color: '#888780' }}>{cmd.notes}</span>}
+              {cmd.notes && <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>{cmd.notes}</span>}
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button onClick={() => setEditingCommande(cmd)} style={iconBtn} title="Modifier">
                   <Settings2 size={13} />
                 </button>
                 <button
                   onClick={() => { if (confirm(`Supprimer la commande ${cmd.numero} ?`)) deleteCommande(projet.id, cmd.id); }}
-                  style={{ ...iconBtn, color: '#D85A30' }}
+                  style={{ ...iconBtn, color: 'var(--color-danger)' }}
                   title="Supprimer"
                 >
                   <Trash2 size={13} />
                 </button>
               </div>
             </div>
-            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
               {moisList.length === 0 ? (
-                <p style={{ padding: '20px 16px', margin: 0, fontSize: 12, color: '#888780' }}>
+                <p style={{ padding: '20px 16px', margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>
                   Aucune saisie mensuelle trouvée. Saisissez les jours réalisés par mois dans le WBS.
                 </p>
               ) : (
@@ -404,13 +404,13 @@ function OngletSuivi({ projet, collaborateurs }) {
         ))
       ) : (
         /* Vue globale si pas de commandes */
-        <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
           {collabsGlobaux.length === 0 ? (
-            <p style={{ padding: '32px', textAlign: 'center', color: '#888780', margin: 0 }}>
+            <p style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-tertiary)', margin: 0 }}>
               Aucun collaborateur affecté dans le WBS.
             </p>
           ) : moisList.length === 0 ? (
-            <p style={{ padding: '32px', textAlign: 'center', color: '#888780', margin: 0 }}>
+            <p style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-tertiary)', margin: 0 }}>
               Saisissez les jours réalisés par mois dans le WBS pour voir le suivi ici.
             </p>
           ) : (
@@ -504,44 +504,44 @@ function ModalCreation({ projet, collaborateurs, onClose }) {
         </label>
         <button onClick={handleGenerate} style={btnPrimStyle}>Générer les lignes</button>
       </div>
-      {dejaFacture && <p style={{ margin: 0, fontSize: 12, color: '#BA7517', background: '#FFF3CD', padding: '6px 10px', borderRadius: 6 }}>Une facture existe déjà pour ce mois.</p>}
+      {dejaFacture && <p style={{ margin: 0, fontSize: 12, color: 'var(--color-warning)', background: 'var(--color-warning-soft)', padding: '6px 10px', borderRadius: 6 }}>Une facture existe déjà pour ce mois.</p>}
       {generated && (
         <>
-          <div style={{ border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ border: '0.5px solid var(--color-border)', borderRadius: 8, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead><tr style={{ background: '#F8F8F7' }}>
+              <thead><tr style={{ background: 'var(--color-bg-secondary)' }}>
                 {['Collaborateur', 'Jours', 'TJM', 'Montant', 'Description', ''].map((h) => (
-                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: '#888780', fontWeight: 500 }}>{h}</th>
+                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
                 {lignes.map((l) => (
-                  <tr key={l.id} style={{ borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+                  <tr key={l.id} style={{ borderTop: '0.5px solid var(--color-border-soft)' }}>
                     <td style={{ padding: '7px 10px' }}><input style={{ ...inputStyle, width: 130 }} value={l.collaborateur_nom} onChange={(e) => updateLigne(l.id, 'collaborateur_nom', e.target.value)} /></td>
                     <td style={{ padding: '7px 10px' }}><input type="number" min={0} step={0.5} style={{ ...inputStyle, width: 58 }} value={l.jours} onChange={(e) => updateLigne(l.id, 'jours', parseFloat(e.target.value) || 0)} /></td>
-                    <td style={{ padding: '7px 10px', fontSize: 12, color: '#5F5E5A' }}>{l.tjm > 0 ? `${l.tjm} €/j` : '—'}</td>
+                    <td style={{ padding: '7px 10px', fontSize: 12, color: 'var(--color-text-secondary)' }}>{l.tjm > 0 ? `${l.tjm} €/j` : '—'}</td>
                     <td style={{ padding: '7px 10px', fontWeight: 500 }}>{formatCurrency(l.montant)}</td>
                     <td style={{ padding: '7px 10px' }}><input style={{ ...inputStyle, width: 170 }} value={l.description} onChange={(e) => updateLigne(l.id, 'description', e.target.value)} /></td>
-                    <td style={{ padding: '7px 6px' }}><button onClick={() => setLignes((p) => p.filter((x) => x.id !== l.id))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D85A30', padding: 3, display: 'flex' }}><X size={13} /></button></td>
+                    <td style={{ padding: '7px 6px' }}><button onClick={() => setLignes((p) => p.filter((x) => x.id !== l.id))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', padding: 3, display: 'flex' }}><X size={13} /></button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <button onClick={() => setLignes((p) => [...p, { id: uuidv4(), collaborateur_id: '', collaborateur_nom: '', jours: 1, tjm: 0, montant: 0, description: '' }])}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#5F5E5A' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-text-secondary)' }}>
               <Plus size={12} /> Ajouter une ligne
             </button>
           </div>
-          {lignes.length === 0 && generated && <p style={{ margin: 0, fontSize: 12, color: '#888780', textAlign: 'center' }}>Aucune saisie mensuelle pour ce mois — ajoutez des jours dans le WBS ou des lignes manuelles.</p>}
+          {lignes.length === 0 && generated && <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)', textAlign: 'center' }}>Aucune saisie mensuelle pour ce mois — ajoutez des jours dans le WBS ou des lignes manuelles.</p>}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-            <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: '#5F5E5A' }}>Sous-total HT</span><span style={{ fontSize: 13, fontWeight: 600, width: 100, textAlign: 'right' }}>{formatCurrency(ht)}</span></div>
+            <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Sous-total HT</span><span style={{ fontSize: 13, fontWeight: 600, width: 100, textAlign: 'right' }}>{formatCurrency(ht)}</span></div>
             <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: '#5F5E5A', display: 'flex', gap: 5, alignItems: 'center' }}>TVA <input type="number" min={0} max={100} style={{ ...inputStyle, width: 48, padding: '3px 6px' }} value={tva} onChange={(e) => setTva(parseFloat(e.target.value) || 0)} /> %</span>
-              <span style={{ fontSize: 13, color: '#5F5E5A', width: 100, textAlign: 'right' }}>{formatCurrency(ht * tva / 100)}</span>
+              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', display: 'flex', gap: 5, alignItems: 'center' }}>TVA <input type="number" min={0} max={100} style={{ ...inputStyle, width: 48, padding: '3px 6px' }} value={tva} onChange={(e) => setTva(parseFloat(e.target.value) || 0)} /> %</span>
+              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)', width: 100, textAlign: 'right' }}>{formatCurrency(ht * tva / 100)}</span>
             </div>
-            <div style={{ display: 'flex', gap: 24, borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 5 }}>
+            <div style={{ display: 'flex', gap: 24, borderTop: '1px solid var(--color-border)', paddingTop: 5 }}>
               <span style={{ fontSize: 14, fontWeight: 600 }}>Total TTC</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#1D9E75', width: 100, textAlign: 'right' }}>{formatCurrency(ttc)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-success)', width: 100, textAlign: 'right' }}>{formatCurrency(ttc)}</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
@@ -590,13 +590,13 @@ function OngletFactures({ projet, collaborateurs }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'Total facturé HT', value: formatCurrency(totalFacture), color: '#1A1A18' },
-          { label: 'Encaissé', value: formatCurrency(totalEncaisse), color: '#1D9E75' },
-          { label: 'En attente', value: formatCurrency(enAttente), color: '#BA7517' },
-          { label: 'Reste à facturer', value: formatCurrency(Math.max(0, budgetConso - totalFacture)), color: '#378ADD' },
+          { label: 'Total facturé HT', value: formatCurrency(totalFacture), color: 'var(--color-text-primary)' },
+          { label: 'Encaissé', value: formatCurrency(totalEncaisse), color: 'var(--color-success)' },
+          { label: 'En attente', value: formatCurrency(enAttente), color: 'var(--color-warning)' },
+          { label: 'Reste à facturer', value: formatCurrency(Math.max(0, budgetConso - totalFacture)), color: 'var(--color-info)' },
         ].map((k) => (
-          <div key={k.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 10, padding: '14px 16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: 11, color: '#888780', fontWeight: 500 }}>{k.label}</p>
+          <div key={k.label} style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10, padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{k.label}</p>
             <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</p>
           </div>
         ))}
@@ -606,11 +606,11 @@ function OngletFactures({ projet, collaborateurs }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <button onClick={() => setShowCreate(true)} style={btnPrimStyle}><Plus size={14} style={{ marginRight: 5 }} /> Nouvelle facture</button>
       </div>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+          <thead><tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
             {['# Facture', 'Mois', 'Lignes', 'HT', 'TTC', 'Statut', 'Émission', 'Échéance', ''].map((h) => (
-              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', whiteSpace: 'nowrap' }}>{h}</th>
+              <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', whiteSpace: 'nowrap' }}>{h}</th>
             ))}
           </tr></thead>
           <tbody>
@@ -618,29 +618,29 @@ function OngletFactures({ projet, collaborateurs }) {
               const badge = statutBadgeProps(f);
               const retard = isEnRetard(f);
               return (
-                <tr key={f.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)', background: retard ? '#FFF9F5' : '' }}>
+                <tr key={f.id} style={{ borderBottom: '0.5px solid var(--color-border-soft)', background: retard ? 'var(--color-danger-soft)' : '' }}>
                   <td style={{ padding: '11px 12px', fontSize: 13, fontWeight: 500, fontFamily: 'monospace' }}>{f.numero}</td>
                   <td style={{ padding: '11px 12px', fontSize: 13 }}>{moisCourt(f.mois)}</td>
-                  <td style={{ padding: '11px 12px', fontSize: 12, color: '#5F5E5A' }}>{f.lignes.length}</td>
+                  <td style={{ padding: '11px 12px', fontSize: 12, color: 'var(--color-text-secondary)' }}>{f.lignes.length}</td>
                   <td style={{ padding: '11px 12px', fontSize: 13, fontWeight: 500 }}>{formatCurrency(montantFacture(f))}</td>
                   <td style={{ padding: '11px 12px', fontSize: 13, fontWeight: 600 }}>{formatCurrency(montantTTC(f))}</td>
                   <td style={{ padding: '11px 12px' }}><Badge label={badge.label} variant={badge.variant} /></td>
-                  <td style={{ padding: '11px 12px', fontSize: 12, color: '#5F5E5A' }}>{f.date_emission ? new Date(f.date_emission).toLocaleDateString('fr-FR') : '—'}</td>
-                  <td style={{ padding: '11px 12px', fontSize: 12, color: retard ? '#D85A30' : '#5F5E5A', fontWeight: retard ? 600 : 400 }}>{f.date_echeance ? new Date(f.date_echeance).toLocaleDateString('fr-FR') : '—'}</td>
+                  <td style={{ padding: '11px 12px', fontSize: 12, color: 'var(--color-text-secondary)' }}>{f.date_emission ? new Date(f.date_emission).toLocaleDateString('fr-FR') : '—'}</td>
+                  <td style={{ padding: '11px 12px', fontSize: 12, color: retard ? 'var(--color-danger)' : 'var(--color-text-secondary)', fontWeight: retard ? 600 : 400 }}>{f.date_echeance ? new Date(f.date_echeance).toLocaleDateString('fr-FR') : '—'}</td>
                   <td style={{ padding: '11px 8px' }}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button onClick={() => setDetailId(f.id)} style={iconBtn} title="Détail"><Eye size={13} /></button>
                       <button onClick={() => exporterFactureExcel(projet, f)} style={iconBtn} title="Exporter Excel"><Download size={13} /></button>
                       {f.statut === 'brouillon' && <button onClick={() => handleEmettre(f)} style={iconBtn} title="Émettre"><Send size={13} /></button>}
-                      {f.statut === 'emise' && <button onClick={() => handlePayer(f)} style={{ ...iconBtn, color: '#1D9E75' }} title="Marquer payée"><CheckCircle size={13} /></button>}
-                      {f.statut === 'brouillon' && <button onClick={() => { if (confirm(`Supprimer ${f.numero} ?`)) deleteFacture(projet.id, f.id); }} style={{ ...iconBtn, color: '#D85A30' }}><Trash2 size={13} /></button>}
+                      {f.statut === 'emise' && <button onClick={() => handlePayer(f)} style={{ ...iconBtn, color: 'var(--color-success)' }} title="Marquer payée"><CheckCircle size={13} /></button>}
+                      {f.statut === 'brouillon' && <button onClick={() => { if (confirm(`Supprimer ${f.numero} ?`)) deleteFacture(projet.id, f.id); }} style={{ ...iconBtn, color: 'var(--color-danger)' }}><Trash2 size={13} /></button>}
                     </div>
                   </td>
                 </tr>
               );
             })}
             {factures.length === 0 && (
-              <tr><td colSpan={9} style={{ padding: 40, textAlign: 'center', color: '#888780' }}>Aucune facture. Cliquez sur "+ Nouvelle facture".</td></tr>
+              <tr><td colSpan={9} style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>Aucune facture. Cliquez sur "+ Nouvelle facture".</td></tr>
             )}
           </tbody>
         </table>
@@ -652,32 +652,32 @@ function OngletFactures({ projet, collaborateurs }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
               {[['Mois', moisCourt(detail.mois)], ['Statut', <Badge label={statutBadgeProps(detail).label} variant={statutBadgeProps(detail).variant} />], ['Émise le', detail.date_emission ? new Date(detail.date_emission).toLocaleDateString('fr-FR') : '—'], ['Échéance', detail.date_echeance ? new Date(detail.date_echeance).toLocaleDateString('fr-FR') : '—'], ['Payée le', detail.date_paiement ? new Date(detail.date_paiement).toLocaleDateString('fr-FR') : '—']].map(([l, v]) => (
-                <div key={l}><p style={{ margin: '0 0 2px', fontSize: 11, color: '#888780' }}>{l}</p><p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{v}</p></div>
+                <div key={l}><p style={{ margin: '0 0 2px', fontSize: 11, color: 'var(--color-text-tertiary)' }}>{l}</p><p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{v}</p></div>
               ))}
             </div>
-            <div style={{ border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ border: '0.5px solid var(--color-border)', borderRadius: 8, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead><tr style={{ background: '#F8F8F7' }}>{['Description', 'Jours', 'TJM', 'Montant HT'].map((h) => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: '#888780', fontWeight: 500 }}>{h}</th>)}</tr></thead>
+                <thead><tr style={{ background: 'var(--color-bg-secondary)' }}>{['Description', 'Jours', 'TJM', 'Montant HT'].map((h) => <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{h}</th>)}</tr></thead>
                 <tbody>{detail.lignes.map((l) => (
-                  <tr key={l.id} style={{ borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+                  <tr key={l.id} style={{ borderTop: '0.5px solid var(--color-border-soft)' }}>
                     <td style={{ padding: '8px 12px' }}>{l.description}</td>
-                    <td style={{ padding: '8px 12px', color: '#5F5E5A' }}>{l.jours} j</td>
-                    <td style={{ padding: '8px 12px', color: '#5F5E5A' }}>{l.tjm > 0 ? `${l.tjm} €/j` : '—'}</td>
+                    <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{l.jours} j</td>
+                    <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{l.tjm > 0 ? `${l.tjm} €/j` : '—'}</td>
                     <td style={{ padding: '8px 12px', fontWeight: 500 }}>{formatCurrency(l.montant)}</td>
                   </tr>
                 ))}</tbody>
               </table>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-              <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: '#5F5E5A' }}>HT</span><span style={{ fontSize: 13, fontWeight: 600, width: 100, textAlign: 'right' }}>{formatCurrency(montantFacture(detail))}</span></div>
-              <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: '#5F5E5A' }}>TVA ({detail.tva}%)</span><span style={{ fontSize: 13, color: '#5F5E5A', width: 100, textAlign: 'right' }}>{formatCurrency(montantFacture(detail) * detail.tva / 100)}</span></div>
-              <div style={{ display: 'flex', gap: 24, borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 5 }}><span style={{ fontSize: 14, fontWeight: 600 }}>TTC</span><span style={{ fontSize: 14, fontWeight: 700, color: '#1D9E75', width: 100, textAlign: 'right' }}>{formatCurrency(montantTTC(detail))}</span></div>
+              <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>HT</span><span style={{ fontSize: 13, fontWeight: 600, width: 100, textAlign: 'right' }}>{formatCurrency(montantFacture(detail))}</span></div>
+              <div style={{ display: 'flex', gap: 24 }}><span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>TVA ({detail.tva}%)</span><span style={{ fontSize: 13, color: 'var(--color-text-secondary)', width: 100, textAlign: 'right' }}>{formatCurrency(montantFacture(detail) * detail.tva / 100)}</span></div>
+              <div style={{ display: 'flex', gap: 24, borderTop: '1px solid var(--color-border)', paddingTop: 5 }}><span style={{ fontSize: 14, fontWeight: 600 }}>TTC</span><span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-success)', width: 100, textAlign: 'right' }}>{formatCurrency(montantTTC(detail))}</span></div>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '0.5px solid rgba(0,0,0,0.08)', paddingTop: 10 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '0.5px solid var(--color-border-soft)', paddingTop: 10 }}>
               <button onClick={() => exporterFactureExcel(projet, detail)} style={btnSecStyle}><Download size={13} style={{ marginRight: 5 }} /> Exporter Excel</button>
               <button onClick={() => setDetailId(null)} style={btnSecStyle}>Fermer</button>
               {detail.statut === 'brouillon' && <button onClick={() => { handleEmettre(detail); setDetailId(null); }} style={btnPrimStyle}><Send size={13} style={{ marginRight: 5 }} /> Émettre</button>}
-              {detail.statut === 'emise' && <button onClick={() => { handlePayer(detail); setDetailId(null); }} style={{ ...btnPrimStyle, background: '#1D9E75' }}><CheckCircle size={13} style={{ marginRight: 5 }} /> Marquer payée</button>}
+              {detail.statut === 'emise' && <button onClick={() => { handlePayer(detail); setDetailId(null); }} style={{ ...btnPrimStyle, background: 'var(--color-success)', color: '#FFFFFF' }}><CheckCircle size={13} style={{ marginRight: 5 }} /> Marquer payée</button>}
             </div>
           </div>
         </Modal>
@@ -699,7 +699,7 @@ export default function ProjetFacturation() {
       <PageHeader title="Facturation" subtitle={projet.nom} />
 
       {/* Onglets — le suivi WBS ne concerne que les projets BUILD (les RUN ont leur propre écran Suivi mensuel) */}
-      <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(0,0,0,0.1)', marginBottom: 24, gap: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '0.5px solid var(--color-border)', marginBottom: 24, gap: 0 }}>
         {[
           ...(isRun ? [] : [{ key: 'suivi', label: 'Suivi mensuel' }]),
           { key: 'factures', label: `Factures (${(projet.factures || []).length})` },
@@ -710,8 +710,8 @@ export default function ProjetFacturation() {
             style={{
               padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 500,
-              color: onglet === t.key ? '#1A1A18' : '#5F5E5A',
-              borderBottom: onglet === t.key ? '2px solid #1A1A18' : '2px solid transparent',
+              color: onglet === t.key ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              borderBottom: onglet === t.key ? '2px solid var(--color-text-primary)' : '2px solid transparent',
               marginBottom: -1,
             }}
           >
@@ -728,8 +728,8 @@ export default function ProjetFacturation() {
   );
 }
 
-const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: '#5F5E5A' };
-const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: '#fff' };
-const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: '#1A1A18', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '7px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', fontSize: 13, cursor: 'pointer' };
-const iconBtn = { display: 'inline-flex', alignItems: 'center', padding: 5, borderRadius: 5, border: '1px solid rgba(0,0,0,0.1)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' };
+const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
+const inputStyle = { padding: '7px 9px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)' };
+const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '7px 12px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, cursor: 'pointer' };
+const iconBtn = { display: 'inline-flex', alignItems: 'center', padding: 5, borderRadius: 5, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', color: 'var(--color-text-secondary)' };

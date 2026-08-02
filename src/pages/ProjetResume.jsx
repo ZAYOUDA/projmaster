@@ -31,7 +31,7 @@ export default function ProjetResume() {
             onClick={() => exporterResumeExcel(projet, collaborateurs)}
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-              borderRadius: 8, border: 'none', background: '#1A1A18', color: '#fff',
+              borderRadius: 8, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
               fontSize: 13, fontWeight: 600, cursor: 'pointer',
             }}
           >
@@ -40,19 +40,19 @@ export default function ProjetResume() {
         }
       />
 
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'auto', maxWidth: '100%' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'auto', maxWidth: '100%' }}>
         <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
-            <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+            <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
               <th style={{ ...thFixe, left: 0, width: 50 }}>#</th>
               <th style={{ ...thFixe, left: 50, width: 300, textAlign: 'left' }}>Tâche</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 200 }}>Collaborateur</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: 11, fontWeight: 500, color: '#888780', width: 110 }}>Charge réelle</th>
-              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#888780', width: 110 }}>Statut</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', width: 200 }}>Collaborateur</th>
+              <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', width: 110 }}>Charge réelle</th>
+              <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', width: 110 }}>Statut</th>
               {jours.map((iso) => (
                 <th key={iso} style={{
-                  padding: '6px 2px', textAlign: 'center', fontSize: 9, fontWeight: 500, color: '#888780', width: 34,
-                  background: isWeekendIso(iso) ? '#EEECE6' : '#F8F8F7',
+                  padding: '6px 2px', textAlign: 'center', fontSize: 9, fontWeight: 500, color: 'var(--color-text-tertiary)', width: 34,
+                  background: isWeekendIso(iso) ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
                 }}>
                   {new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                 </th>
@@ -61,17 +61,17 @@ export default function ProjetResume() {
           </thead>
           <tbody>
             {lignes.map((l, i) => (
-              <tr key={l.id} style={{ borderBottom: i < lignes.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>
-                <td style={{ ...tdFixe, left: 0, width: 50, background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>{l.numero}</td>
-                <td style={{ ...tdFixe, left: 50, width: 300, textAlign: 'left', paddingLeft: 8 + l.depth * 20, fontWeight: l.isLeaf ? 400 : 600, background: l.depth === 0 ? '#FAFAFE' : '#fff' }}>
+              <tr key={l.id} style={{ borderBottom: i < lignes.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none', background: l.depth === 0 ? 'var(--color-bg-secondary)' : 'var(--color-bg-card)' }}>
+                <td style={{ ...tdFixe, left: 0, width: 50, background: l.depth === 0 ? 'var(--color-bg-secondary)' : 'var(--color-bg-card)' }}>{l.numero}</td>
+                <td style={{ ...tdFixe, left: 50, width: 300, textAlign: 'left', paddingLeft: 8 + l.depth * 20, fontWeight: l.isLeaf ? 400 : 600, background: l.depth === 0 ? 'var(--color-bg-secondary)' : 'var(--color-bg-card)' }}>
                   {l.nom}
                 </td>
-                <td style={{ padding: '8px', fontSize: 12, color: '#5F5E5A', verticalAlign: 'top' }}>
+                <td style={{ padding: '8px', fontSize: 12, color: 'var(--color-text-secondary)', verticalAlign: 'top' }}>
                   {l.collaborateurs.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {l.collaborateurs.map((c) => (
-                        <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#F1EFE8', borderRadius: 99, padding: '1px 8px 1px 1px', whiteSpace: 'nowrap' }}>
-                          <span style={{ width: 16, height: 16, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                        <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-bg-tertiary)', borderRadius: 99, padding: '1px 8px 1px 1px', whiteSpace: 'nowrap' }}>
+                          <span style={{ width: 16, height: 16, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>
                             {c.initiales}
                           </span>
                           {c.prenom} {c.nom}
@@ -80,7 +80,7 @@ export default function ProjetResume() {
                     </div>
                   )}
                 </td>
-                <td style={{ padding: '8px', fontSize: 13, fontWeight: 600, color: l.chargeReelle > 0 ? '#1A1A18' : '#BDBCB8', textAlign: 'right', verticalAlign: 'top' }}>
+                <td style={{ padding: '8px', fontSize: 13, fontWeight: 600, color: l.chargeReelle > 0 ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)', textAlign: 'right', verticalAlign: 'top' }}>
                   {l.chargeReelle > 0 ? `${fmtJours(l.chargeReelle)}j` : '—'}
                 </td>
                 <td style={{ padding: '8px', verticalAlign: 'top' }}>
@@ -90,8 +90,8 @@ export default function ProjetResume() {
                   const v = l.parJour[iso];
                   return (
                     <td key={iso} style={{
-                      textAlign: 'center', fontSize: 10, color: '#1A6E9B',
-                      background: isWeekendIso(iso) ? '#F0EEE8' : v > 0 ? '#EBF5FB' : 'transparent',
+                      textAlign: 'center', fontSize: 10, color: 'var(--color-info)',
+                      background: isWeekendIso(iso) ? 'var(--color-bg-tertiary)' : v > 0 ? 'var(--color-info-soft)' : 'transparent',
                     }}>
                       {v > 0 ? fmtJours(v) : ''}
                     </td>
@@ -101,7 +101,7 @@ export default function ProjetResume() {
             ))}
             {lignes.length === 0 && (
               <tr>
-                <td colSpan={5 + jours.length} style={{ padding: '24px 8px', textAlign: 'center', color: '#888780', fontSize: 13 }}>
+                <td colSpan={5 + jours.length} style={{ padding: '24px 8px', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
                   Aucune tâche pour ce projet.
                 </td>
               </tr>
@@ -114,12 +114,12 @@ export default function ProjetResume() {
 }
 
 const thFixe = {
-  position: 'sticky', zIndex: 2, background: '#F8F8F7',
-  padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 500, color: '#888780',
-  borderRight: '1px solid rgba(0,0,0,0.1)',
+  position: 'sticky', zIndex: 2, background: 'var(--color-bg-secondary)',
+  padding: '10px 8px', textAlign: 'center', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)',
+  borderRight: '1px solid var(--color-border)',
 };
 const tdFixe = {
   position: 'sticky', zIndex: 1,
-  padding: '8px', fontSize: 13, color: '#1A1A18', verticalAlign: 'top',
-  borderRight: '1px solid rgba(0,0,0,0.1)',
+  padding: '8px', fontSize: 13, color: 'var(--color-text-primary)', verticalAlign: 'top',
+  borderRight: '1px solid var(--color-border)',
 };

@@ -67,8 +67,8 @@ export default function ProjetParametres() {
           <div style={{ marginBottom: 12 }}>
             <span style={{
               display: 'inline-block', padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-              background: projet.type === 'RUN' ? '#EFF6FF' : '#F1EFE8',
-              color: projet.type === 'RUN' ? '#1D4ED8' : '#5F5E5A',
+              background: projet.type === 'RUN' ? 'var(--color-info-soft)' : 'var(--color-bg-tertiary)',
+              color: projet.type === 'RUN' ? 'var(--color-info)' : 'var(--color-text-secondary)',
             }}>
               {projet.type === 'RUN' ? 'RUN — TMA / régie' : 'BUILD'}
             </span>
@@ -100,12 +100,12 @@ export default function ProjetParametres() {
             </select>
           </label>
           <div style={{ marginTop: 12 }}>
-            <p style={{ margin: '0 0 8px', fontSize: 12, color: '#5F5E5A', fontWeight: 500 }}>Couleur du projet</p>
+            <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 500 }}>Couleur du projet</p>
             <div style={{ display: 'flex', gap: 8 }}>
               {PALETTE.map((c) => (
                 <button key={c} type="button" onClick={() => set('couleur', c)} style={{
                   width: 28, height: 28, borderRadius: '50%', background: c,
-                  border: form.couleur === c ? '3px solid #1A1A18' : '2px solid transparent',
+                  border: form.couleur === c ? '3px solid var(--color-text-primary)' : '2px solid transparent',
                   cursor: 'pointer', outline: 'none',
                 }} />
               ))}
@@ -115,7 +115,7 @@ export default function ProjetParametres() {
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           <button type="submit" style={btnPrimStyle}>Enregistrer</button>
-          {saved && <span style={{ fontSize: 13, color: '#1D9E75', alignSelf: 'center' }}>✓ Sauvegardé</span>}
+          {saved && <span style={{ fontSize: 13, color: 'var(--color-success)', alignSelf: 'center' }}>✓ Sauvegardé</span>}
         </div>
       </form>
 
@@ -128,12 +128,12 @@ export default function ProjetParametres() {
       {projet.type !== 'RUN' && (
       <section style={cardStyle}>
         <h3 style={{ ...h3Style, marginBottom: 4 }}>Taux journaliers (TJM)</h3>
-        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#5F5E5A' }}>Définissez le TJM de chaque collaborateur pour ce projet.</p>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>Définissez le TJM de chaque collaborateur pour ce projet.</p>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '0.5px solid rgba(0,0,0,0.1)' }}>
+            <tr style={{ borderBottom: '0.5px solid var(--color-border)' }}>
               {['Collaborateur', 'Profil', 'TJM (€)', ''].map((h) => (
-                <th key={h} style={{ padding: '8px 0', textAlign: 'left', fontSize: 12, color: '#888780', fontWeight: 500 }}>{h}</th>
+                <th key={h} style={{ padding: '8px 0', textAlign: 'left', fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -142,14 +142,14 @@ export default function ProjetParametres() {
               const c = collaborateurs.find((x) => x.id === t.collaborateur_id);
               if (!c) return null;
               return (
-                <tr key={t.collaborateur_id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+                <tr key={t.collaborateur_id} style={{ borderBottom: '0.5px solid var(--color-border-soft)' }}>
                   <td style={{ padding: '10px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Avatar collaborateur={c} size={28} />
                       <span style={{ fontSize: 13, fontWeight: 500 }}>{c.prenom} {c.nom}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '10px 0', fontSize: 13, color: '#5F5E5A' }}>{c.profil}</td>
+                  <td style={{ padding: '10px 0', fontSize: 13, color: 'var(--color-text-secondary)' }}>{c.profil}</td>
                   <td style={{ padding: '10px 0' }}>
                     <input
                       type="number"
@@ -197,16 +197,16 @@ export default function ProjetParametres() {
       )}
 
       {/* Zone dangereuse */}
-      <section style={{ ...cardStyle, border: '1px solid #FECACA', background: '#FFF5F5' }}>
-        <h3 style={{ ...h3Style, color: '#DC2626' }}>Zone dangereuse</h3>
+      <section style={{ ...cardStyle, border: '1px solid var(--color-danger)', background: 'var(--color-danger-soft)' }}>
+        <h3 style={{ ...h3Style, color: 'var(--color-danger)' }}>Zone dangereuse</h3>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: '#1A1A18' }}>Supprimer ce projet</p>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#888780' }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)' }}>Supprimer ce projet</p>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-tertiary)' }}>
               Supprime définitivement le projet, tout son WBS, planning, budget et jalons. Action irréversible.
             </p>
           </div>
-          <button onClick={handleDelete} style={{ ...btnPrimStyle, background: '#DC2626', flexShrink: 0, gap: 6 }}>
+          <button onClick={handleDelete} style={{ ...btnPrimStyle, background: 'var(--color-danger)', color: '#FFFFFF', flexShrink: 0, gap: 6 }}>
             <Trash2 size={14} /> Supprimer le projet
           </button>
         </div>
@@ -215,10 +215,10 @@ export default function ProjetParametres() {
   );
 }
 
-const cardStyle = { background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, padding: 24, marginBottom: 24 };
+const cardStyle = { background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 24 };
 const h3Style = { margin: '0 0 16px', fontSize: 14, fontWeight: 600 };
-const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: '#5F5E5A' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%' };
-const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 16px', borderRadius: 6, border: 'none', background: '#1A1A18', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const iconBtnStyle = { padding: 6, borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#D85A30' };
+const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%' };
+const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 16px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const iconBtnStyle = { padding: 6, borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-danger)' };

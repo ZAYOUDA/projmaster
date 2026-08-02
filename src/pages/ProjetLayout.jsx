@@ -53,7 +53,7 @@ export default function ProjetLayout() {
   const tabLink = ({ isActive }) => ({
     display: 'inline-flex', alignItems: 'center', gap: 6,
     padding: '8px 12px', textDecoration: 'none', fontSize: 13, fontWeight: 500,
-    color: isActive ? '#1A1A18' : '#5F5E5A',
+    color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
     borderBottom: isActive ? `2px solid ${projet.couleur}` : '2px solid transparent',
     transition: 'color 0.15s',
     whiteSpace: 'nowrap',
@@ -62,14 +62,14 @@ export default function ProjetLayout() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div ref={headerRef} style={{
-        padding: '20px 32px 0', borderBottom: '0.5px solid rgba(0,0,0,0.1)',
-        position: 'sticky', top: 0, zIndex: 20, background: '#fff', flexShrink: 0,
+        padding: '20px 32px 0', borderBottom: '0.5px solid var(--color-border)',
+        position: 'sticky', top: 0, zIndex: 20, background: 'var(--color-bg-primary)', flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <span style={{ width: 12, height: 12, borderRadius: '50%', background: projet.couleur }} />
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#1A1A18' }}>{projet.nom}</h2>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--color-text-primary)' }}>{projet.nom}</h2>
           {projet.statut !== 'actif' && (
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#F1EFE8', color: '#888780', fontWeight: 500 }}>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
               {projet.statut === 'en_pause' ? 'En pause' : 'Clôturé'}
             </span>
           )}
