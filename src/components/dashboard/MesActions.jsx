@@ -6,10 +6,10 @@ import useAppStore from '../../store/useAppStore';
 // Couleurs alignées sur les variantes déjà définies dans Badge.jsx pour les statuts de tâche WBS
 // (non_demarre/en_cours/termine/bloque) afin de rester visuellement cohérent avec le reste de l'app.
 const STATUTS = [
-  { key: 'a_faire', label: 'À faire', color: '#888780' },
-  { key: 'en_cours', label: 'En cours', color: '#378ADD' },
-  { key: 'termine', label: 'Terminé', color: '#1D9E75' },
-  { key: 'bloque', label: 'Bloqué', color: '#D85A30' },
+  { key: 'a_faire', label: 'À faire', color: 'var(--color-text-tertiary)' },
+  { key: 'en_cours', label: 'En cours', color: 'var(--color-info)' },
+  { key: 'termine', label: 'Terminé', color: 'var(--color-success)' },
+  { key: 'bloque', label: 'Bloqué', color: 'var(--color-danger)' },
 ];
 const COLOR_BY_STATUT = Object.fromEntries(STATUTS.map((s) => [s.key, s.color]));
 const LABEL_BY_STATUT = Object.fromEntries(STATUTS.map((s) => [s.key, s.label]));
@@ -67,8 +67,8 @@ function Picklist({ trigger, options, value, onChange, align = 'left', minWidth 
           ref={menuRef}
           style={{
             position: 'fixed', top: pos.top, left: pos.left, right: pos.right, zIndex: 1000,
-            background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', minWidth,
+            background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 8,
+            boxShadow: '0 4px 16px var(--color-shadow)', overflow: 'hidden', minWidth,
           }}
         >
           {options.map((o) => (
@@ -78,8 +78,8 @@ function Picklist({ trigger, options, value, onChange, align = 'left', minWidth 
               onClick={() => { onChange(o.key); setOuvert(false); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, width: '100%', whiteSpace: 'nowrap',
-                padding: '7px 10px', border: 'none', background: value === o.key ? '#F8F8F7' : '#fff',
-                cursor: 'pointer', fontSize: 12, color: '#1A1A18', textAlign: 'left',
+                padding: '7px 10px', border: 'none', background: value === o.key ? 'var(--color-bg-secondary)' : 'var(--color-bg-card)',
+                cursor: 'pointer', fontSize: 12, color: 'var(--color-text-primary)', textAlign: 'left',
               }}
             >
               {o.color && <span style={{ width: 7, height: 7, borderRadius: '50%', background: o.color, flexShrink: 0 }} />}
@@ -108,7 +108,7 @@ function StatutPicker({ value, onChange }) {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 3,
             fontSize: 10.5, fontWeight: 500, borderRadius: 99, padding: '2px 7px',
-            border: `0.5px solid ${statut.color}`, background: '#fff', color: statut.color, cursor: 'pointer',
+            border: `0.5px solid ${statut.color}`, background: 'var(--color-bg-card)', color: statut.color, cursor: 'pointer',
           }}
         >
           {statut.label}
@@ -144,7 +144,7 @@ function FiltrePicker({ value, onChange, taches }) {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '3px 9px', fontSize: 11, fontWeight: 500, borderRadius: 99, cursor: 'pointer',
-            border: '0.5px solid rgba(0,0,0,0.15)', background: '#fff', color: '#5F5E5A',
+            border: '0.5px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)',
           }}
         >
           {actif.color && <span style={{ width: 6, height: 6, borderRadius: '50%', background: actif.color, flexShrink: 0 }} />}
@@ -175,9 +175,9 @@ function AjoutTache({ onAjouter }) {
   return (
     <form onSubmit={submit} style={{
       display: 'flex', alignItems: 'center', gap: 8,
-      border: '0.5px solid rgba(0,0,0,0.15)', borderRadius: 10, padding: '8px 10px', marginBottom: 10,
+      border: '0.5px solid var(--color-border)', borderRadius: 10, padding: '8px 10px', marginBottom: 10,
     }}>
-      <Plus size={16} color="#888780" style={{ flexShrink: 0 }} />
+      <Plus size={16} color="var(--color-text-tertiary)" style={{ flexShrink: 0 }} />
       <input
         type="text" value={titre} onChange={(e) => setTitre(e.target.value)}
         placeholder="Nouvelle action…"
@@ -191,7 +191,7 @@ function AjoutTache({ onAjouter }) {
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 28, height: 28, borderRadius: 8, border: 'none',
-            background: '#F1EFE8', color: '#5F5E5A', cursor: 'pointer',
+            background: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)', cursor: 'pointer',
           }}
         >
           <CalendarDays size={14} />
@@ -203,8 +203,8 @@ function AjoutTache({ onAjouter }) {
             onBlur={() => setDateOuverte(false)}
             style={{
               position: 'absolute', top: '100%', right: 0, marginTop: 4, zIndex: 20,
-              padding: '6px 8px', fontSize: 12, borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)',
-              background: '#fff',
+              padding: '6px 8px', fontSize: 12, borderRadius: 8, border: '0.5px solid var(--color-border)',
+              background: 'var(--color-bg-card)',
             }}
           />
         )}
@@ -251,8 +251,8 @@ export default function MesActions() {
   return (
     <>
       <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Mes actions</h3>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, marginBottom: 24 }}>
-        <div style={{ padding: '12px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, marginBottom: 24 }}>
+        <div style={{ padding: '12px 16px', borderBottom: '0.5px solid var(--color-border-soft)' }}>
           <AjoutTache onAjouter={addTache} />
 
           {/* Filtre — picklist unique plutôt qu'une rangée de boutons */}
@@ -265,7 +265,7 @@ export default function MesActions() {
                 onClick={() => setAfficherTerminees((v) => !v)}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'none',
-                  cursor: 'pointer', padding: 0, fontSize: 11, color: '#5F5E5A', fontWeight: 500,
+                  cursor: 'pointer', padding: 0, fontSize: 11, color: 'var(--color-text-secondary)', fontWeight: 500,
                 }}
               >
                 {afficherTerminees ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -277,7 +277,7 @@ export default function MesActions() {
                   title="Supprime définitivement les actions terminées"
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'none',
-                    cursor: 'pointer', padding: 0, fontSize: 11, color: '#D85A30', fontWeight: 500,
+                    cursor: 'pointer', padding: 0, fontSize: 11, color: 'var(--color-danger)', fontWeight: 500,
                   }}
                 >
                   <Archive size={12} /> Archiver
@@ -288,7 +288,7 @@ export default function MesActions() {
         </div>
 
         {visibles.length === 0 && (
-          <p style={{ padding: '18px 16px', textAlign: 'center', color: '#888780', margin: 0, fontSize: 12 }}>
+          <p style={{ padding: '18px 16px', textAlign: 'center', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 12 }}>
             Aucune action{filtre !== 'toutes' ? ` "${LABEL_BY_STATUT[filtre]}"` : ''}.
           </p>
         )}
@@ -302,20 +302,20 @@ export default function MesActions() {
                 key={t.id}
                 style={{
                   padding: '9px 16px',
-                  borderBottom: i < visibles.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none',
+                  borderBottom: i < visibles.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none',
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}
               >
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: COLOR_BY_STATUT[t.statut], flexShrink: 0 }} />
                 <span style={{
-                  flex: 1, fontSize: 13, color: '#1A1A18', minWidth: 0,
+                  flex: 1, fontSize: 13, color: 'var(--color-text-primary)', minWidth: 0,
                   textDecoration: t.statut === 'termine' ? 'line-through' : 'none',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {t.titre}
                 </span>
                 {t.deadline && (
-                  <span style={{ fontSize: 11, fontWeight: retard ? 600 : 400, color: retard ? '#D85A30' : '#888780', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: retard ? 600 : 400, color: retard ? 'var(--color-danger)' : 'var(--color-text-tertiary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     {retard && '⚠ '}{new Date(t.deadline).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                   </span>
                 )}
@@ -324,7 +324,7 @@ export default function MesActions() {
                   onClick={() => deleteTache(t.id)}
                   title="Supprimer"
                   style={{
-                    border: 'none', background: 'none', cursor: 'pointer', color: '#BDBCB8',
+                    border: 'none', background: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)',
                     fontSize: 15, lineHeight: 1, padding: 0, flexShrink: 0,
                   }}
                 >
