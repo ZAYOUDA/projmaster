@@ -67,7 +67,7 @@ function Tooltip({ node, agg, budget, couleur, x, y }) {
   return (
     <div style={{
       position: 'fixed', left: x + 12, top: y - 8, zIndex: 9999,
-      background: '#1A1A18', color: '#fff', borderRadius: 10, padding: '12px 16px',
+      background: 'rgb(26, 26, 24)', color: '#FFFFFF', borderRadius: 10, padding: '12px 16px',
       fontSize: 12, lineHeight: 1.7, width: 260, boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
       pointerEvents: 'none',
     }}>
@@ -155,7 +155,7 @@ function GanttBar({ node, agg, minDate, pxPerDay, couleur, tjm, allNodes, depth 
           <rect
             x={reelX} y={barYReel} width={reelW} height={barHeight}
             rx={4}
-            fill={isLate ? '#D85A30' : couleur}
+            fill={isLate ? 'var(--color-danger)' : couleur}
             opacity={Math.min(1, opacite + 0.1)}
           />
           {/* Indicateur avancement — trait clair pour ressortir sur la barre pleine */}
@@ -258,7 +258,7 @@ export default function ProjetGantt() {
 
   if (projet.wbs.length === 0) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: '#888780', marginTop: 80 }}>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-tertiary)', marginTop: 80 }}>
         <p style={{ fontSize: 15, fontWeight: 500 }}>Gantt</p>
         <p style={{ fontSize: 13 }}>Aucune tâche dans le WBS. Commencez par créer des livrables.</p>
       </div>
@@ -276,23 +276,23 @@ export default function ProjetGantt() {
               <button
                 onClick={toggleExpandAll}
                 style={{
-                  padding: '7px 14px', borderRadius: 7, border: '1px solid rgba(0,0,0,0.12)',
-                  background: '#fff', color: '#5F5E5A', fontSize: 13, cursor: 'pointer',
+                  padding: '7px 14px', borderRadius: 7, border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', fontSize: 13, cursor: 'pointer',
                 }}
               >
                 {allExpanded ? 'Tout replier' : 'Tout déplier'}
               </button>
             )}
-            <div style={{ display: 'flex', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 7, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: 7, overflow: 'hidden' }}>
               {Object.entries(ZOOMS).map(([key, z]) => (
                 <button
                   key={key}
                   onClick={() => setZoom(key)}
                   style={{
                     padding: '7px 14px', border: 'none', cursor: 'pointer', fontSize: 13,
-                    background: zoom === key ? '#1A1A18' : '#fff',
-                    color: zoom === key ? '#fff' : '#5F5E5A',
-                    borderRight: key !== 'trimestre' ? '1px solid rgba(0,0,0,0.12)' : 'none',
+                    background: zoom === key ? 'var(--color-text-primary)' : 'var(--color-bg-card)',
+                    color: zoom === key ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
+                    borderRight: key !== 'trimestre' ? '1px solid var(--color-border)' : 'none',
                   }}
                 >
                   {z.label}
@@ -307,29 +307,29 @@ export default function ProjetGantt() {
       <div style={{ display: 'flex', gap: 20, marginBottom: 16, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 0.35 }} />
-          <span style={{ fontSize: 12, color: '#5F5E5A' }}>Prévisionnelle</span>
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Prévisionnelle</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 28, height: 10, background: projet.couleur, borderRadius: 3, opacity: 1 }} />
-          <span style={{ fontSize: 12, color: '#5F5E5A' }}>Réelle</span>
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Réelle</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 2, height: 14, background: projet.couleur }} />
-          <span style={{ fontSize: 12, color: '#5F5E5A' }}>% avancement</span>
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>% avancement</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 28, height: 10, background: '#D85A30', borderRadius: 3, opacity: 0.7 }} />
-          <span style={{ fontSize: 12, color: '#5F5E5A' }}>Dépassement</span>
+          <div style={{ width: 28, height: 10, background: 'var(--color-danger)', borderRadius: 3, opacity: 0.7 }} />
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Dépassement</span>
         </div>
       </div>
 
       {/* Conteneur scrollable */}
-      <div style={{ display: 'flex', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+      <div style={{ display: 'flex', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden', background: 'var(--color-bg-card)' }}>
         {/* Panel gauche — noms des tâches */}
-        <div style={{ width: LEFT_W, flexShrink: 0, borderRight: '0.5px solid rgba(0,0,0,0.08)' }}>
+        <div style={{ width: LEFT_W, flexShrink: 0, borderRight: '0.5px solid var(--color-border-soft)' }}>
           {/* En-tête gauche */}
-          <div style={{ height: HEADER_H, borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Livrable</span>
+          <div style={{ height: HEADER_H, borderBottom: '0.5px solid var(--color-border-soft)', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Livrable</span>
           </div>
           {/* Lignes tâches (livrables L1, et sous-tâches dépliées en dessous) */}
           {visibleRows.map(({ node, agg, depth, children }) => (
@@ -338,35 +338,35 @@ export default function ProjetGantt() {
               style={{
                 height: ROW_H, display: 'flex', alignItems: 'center', gap: 4,
                 padding: `0 16px 0 ${16 + depth * 16}px`,
-                borderBottom: '0.5px solid rgba(0,0,0,0.05)',
+                borderBottom: '0.5px solid var(--color-border-soft)',
               }}
             >
               {children.length > 0 ? (
                 <button
                   onClick={() => toggleExpand(node.id)}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', color: '#888780', flexShrink: 0 }}
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', color: 'var(--color-text-tertiary)', flexShrink: 0 }}
                   title={expandedIds.has(node.id) ? 'Replier' : `Déplier (${children.length})`}
                 >
                   {expandedIds.has(node.id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
               ) : <span style={{ width: 14, flexShrink: 0 }} />}
               <div style={{ minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: depth === 0 ? 13 : 12.5, fontWeight: depth === 0 ? 500 : 400, color: depth === 0 ? '#1A1A18' : '#5F5E5A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 - depth * 16 }}>
+                <p style={{ margin: 0, fontSize: depth === 0 ? 13 : 12.5, fontWeight: depth === 0 ? 500 : 400, color: depth === 0 ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 - depth * 16 }}>
                   {node.nom}
                 </p>
-                <p style={{ margin: 0, fontSize: 11, color: '#888780' }}>{agg.avancement}%</p>
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-tertiary)' }}>{agg.avancement}%</p>
               </div>
             </div>
           ))}
           {/* Jalons label */}
           {jalons.length > 0 && (
-            <div style={{ height: 28, display: 'flex', alignItems: 'center', padding: '0 16px', background: '#F8F8F7', borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Jalons</span>
+            <div style={{ height: 28, display: 'flex', alignItems: 'center', padding: '0 16px', background: 'var(--color-bg-secondary)', borderTop: '0.5px solid var(--color-border-soft)' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Jalons</span>
             </div>
           )}
           {jalons.map((m) => (
-            <div key={m.id} style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '0.5px solid rgba(0,0,0,0.05)' }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: '#1A1A18', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 }}>
+            <div key={m.id} style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '0.5px solid var(--color-border-soft)' }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: LEFT_W - 32 }}>
                 ◆ {m.nom}
               </p>
             </div>
@@ -381,12 +381,12 @@ export default function ProjetGantt() {
               const x = Math.max(0, diffDays(minDate, month) * pxPerDay);
               return (
                 <g key={i}>
-                  <line x1={x} y1={0} x2={x} y2={svgH} stroke="rgba(0,0,0,0.06)" strokeWidth={1} />
-                  <text x={x + 6} y={20} fontSize={11} fill="#888780" fontWeight="500">
+                  <line x1={x} y1={0} x2={x} y2={svgH} stroke="var(--color-border-soft)" strokeWidth={1} />
+                  <text x={x + 6} y={20} fontSize={11} fill="var(--color-text-tertiary)" fontWeight="500">
                     {month.toLocaleDateString('fr-FR', { month: 'short', year: zoom === 'trimestre' ? 'numeric' : undefined })}
                   </text>
                   {zoom === 'semaine' && (
-                    <text x={x + 6} y={36} fontSize={10} fill="#BDBCB8">
+                    <text x={x + 6} y={36} fontSize={10} fill="var(--color-text-tertiary)">
                       {month.toLocaleDateString('fr-FR', { year: 'numeric' })}
                     </text>
                   )}
@@ -395,13 +395,13 @@ export default function ProjetGantt() {
             })}
 
             {/* Ligne séparation header */}
-            <line x1={0} y1={HEADER_H} x2={totalW} y2={HEADER_H} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
+            <line x1={0} y1={HEADER_H} x2={totalW} y2={HEADER_H} stroke="var(--color-border-soft)" strokeWidth={1} />
 
             {/* Ligne "aujourd'hui" */}
             {todayX >= 0 && todayX <= totalW && (
               <g>
-                <line x1={todayX} y1={HEADER_H} x2={todayX} y2={svgH} stroke="#D85A30" strokeWidth={1.5} strokeDasharray="4 3" />
-                <text x={todayX + 4} y={HEADER_H + 12} fontSize={10} fill="#D85A30" fontWeight="600">Auj.</text>
+                <line x1={todayX} y1={HEADER_H} x2={todayX} y2={svgH} stroke="var(--color-danger)" strokeWidth={1.5} strokeDasharray="4 3" />
+                <text x={todayX + 4} y={HEADER_H + 12} fontSize={10} fill="var(--color-danger)" fontWeight="600">Auj.</text>
               </g>
             )}
 
@@ -441,11 +441,11 @@ export default function ProjetGantt() {
                   {/* Diamond */}
                   <polygon
                     points={`${x},${y + ROW_H / 2 - size} ${x + size},${y + ROW_H / 2} ${x},${y + ROW_H / 2 + size} ${x - size},${y + ROW_H / 2}`}
-                    fill={late ? '#D85A30' : '#1A1A18'}
+                    fill={late ? 'var(--color-danger)' : 'var(--color-text-primary)'}
                     opacity={0.85}
                   />
                   {/* Date label */}
-                  <text x={x + size + 4} y={y + ROW_H / 2 + 4} fontSize={11} fill={late ? '#D85A30' : '#5F5E5A'}>
+                  <text x={x + size + 4} y={y + ROW_H / 2 + 4} fontSize={11} fill={late ? 'var(--color-danger)' : 'var(--color-text-secondary)'}>
                     {fmtDate(m.date_prevue)}
                   </text>
                 </g>

@@ -34,8 +34,8 @@ function MultiSelectFilter({ label, options, selected, onChange }) {
         onClick={() => setOuvert((v) => !v)}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '6px 10px', borderRadius: 8, border: '0.5px solid rgba(0,0,0,0.15)',
-          background: selected.size > 0 ? '#F1EFE8' : '#fff', color: '#1A1A18',
+          padding: '6px 10px', borderRadius: 8, border: '0.5px solid var(--color-border)',
+          background: selected.size > 0 ? 'var(--color-bg-tertiary)' : 'var(--color-bg-card)', color: 'var(--color-text-primary)',
           fontSize: 12, fontWeight: 500, cursor: 'pointer',
         }}
       >
@@ -45,8 +45,8 @@ function MultiSelectFilter({ label, options, selected, onChange }) {
       {ouvert && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 30, minWidth: 190,
-          background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.12)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto',
+          background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 8,
+          boxShadow: '0 4px 16px var(--color-shadow)', overflow: 'hidden', maxHeight: 260, overflowY: 'auto',
         }}>
           {selected.size > 0 && (
             <button
@@ -54,8 +54,8 @@ function MultiSelectFilter({ label, options, selected, onChange }) {
               onClick={() => onChange(new Set())}
               style={{
                 display: 'block', width: '100%', textAlign: 'left', padding: '7px 10px',
-                border: 'none', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff',
-                cursor: 'pointer', fontSize: 12, color: '#D85A30', fontWeight: 500,
+                border: 'none', borderBottom: '0.5px solid var(--color-border-soft)', background: 'var(--color-bg-card)',
+                cursor: 'pointer', fontSize: 12, color: 'var(--color-danger)', fontWeight: 500,
               }}
             >
               Réinitialiser
@@ -66,7 +66,7 @@ function MultiSelectFilter({ label, options, selected, onChange }) {
               key={o.value}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px',
-                cursor: 'pointer', fontSize: 12.5, color: '#1A1A18',
+                cursor: 'pointer', fontSize: 12.5, color: 'var(--color-text-primary)',
               }}
             >
               <input type="checkbox" checked={selected.has(o.value)} onChange={() => toggle(o.value)} />
@@ -104,18 +104,18 @@ function KanbanCard({ node, projet, numero, collaborateurs }) {
       draggable={canDrag}
       onDragStart={(e) => canDrag && e.dataTransfer.setData('nodeId', node.id)}
       style={{
-        background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: 12,
+        background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 8, padding: 12,
         marginBottom: 8, cursor: canDrag ? 'grab' : 'default', userSelect: 'none',
         opacity: isCollab && !canDrag ? 0.55 : 1,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-        <span style={{ fontSize: 11, color: '#888780', fontFamily: 'monospace' }}>{numero}</span>
+        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'monospace' }}>{numero}</span>
         <Badge label={STATUT_LABELS[node.statut] || node.statut} variant={node.statut} />
       </div>
       <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 500, lineHeight: 1.3 }}>{node.nom}</p>
       {node.date_fin_prev && (
-        <p style={{ margin: '0 0 6px', fontSize: 11, color: '#888780' }}>
+        <p style={{ margin: '0 0 6px', fontSize: 11, color: 'var(--color-text-tertiary)' }}>
           Fin prév. : {new Date(node.date_fin_prev).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
         </p>
       )}
@@ -125,10 +125,10 @@ function KanbanCard({ node, projet, numero, collaborateurs }) {
         </div>
         {node.avancement > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 40, height: 3, background: '#E8E7E3', borderRadius: 99 }}>
+            <div style={{ width: 40, height: 3, background: 'var(--color-bg-tertiary)', borderRadius: 99 }}>
               <div style={{ height: '100%', width: `${node.avancement}%`, background: projet.couleur, borderRadius: 99 }} />
             </div>
-            <span style={{ fontSize: 10, color: '#888780' }}>{node.avancement}%</span>
+            <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)' }}>{node.avancement}%</span>
           </div>
         )}
       </div>
@@ -203,11 +203,11 @@ export default function ProjetKanban() {
               key={col.id}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleDrop(e, col.id)}
-              style={{ background: '#F8F8F7', borderRadius: 10, padding: '12px 10px', minHeight: 200 }}
+              style={{ background: 'var(--color-bg-secondary)', borderRadius: 10, padding: '12px 10px', minHeight: 200 }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1A18' }}>{col.label}</span>
-                <span style={{ fontSize: 11, color: '#888780', background: '#E8E7E3', borderRadius: 99, padding: '1px 6px' }}>{cards.length}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)' }}>{col.label}</span>
+                <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', background: 'var(--color-bg-tertiary)', borderRadius: 99, padding: '1px 6px' }}>{cards.length}</span>
               </div>
               {cards.map((n) => (
                 <KanbanCard key={n.id} node={n} projet={projet} numero={numeros[n.id]} collaborateurs={collaborateurs} />
