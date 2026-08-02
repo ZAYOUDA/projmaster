@@ -31,7 +31,7 @@ export default function App() {
   }, [savedAt]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#FFFFFF' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--color-bg-primary)' }}>
       <Sidebar />
       {/* minHeight: 0 est nécessaire pour qu'un enfant flex accepte de se limiter à la hauteur
           disponible au lieu de grandir avec son contenu — sans ça, overflowY:'auto' ne scrolle
@@ -43,8 +43,8 @@ export default function App() {
       {showSaved && (
         <div style={{
           position: 'fixed', bottom: 16, right: 16, zIndex: 9999,
-          background: '#1A1A18', color: '#fff', borderRadius: 8, padding: '6px 14px',
-          fontSize: 12, fontWeight: 500, boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+          background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', borderRadius: 8, padding: '6px 14px',
+          fontSize: 12, fontWeight: 500, boxShadow: '0 2px 12px var(--color-shadow)',
         }}>
           ✓ Sauvegardé
         </div>

@@ -6,25 +6,73 @@
   }
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    background-color: #FFFFFF;
-    color: #1A1A18;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     font-size: 14px;
     line-height: 1.5;
     margin: 0;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.15s, color 0.15s;
   }
 }
 
-:root {
+/* Thème clair (défaut) — palette d'origine, inchangée. */
+:root,
+:root[data-theme='light'] {
   --color-bg-primary: #FFFFFF;
   --color-bg-secondary: #F8F8F7;
   --color-bg-tertiary: #F1EFE8;
+  --color-bg-sidebar: #F8F8F7;
+  --color-bg-card: #FFFFFF;
+  --color-bg-hover: #F1EFE8;
   --color-text-primary: #1A1A18;
   --color-text-secondary: #5F5E5A;
   --color-text-tertiary: #888780;
   --color-border: rgba(0,0,0,0.12);
+  --color-border-soft: rgba(0,0,0,0.08);
+  --color-accent: #378ADD;
+  --color-accent-soft: #E6F1FB;
+  --color-on-accent: #FFFFFF;
   --color-success: #1D9E75;
+  --color-success-soft: #E1F5EE;
   --color-warning: #BA7517;
+  --color-warning-soft: #FAEEDA;
   --color-danger: #D85A30;
+  --color-danger-soft: #FAECE7;
+  --color-critical: #C0391B;
+  --color-critical-soft: #FAE0DA;
   --color-info: #378ADD;
+  --color-info-soft: #E6F1FB;
+  --color-shadow: rgba(0,0,0,0.12);
+}
+
+/* Thème sombre — "charbon chaud" (gris chauds, pas bleutés) + accent ocre doré.
+   Warning décalé vers un rouge-brique pour ne pas se confondre avec l'accent ocre
+   (les deux étaient trop proches en ocre/orange — cf. validation du 2026-08-02). */
+:root[data-theme='dark'] {
+  --color-bg-primary: #1C1A17;
+  --color-bg-secondary: #242220;
+  --color-bg-tertiary: #2E2B27;
+  --color-bg-sidebar: #161412;
+  --color-bg-card: #242220;
+  --color-bg-hover: #2E2B27;
+  --color-text-primary: #F3F1EC;
+  --color-text-secondary: #B8B4AC;
+  --color-text-tertiary: #8A867E;
+  --color-border: rgba(255,255,255,0.10);
+  --color-border-soft: rgba(255,255,255,0.07);
+  --color-accent: #E0A94A;
+  --color-accent-soft: #3A2E14;
+  --color-on-accent: #1C1A17;
+  --color-success: #3FB98F;
+  --color-success-soft: #1A2C24;
+  --color-warning: #E0664A;
+  --color-warning-soft: #3A211A;
+  --color-danger: #E5794F;
+  --color-danger-soft: #3A241A;
+  --color-critical: #F4552E;
+  --color-critical-soft: #452015;
+  --color-info: #6EA8E8;
+  --color-info-soft: #223447;
+  --color-shadow: rgba(0,0,0,0.45);
 }

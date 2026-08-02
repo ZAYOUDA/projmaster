@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../firebase/auth';
+import { useTheme } from '../../hooks/useTheme';
 import NouveauProjetModal from './NouveauProjetModal';
 
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
@@ -19,6 +20,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { userDoc } = useAuth();
   const [showNewProjet, setShowNewProjet] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleCreateProjet = async (type) => {
     const newP = await addProjet({
@@ -52,23 +54,23 @@ export default function Sidebar() {
     display: 'flex', alignItems: 'center', gap: 8,
     padding: '6px 12px', borderRadius: 6, textDecoration: 'none',
     fontSize: 13, fontWeight: 500,
-    color: isActive ? '#1A1A18' : '#5F5E5A',
-    background: isActive ? '#F1EFE8' : 'transparent',
+    color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+    background: isActive ? 'var(--color-bg-tertiary)' : 'transparent',
     transition: 'background 0.15s',
   });
 
   return (
     <aside style={{
-      width: 200, flexShrink: 0, background: '#F8F8F7',
-      borderRight: '0.5px solid rgba(0,0,0,0.12)',
+      width: 200, flexShrink: 0, background: 'var(--color-bg-sidebar)',
+      borderRight: '0.5px solid var(--color-border)',
       display: 'flex', flexDirection: 'column',
       height: '100vh', position: 'sticky', top: 0, overflow: 'hidden',
     }}>
       {/* Logo */}
-      <div style={{ padding: '20px 16px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+      <div style={{ padding: '20px 16px 16px', borderBottom: '0.5px solid var(--color-border-soft)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <FolderOpen size={18} color="#378ADD" />
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#1A1A18' }}>MisterProject</span>
+          <FolderOpen size={18} color="var(--color-accent)" />
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)' }}>MisterProject</span>
         </div>
         <div style={{
           marginTop: 8,
@@ -94,7 +96,7 @@ export default function Sidebar() {
         </NavLink>
 
         {/* Projets */}
-        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Projets
         </div>
 
@@ -122,9 +124,9 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
             padding: '6px 12px', borderRadius: 6, border: 'none',
             background: 'transparent', cursor: 'pointer', fontSize: 13,
-            color: '#888780', fontWeight: 500, marginTop: 4,
+            color: 'var(--color-text-tertiary)', fontWeight: 500, marginTop: 4,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#F1EFE8'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <Plus size={14} />
@@ -132,7 +134,7 @@ export default function Sidebar() {
         </button>}
 
         {/* Outils */}
-        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Outils
         </div>
         {userDoc?.role === 'admin' && (
@@ -162,16 +164,31 @@ export default function Sidebar() {
       </nav>
 
       {/* Déconnexion */}
-      <div style={{ padding: '8px 8px 16px', borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
+      <div style={{ padding: '8px 8px 16px', borderTop: '0.5px solid var(--color-border-soft)' }}>
+        <button
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Passer en thème sombre' : 'Passer en thème clair'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+            padding: '6px 12px', borderRadius: 6, border: 'none',
+            background: 'transparent', cursor: 'pointer', fontSize: 13,
+            color: 'var(--color-text-tertiary)', fontWeight: 500,
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+          {theme === 'light' ? 'Thème sombre' : 'Thème clair'}
+        </button>
         {userDoc && (
           <div style={{ padding: '4px 12px 8px' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1A18', marginBottom: 2 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 2 }}>
               {userDoc.prenom} {userDoc.nom}
             </div>
             <span style={{
               display: 'inline-block', padding: '1px 7px', borderRadius: 99, fontSize: 10, fontWeight: 600,
-              background: userDoc.role === 'admin' ? '#DBEAFE' : '#F1EFE8',
-              color: userDoc.role === 'admin' ? '#1D4ED8' : '#5F5E5A',
+              background: userDoc.role === 'admin' ? 'var(--color-info-soft)' : 'var(--color-bg-tertiary)',
+              color: userDoc.role === 'admin' ? 'var(--color-info)' : 'var(--color-text-secondary)',
             }}>
               {userDoc.role === 'admin' ? 'Admin' : 'Collaborateur'}
             </span>
@@ -183,9 +200,9 @@ export default function Sidebar() {
             display: 'flex', alignItems: 'center', gap: 8, width: '100%',
             padding: '6px 12px', borderRadius: 6, border: 'none',
             background: 'transparent', cursor: 'pointer', fontSize: 13,
-            color: '#888780', fontWeight: 500,
+            color: 'var(--color-text-tertiary)', fontWeight: 500,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-soft)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <LogOut size={14} />
