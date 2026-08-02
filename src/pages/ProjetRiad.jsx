@@ -27,8 +27,8 @@ export default function ProjetRiad() {
       <PageHeader title="RIAD" subtitle="Risques · Incidents · Actions · Décisions" />
 
       <div style={{
-        display: 'flex', borderBottom: '0.5px solid rgba(0,0,0,0.1)', marginBottom: 24, gap: 0,
-        position: 'sticky', top: headerHeight, zIndex: 15, background: '#fff',
+        display: 'flex', borderBottom: '0.5px solid var(--color-border-soft)', marginBottom: 24, gap: 0,
+        position: 'sticky', top: headerHeight, zIndex: 15, background: 'var(--color-bg-primary)',
       }}>
         {ONGLETS.map((t) => (
           <button
@@ -37,8 +37,8 @@ export default function ProjetRiad() {
             style={{
               padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 500,
-              color: onglet === t.key ? '#1A1A18' : '#5F5E5A',
-              borderBottom: onglet === t.key ? '2px solid #1A1A18' : '2px solid transparent',
+              color: onglet === t.key ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              borderBottom: onglet === t.key ? '2px solid var(--color-text-primary)' : '2px solid transparent',
               marginBottom: -1,
             }}
           >

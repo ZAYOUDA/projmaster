@@ -4,10 +4,10 @@ import { formatCurrency } from '../../data/calculations';
 import { classifierIndexEVM, CPI_DEFINITION, SPI_DEFINITION, SPI_T_DEFINITION } from '../../utils/evmCalculs';
 
 const STATUT_STYLE = {
-  success: { bg: '#E1F5EE', color: '#1D9E75', label: 'Conforme' },
-  warning: { bg: '#FAEEDA', color: '#BA7517', label: 'À surveiller' },
-  danger:  { bg: '#FAECE7', color: '#D85A30', label: 'Dérive' },
-  neutral: { bg: '#F1EFE8', color: '#888780', label: '—' },
+  success: { bg: 'var(--color-success-soft)', color: 'var(--color-success)', label: 'Conforme' },
+  warning: { bg: 'var(--color-warning-soft)', color: 'var(--color-warning)', label: 'À surveiller' },
+  danger:  { bg: 'var(--color-danger-soft)', color: 'var(--color-danger)', label: 'Dérive' },
+  neutral: { bg: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)', label: '—' },
 };
 
 function KpiPill({ label, value }) {
@@ -26,22 +26,22 @@ function KpiCard({ label, formule, value, definition }) {
   const s = STATUT_STYLE[classifierIndexEVM(value)];
   return (
     <div style={{
-      background: '#fff', border: '0.5px solid rgba(0,0,0,0.1)', borderRadius: 10,
+      background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10,
       padding: '14px 16px', flex: 1, minWidth: 220,
     }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1A1A18' }}>{label}</span>
-        <span style={{ fontSize: 10, color: '#BDBCB8', fontFamily: 'monospace' }}>{formule}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>{label}</span>
+        <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontFamily: 'monospace' }}>{formule}</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 26, fontWeight: 700, color: '#1A1A18', lineHeight: 1 }}>
+        <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1 }}>
           {value === null ? '—' : value.toFixed(2)}
         </span>
         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: s.bg, color: s.color }}>
           {s.label}
         </span>
       </div>
-      <p style={{ margin: 0, fontSize: 11.5, color: '#5F5E5A', lineHeight: 1.5 }}>{definition}</p>
+      <p style={{ margin: 0, fontSize: 11.5, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>{definition}</p>
     </div>
   );
 }
@@ -49,10 +49,10 @@ function KpiCard({ label, formule, value, definition }) {
 function StatChip({ label, value }) {
   return (
     <div style={{ flex: '1 1 120px' }}>
-      <p style={{ margin: '0 0 2px', fontSize: 10, color: '#888780', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+      <p style={{ margin: '0 0 2px', fontSize: 10, color: 'var(--color-text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
         {label}
       </p>
-      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#1A1A18' }}>{value}</p>
+      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>{value}</p>
     </div>
   );
 }
@@ -77,17 +77,17 @@ export default function SanteProjetEVM({ evm, earnedSchedule, alertes }) {
         <KpiPill label="SPI" value={evm.spi} />
         {earnedSchedule && <KpiPill label="SPI(t)" value={earnedSchedule.spiT} />}
         {alertes.length > 0 && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#BA7517' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--color-warning)' }}>
             <AlertTriangle size={12} /> {alertes.length}
           </span>
         )}
-        {ouvert ? <ChevronUp size={14} color="#888780" /> : <ChevronDown size={14} color="#888780" />}
+        {ouvert ? <ChevronUp size={14} color="var(--color-text-tertiary)" /> : <ChevronDown size={14} color="var(--color-text-tertiary)" />}
       </button>
 
       {ouvert && (
         <div style={{
-          marginTop: 12, padding: 16, background: '#FAFAF9',
-          border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 12,
+          marginTop: 12, padding: 16, background: 'var(--color-bg-secondary)',
+          border: '0.5px solid var(--color-border-soft)', borderRadius: 12,
         }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
             <KpiCard label="CPI — coût" formule="EV / AC" value={evm.cpi} definition={CPI_DEFINITION} />
@@ -97,7 +97,7 @@ export default function SanteProjetEVM({ evm, earnedSchedule, alertes }) {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', paddingTop: 14, borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', paddingTop: 14, borderTop: '0.5px solid var(--color-border-soft)' }}>
             <StatChip label="BAC · budget prévu" value={formatCurrency(evm.bac)} />
             <StatChip label="AC · coût réel" value={formatCurrency(evm.ac)} />
             <StatChip label="EV · valeur acquise" value={formatCurrency(evm.ev)} />
@@ -105,17 +105,17 @@ export default function SanteProjetEVM({ evm, earnedSchedule, alertes }) {
           </div>
 
           {alertes.length > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '0.5px solid rgba(0,0,0,0.08)' }}>
-              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#BA7517', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: '0.5px solid var(--color-border-soft)' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <AlertTriangle size={13} /> Avancement probablement pas à jour
               </p>
               {alertes.map((a) => (
                 <div key={a.id} style={{
                   display: 'flex', justifyContent: 'space-between', gap: 12,
-                  fontSize: 12, color: '#5F5E5A', padding: '5px 0',
-                  borderBottom: '0.5px solid rgba(0,0,0,0.05)',
+                  fontSize: 12, color: 'var(--color-text-secondary)', padding: '5px 0',
+                  borderBottom: '0.5px solid var(--color-border-soft)',
                 }}>
-                  <span style={{ fontWeight: 500, color: '#1A1A18' }}>{a.nom}</span>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{a.nom}</span>
                   <span style={{ flexShrink: 0 }}>{a.pctAvancement}% déclaré vs {a.pctJours}% des jours consommés</span>
                 </div>
               ))}

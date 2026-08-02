@@ -19,16 +19,16 @@ import {
  */
 
 const C = {
-  ink: '#1A1A18',
-  grey: '#6B6B68',
-  line: '#E8E8E6',
-  bg: '#FFFFFF',
-  soft: '#F7F7F5',
-  warn: '#B45309',
-  warnBg: '#FEF3C7',
-  ok: '#166534',
-  okBg: '#DCFCE7',
-  danger: '#B91C1C',
+  ink: 'var(--color-text-primary)',
+  grey: 'var(--color-text-secondary)',
+  line: 'var(--color-border)',
+  bg: 'var(--color-bg-card)',
+  soft: 'var(--color-bg-secondary)',
+  warn: 'var(--color-warning)',
+  warnBg: 'var(--color-warning-soft)',
+  ok: 'var(--color-success)',
+  okBg: 'var(--color-success-soft)',
+  danger: 'var(--color-danger)',
 };
 
 const S = {
@@ -40,14 +40,14 @@ const S = {
   td: { fontSize: 13, padding: '8px 10px', borderBottom: `1px solid ${C.line}`, verticalAlign: 'middle' },
   select: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6, background: C.bg, maxWidth: 220 },
   input: { fontSize: 13, padding: '5px 8px', border: `1px solid ${C.line}`, borderRadius: 6, width: 70, textAlign: 'right' },
-  btn: { fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.ink, color: '#fff' },
+  btn: { fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', background: C.ink, color: 'var(--color-bg-primary)' },
   btnGhost: { fontSize: 13, fontWeight: 500, padding: '9px 18px', borderRadius: 8, border: `1px solid ${C.line}`, cursor: 'pointer', background: C.bg, color: C.ink },
   badge: (bg, fg) => ({ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: bg, color: fg }),
   stepDot: (active, done) => ({
     width: 26, height: 26, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: 12, fontWeight: 700,
     background: done ? C.ink : active ? C.ink : C.soft,
-    color: done || active ? '#fff' : C.grey,
+    color: done || active ? 'var(--color-bg-primary)' : C.grey,
     border: `1px solid ${done || active ? C.ink : C.line}`,
   }),
 };
@@ -358,7 +358,7 @@ export default function ImportCRA() {
           </div>
 
           {parsed.warnings.length > 0 && (
-            <div style={{ ...S.card, background: C.warnBg, borderColor: '#FDE68A' }}>
+            <div style={{ ...S.card, background: C.warnBg, borderColor: 'var(--color-warning)' }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.warn, marginBottom: 6 }}>Contrôles</div>
               {parsed.warnings.map((w, i) => (
                 <div key={i} style={{ fontSize: 12.5, color: C.warn }}>• {w}</div>
@@ -480,7 +480,7 @@ export default function ImportCRA() {
 
       {/* ================= ÉTAPE 4 : TERMINÉ ================= */}
       {step === 4 && done && (
-        <div style={{ ...S.card, background: C.okBg, borderColor: '#BBF7D0' }}>
+        <div style={{ ...S.card, background: C.okBg, borderColor: 'var(--color-success)' }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.ok }}>✓ Import terminé</div>
           <div style={{ fontSize: 13, color: C.ok, marginTop: 6 }}>
             {done.entries ?? '—'} lignes importées

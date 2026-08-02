@@ -42,18 +42,18 @@ function groupByMonth(days) {
 
 // ── Couleurs cellule réel ─────────────────────────────────────────
 function reelBg(reel, prev, wknd) {
-  if (wknd) return '#F0EEE8';
-  if (reel === 0) return '#fff';
-  if (prev === 0) return '#FAE8E4';
-  if (reel > prev * 1.1) return '#FAE8E4';
-  if (reel >= prev * 0.9) return '#FFF3CD';
-  return '#E6F5EE';
+  if (wknd) return 'var(--color-bg-tertiary)';
+  if (reel === 0) return 'var(--color-bg-card)';
+  if (prev === 0) return 'var(--color-danger-soft)';
+  if (reel > prev * 1.1) return 'var(--color-danger-soft)';
+  if (reel >= prev * 0.9) return 'var(--color-warning-soft)';
+  return 'var(--color-success-soft)';
 }
 function reelColor(reel, prev) {
-  if (reel === 0) return '#CCC';
-  if (prev === 0 || reel > prev * 1.1) return '#C0391B';
-  if (reel >= prev * 0.9) return '#8A5A00';
-  return '#0E7A45';
+  if (reel === 0) return 'var(--color-text-tertiary)';
+  if (prev === 0 || reel > prev * 1.1) return 'var(--color-critical)';
+  if (reel >= prev * 0.9) return 'var(--color-warning)';
+  return 'var(--color-success)';
 }
 
 // ── Δ helpers ─────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ function DeltaCell({ delta, bg }) {
   const isZero = delta === 0;
   return (
     <td style={deltaCellStyle(bg)}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: isZero ? '#888780' : isNeg ? '#C0391B' : '#0E7A45' }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: isZero ? 'var(--color-text-tertiary)' : isNeg ? 'var(--color-critical)' : 'var(--color-success)' }}>
         {isNeg ? '' : '+'}{delta % 1 === 0 ? delta : delta.toFixed(1)}
       </span>
     </td>
@@ -72,9 +72,9 @@ function DeltaCell({ delta, bg }) {
 const deltaCellStyle = (bg) => ({
   position: 'sticky', left: COL_LEFT.delta, zIndex: 2,
   width: 46, minWidth: 46, textAlign: 'center',
-  borderRight: '1px solid rgba(0,0,0,0.12)',
-  borderBottom: '0.5px solid rgba(0,0,0,0.07)',
-  background: bg || '#fff', verticalAlign: 'middle',
+  borderRight: '1px solid var(--color-border)',
+  borderBottom: '0.5px solid var(--color-border-soft)',
+  background: bg || 'var(--color-bg-card)', verticalAlign: 'middle',
 });
 
 // ── Cellule charge éditable ───────────────────────────────────────
@@ -115,8 +115,8 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
   };
 
   const conflictStyle = conflict ? {
-    outline: '1.5px solid #E8A020', outlineOffset: '-1.5px',
-    background: value > 0 ? bg : '#FFF8EC',
+    outline: '1.5px solid var(--color-warning)', outlineOffset: '-1.5px',
+    background: value > 0 ? bg : 'var(--color-warning-soft)',
   } : {};
 
   return (
@@ -140,19 +140,19 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
       style={{
         width: colWidth, minWidth: colWidth, maxWidth: colWidth,
         height: 26, padding: 0,
-        border: '0.5px solid rgba(0,0,0,0.07)',
+        border: '0.5px solid var(--color-border-soft)',
         background: bg, cursor: 'pointer', textAlign: 'center', verticalAlign: 'middle',
         position: 'relative', outline: 'none',
         ...conflictStyle,
       }}
-      onFocus={(e) => { e.currentTarget.style.boxShadow = 'inset 0 0 0 2px #378ADD'; }}
+      onFocus={(e) => { e.currentTarget.style.boxShadow = 'inset 0 0 0 2px var(--color-info)'; }}
       onBlur={(e) => { if (!editing) e.currentTarget.style.boxShadow = 'none'; }}
     >
       {conflict && !editing && (
         <span style={{
           position: 'absolute', top: 0, right: 0,
           width: 5, height: 5, borderRadius: '0 0 0 5px',
-          background: '#E8A020', zIndex: 1,
+          background: 'var(--color-warning)', zIndex: 1,
         }} />
       )}
       {editing ? (
@@ -171,13 +171,13 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
             if (e.key === 'Escape') setEditing(false);
           }}
           style={{
-            width: '100%', height: '100%', border: '2px solid #378ADD',
+            width: '100%', height: '100%', border: '2px solid var(--color-info)',
             textAlign: 'center', fontSize: 11, outline: 'none',
-            background: '#fff', fontFamily: 'inherit', padding: 0,
+            background: 'var(--color-bg-card)', fontFamily: 'inherit', padding: 0,
           }}
         />
       ) : (
-        <span style={{ fontSize: 11, color: value > 0 ? color : '#D8D6D0', fontWeight: value > 0 ? 600 : 400 }}>
+        <span style={{ fontSize: 11, color: value > 0 ? color : 'var(--color-text-tertiary)', fontWeight: value > 0 ? 600 : 400 }}>
           {value > 0 ? String(value % 1 === 0 ? value : value.toFixed(1)).replace('.', ',') : '·'}
         </span>
       )}
@@ -186,10 +186,10 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
 }
 
 const STATUT_OPTIONS = [
-  { value: 'non_demarre', label: 'Non démarré', color: '#888780' },
-  { value: 'en_cours',    label: 'En cours',    color: '#378ADD' },
-  { value: 'termine',     label: 'Terminé',     color: '#1D9E75' },
-  { value: 'bloque',      label: 'Bloqué',      color: '#D85A30' },
+  { value: 'non_demarre', label: 'Non démarré', color: 'var(--color-text-tertiary)' },
+  { value: 'en_cours',    label: 'En cours',    color: 'var(--color-info)' },
+  { value: 'termine',     label: 'Terminé',     color: 'var(--color-success)' },
+  { value: 'bloque',      label: 'Bloqué',      color: 'var(--color-danger)' },
 ];
 
 // ── Lignes d'une tâche ────────────────────────────────────────────
@@ -260,7 +260,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
     totalReelByDay[iso] = leafAffectations.reduce((s, a) => s + ((a.planning_reel || {})[iso] || 0), 0);
   });
 
-  const headerBg = depth === 0 ? '#F0EFF9' : '#F8F8FB';
+  const headerBg = depth === 0 ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)';
 
   return (
     <>
@@ -273,7 +273,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                 {expanded ? <ChevronDown size={12} /> : <ChevronRightIcon size={12} />}
               </button>
             ) : <span style={{ width: 16, flexShrink: 0 }} />}
-            <span style={{ fontSize: 10, color: '#888780', fontFamily: 'monospace', marginRight: 4, flexShrink: 0 }}>{numero}</span>
+            <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontFamily: 'monospace', marginRight: 4, flexShrink: 0 }}>{numero}</span>
             <span style={{ fontSize: 12, fontWeight: depth === 0 ? 700 : 500 }}>
               {node.nom}
             </span>
@@ -292,7 +292,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                 <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
               ))}
               {collaborateurs.filter((c) => !c.actif && (node.affectations || []).some((a) => a.collaborateur_id === c.id)).map((c) => (
-                <option key={c.id} value={c.id} style={{ color: '#888780' }}>{c.prenom} {c.nom} (inactif)</option>
+                <option key={c.id} value={c.id} style={{ color: 'var(--color-text-tertiary)' }}>{c.prenom} {c.nom} (inactif)</option>
               ))}
             </select>
           )}
@@ -316,9 +316,9 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         </td>
         {/* Total */}
         <td style={{ ...totalCol, background: headerBg }}>
-          {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 600 }}>{totalJoursPrev > 0 ? `${fmtJours(totalJoursPrev)}j` : ''}</div>}
+          {showPrev && <div style={{ fontSize: 10, color: 'var(--color-info)', fontWeight: 600 }}>{totalJoursPrev > 0 ? `${fmtJours(totalJoursPrev)}j` : ''}</div>}
           {showReel && totalJoursReel > 0 && (
-            <div style={{ fontSize: 10, color: totalJoursReel > totalJoursPrev ? '#C0391B' : '#0E7A45', fontWeight: 600 }}>{fmtJours(totalJoursReel)}j</div>
+            <div style={{ fontSize: 10, color: totalJoursReel > totalJoursPrev ? 'var(--color-critical)' : 'var(--color-success)', fontWeight: 600 }}>{fmtJours(totalJoursReel)}j</div>
           )}
         </td>
         {/* Δ */}
@@ -332,12 +332,12 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
           return (
             <td key={iso} style={{
               width: colWidth, minWidth: colWidth,
-              border: '0.5px solid rgba(0,0,0,0.07)',
-              background: wknd ? '#EEECE6' : headerBg,
+              border: '0.5px solid var(--color-border-soft)',
+              background: wknd ? 'var(--color-bg-tertiary)' : headerBg,
               textAlign: 'center', fontSize: 10, height: 26,
-              borderLeft: d.getDay() === 1 ? '1px solid rgba(0,0,0,0.1)' : undefined,
+              borderLeft: d.getDay() === 1 ? '1px solid var(--color-border)' : undefined,
             }}>
-              {showPrev && prev > 0 && <div style={{ color: '#378ADD', fontWeight: 600, lineHeight: 1.2 }}>{String(prev % 1 === 0 ? prev : prev.toFixed(1)).replace('.', ',')}</div>}
+              {showPrev && prev > 0 && <div style={{ color: 'var(--color-info)', fontWeight: 600, lineHeight: 1.2 }}>{String(prev % 1 === 0 ? prev : prev.toFixed(1)).replace('.', ',')}</div>}
               {showReel && reel > 0 && <div style={{ color: reelColor(reel, prev), fontWeight: 600, lineHeight: 1.2 }}>{String(reel % 1 === 0 ? reel : reel.toFixed(1)).replace('.', ',')}</div>}
             </td>
           );
@@ -355,47 +355,47 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         return (
           <React.Fragment key={aff.id}>
             {showPrev && (
-              <tr style={{ background: '#FAFAFE' }}>
-                <td style={{ ...frozenLeft(depth + 1), background: '#FAFAFE' }}>
+              <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                <td style={{ ...frozenLeft(depth + 1), background: 'var(--color-bg-secondary)' }}>
                   {filling === aff.id ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 16 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>
                         {collab.initiales}
                       </div>
-                      <span style={{ fontSize: 10, color: '#5F5E5A', flexShrink: 0 }}>Remplir :</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', flexShrink: 0 }}>Remplir :</span>
                       <input
                         autoFocus
                         value={fillVal}
                         onChange={(e) => setFillVal(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') doFill(aff.id, aff.collaborateur_id, fillVal); if (e.key === 'Escape') setFilling(null); }}
-                        style={{ width: 36, padding: '1px 4px', border: '1.5px solid #378ADD', borderRadius: 4, fontSize: 11, textAlign: 'center', fontFamily: 'inherit', outline: 'none' }}
+                        style={{ width: 36, padding: '1px 4px', border: '1.5px solid var(--color-info)', borderRadius: 4, fontSize: 11, textAlign: 'center', fontFamily: 'inherit', outline: 'none' }}
                       />
-                      <button onClick={() => doFill(aff.id, aff.collaborateur_id, fillVal)} style={{ padding: '1px 6px', borderRadius: 4, border: 'none', background: '#378ADD', color: '#fff', fontSize: 11, cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}>OK</button>
-                      <button onClick={() => setFilling(null)} style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', fontSize: 11, cursor: 'pointer', color: '#888', flexShrink: 0 }}>✕</button>
+                      <button onClick={() => doFill(aff.id, aff.collaborateur_id, fillVal)} style={{ padding: '1px 6px', borderRadius: 4, border: 'none', background: 'var(--color-info)', color: '#FFFFFF', fontSize: 11, cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}>OK</button>
+                      <button onClick={() => setFilling(null)} style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 11, cursor: 'pointer', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>✕</button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ width: 16, flexShrink: 0 }} />
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>
                         {collab.initiales}
                       </div>
-                      <span style={{ fontSize: 11, color: '#5F5E5A', }}>{collab.prenom} {collab.nom}</span>
-                      <span style={{ fontSize: 9, background: '#E6F0FB', color: '#378ADD', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>PRÉ</span>
+                      <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', }}>{collab.prenom} {collab.nom}</span>
+                      <span style={{ fontSize: 9, background: 'var(--color-info-soft)', color: 'var(--color-info)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>PRÉ</span>
                       <button
                         onClick={() => { setFilling(aff.id); setFillVal('1'); }}
                         title="Remplir tous les jours visibles"
-                        style={{ marginLeft: 'auto', padding: '1px 5px', borderRadius: 4, border: '1px solid rgba(55,138,221,0.3)', background: '#EBF5FF', color: '#378ADD', fontSize: 10, cursor: 'pointer', flexShrink: 0 }}
+                        style={{ marginLeft: 'auto', padding: '1px 5px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-info-soft)', color: 'var(--color-info)', fontSize: 10, cursor: 'pointer', flexShrink: 0 }}
                       >↔</button>
                     </div>
                   )}
                 </td>
-                <td style={{ ...collabCol, background: '#FAFAFE' }} />
-                <td style={{ ...statutCol, background: '#FAFAFE' }} />
-                <td style={{ ...totalCol, background: '#FAFAFE', color: '#378ADD', fontSize: 11, fontWeight: 600 }}>
+                <td style={{ ...collabCol, background: 'var(--color-bg-secondary)' }} />
+                <td style={{ ...statutCol, background: 'var(--color-bg-secondary)' }} />
+                <td style={{ ...totalCol, background: 'var(--color-bg-secondary)', color: 'var(--color-info)', fontSize: 11, fontWeight: 600 }}>
                   {joursPrev > 0 ? `${fmtJours(joursPrev)}j` : ''}
                 </td>
                 {/* Δ sur ligne prév — visible quelle que soit la vue sélectionnée */}
-                <DeltaCell delta={affDelta} bg='#FAFAFE' />
+                <DeltaCell delta={affDelta} bg='var(--color-bg-secondary)' />
                 {days.map((d) => {
                   const iso = toISO(d);
                   const value = (aff.planning || {})[iso] || 0;
@@ -405,54 +405,54 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                   const totalJourCollab = (chargeParCollabJour[aff.collaborateur_id] || {})[iso] || 0;
                   const autresTaches = totalJourCollab - value;
                   const conflict = !isConge && autresTaches > 0 ? collab.prenom : null;
-                  const bg = isConge ? '#FEE2E2' : wknd ? '#F0EEE8' : value >= 1 ? '#DAEEF8' : value > 0 ? '#EBF5FB' : '#FAFAFE';
+                  const bg = isConge ? 'var(--color-danger-soft)' : wknd ? 'var(--color-bg-tertiary)' : value >= 1 ? 'var(--color-info-soft)' : value > 0 ? 'var(--color-info-soft)' : 'var(--color-bg-secondary)';
                   return isConge ? (
                     <td key={iso} title={`Congé — ${collab.prenom} ${collab.nom}`} style={{
-                      width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid rgba(0,0,0,0.07)',
-                      background: '#FEE2E2', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
+                      width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid var(--color-border-soft)',
+                      background: 'var(--color-danger-soft)', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
                     }}>
-                      <span style={{ fontSize: 10, color: '#DC2626' }}>✕</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-danger)' }}>✕</span>
                     </td>
                   ) : (
-                    <ChargeCell key={iso} value={value} isWeekend={wknd} colWidth={colWidth} bg={bg} color='#1A6E9B' conflict={conflict}
+                    <ChargeCell key={iso} value={value} isWeekend={wknd} colWidth={colWidth} bg={bg} color='var(--color-info)' conflict={conflict}
                       onChange={(v) => setChargePlanning(projetId, node.id, aff.id, iso, v)} />
                   );
                 })}
               </tr>
             )}
             {showReel && (
-              <tr style={{ background: '#FFFDF9' }}>
-                <td style={{ ...frozenLeft(depth + 1), background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+              <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                <td style={{ ...frozenLeft(depth + 1), background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border-soft)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 16, flexShrink: 0 }} />
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flexShrink: 0, opacity: 0.6 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#FFFFFF', flexShrink: 0, opacity: 0.6 }}>
                       {collab.initiales}
                     </div>
-                    <span style={{ fontSize: 11, color: '#888780', }}>{collab.prenom} {collab.nom}</span>
-                    <span style={{ fontSize: 9, background: '#FFF0E0', color: '#BA7517', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>RÉE</span>
+                    <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', }}>{collab.prenom} {collab.nom}</span>
+                    <span style={{ fontSize: 9, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>RÉE</span>
                   </div>
                 </td>
-                <td style={{ ...collabCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
-                <td style={{ ...statutCol, background: '#FFFDF9', borderBottom: '1px solid rgba(0,0,0,0.08)' }} />
-                <td style={{ ...totalCol, background: '#FFFDF9', fontSize: 11, fontWeight: 600, borderBottom: '1px solid rgba(0,0,0,0.08)', color: joursReel > joursPrev ? '#C0391B' : joursReel > 0 ? '#0E7A45' : '#CCC' }}>
+                <td style={{ ...collabCol, background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border-soft)' }} />
+                <td style={{ ...statutCol, background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border-soft)' }} />
+                <td style={{ ...totalCol, background: 'var(--color-bg-secondary)', fontSize: 11, fontWeight: 600, borderBottom: '1px solid var(--color-border-soft)', color: joursReel > joursPrev ? 'var(--color-critical)' : joursReel > 0 ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>
                   {joursReel > 0 ? `${fmtJours(joursReel)}j` : ''}
                 </td>
                 {/* Δ sur ligne réel — visible quelle que soit la vue sélectionnée */}
-                <DeltaCell delta={affDelta} bg='#FFFDF9' />
+                <DeltaCell delta={affDelta} bg='var(--color-bg-secondary)' />
                 {days.map((d) => {
                   const iso = toISO(d);
                   const reel = (aff.planning_reel || {})[iso] || 0;
                   const prev = (aff.planning || {})[iso] || 0;
                   const wknd = isWeekend(d);
                   const isConge = (congesParCollab[aff.collaborateur_id]?.[iso] || 0) > 0;
-                  const bg = wknd ? '#F0EEE8' : reelBg(reel, prev, false);
+                  const bg = wknd ? 'var(--color-bg-tertiary)' : reelBg(reel, prev, false);
                   // Même marquage congé que sur la ligne Prév — avant, seule la ligne Prév le montrait.
                   return isConge ? (
                     <td key={iso} title={`Congé — ${collab.prenom} ${collab.nom}`} style={{
-                      width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid rgba(0,0,0,0.07)',
-                      background: '#FEE2E2', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
+                      width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid var(--color-border-soft)',
+                      background: 'var(--color-danger-soft)', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
                     }}>
-                      <span style={{ fontSize: 10, color: '#DC2626' }}>✕</span>
+                      <span style={{ fontSize: 10, color: 'var(--color-danger)' }}>✕</span>
                     </td>
                   ) : (
                     <ChargeCell key={iso} value={reel} isWeekend={wknd} colWidth={colWidth} bg={bg}
@@ -492,18 +492,18 @@ const frozenLeft = (depth) => ({
   position: 'sticky', left: COL_LEFT.tache, zIndex: 2, background: 'inherit',
   width: 340, minWidth: 340,
   padding: `4px 8px 4px ${8 + depth * 14}px`,
-  fontSize: 12, borderRight: '1px solid rgba(0,0,0,0.1)',
+  fontSize: 12, borderRight: '1px solid var(--color-border)',
   whiteSpace: 'normal', wordBreak: 'break-word',
-  borderBottom: '0.5px solid rgba(0,0,0,0.07)',
+  borderBottom: '0.5px solid var(--color-border-soft)',
 });
 const totalCol = {
   position: 'sticky', left: COL_LEFT.total, zIndex: 2,
   width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8,
   fontSize: 11, fontWeight: 600,
-  borderRight: '1px solid rgba(0,0,0,0.1)',
-  borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle',
+  borderRight: '1px solid var(--color-border)',
+  borderBottom: '0.5px solid var(--color-border-soft)', verticalAlign: 'middle',
 };
-const chevronBtn = { background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#888780', flexShrink: 0 };
+const chevronBtn = { background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: 'var(--color-text-tertiary)', flexShrink: 0 };
 
 // ── Page ─────────────────────────────────────────────────────────
 const ZOOM_OPTIONS = [
@@ -636,43 +636,43 @@ export default function ProjetPlanning() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: `calc(100vh - ${headerHeight}px)`, overflow: 'hidden' }}>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.1)', flexShrink: 0, background: '#fff', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderBottom: '0.5px solid var(--color-border)', flexShrink: 0, background: 'var(--color-bg-card)', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 14, fontWeight: 600 }}>Planning de charge</span>
 
         {parentIds.length > 0 && (
           <button onClick={allCollapsed ? expandAll : collapseAll}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888780', padding: 0 }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-tertiary)', padding: 0 }}>
             {allCollapsed ? <ChevronDown size={13} /> : <ChevronRightIcon size={13} />}
             {allCollapsed ? 'Tout déplier' : 'Tout plier'}
           </button>
         )}
 
         {/* Picklist */}
-        <div style={{ display: 'flex', background: '#F1EFE8', borderRadius: 8, padding: 3, gap: 2 }}>
+        <div style={{ display: 'flex', background: 'var(--color-bg-tertiary)', borderRadius: 8, padding: 3, gap: 2 }}>
           {[['prévisionnel', '📘 Prév.'], ['réel', '📙 Réel'], ['les deux', '📊 Les deux']].map(([v, label]) => (
             <button key={v} onClick={() => setVue(v)} style={{
               padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
               fontSize: 12, fontWeight: 500,
-              background: vue === v ? '#fff' : 'transparent',
-              color: vue === v ? '#1A1A18' : '#888780',
-              boxShadow: vue === v ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              background: vue === v ? 'var(--color-bg-card)' : 'transparent',
+              color: vue === v ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+              boxShadow: vue === v ? '0 1px 3px var(--color-border)' : 'none',
               transition: 'all 0.15s',
             }}>{label}</button>
           ))}
         </div>
 
         {/* Légende */}
-        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#5F5E5A' }}>
-          {showPrev && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: '#DAEEF8', borderRadius: 2 }} />Prév.</span>}
+        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--color-text-secondary)' }}>
+          {showPrev && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-info-soft)', borderRadius: 2 }} />Prév.</span>}
           {showReel && <>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: '#E6F5EE', borderRadius: 2 }} />OK</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: '#FFF3CD', borderRadius: 2 }} />≈ prév</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: '#FAE8E4', borderRadius: 2 }} />Dépas.</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-success-soft)', borderRadius: 2 }} />OK</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-warning-soft)', borderRadius: 2 }} />≈ prév</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-danger-soft)', borderRadius: 2 }} />Dépas.</span>
           </>}
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: '#FEE2E2', borderRadius: 2, border: '0.5px solid #FECACA' }} />Congé</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-danger-soft)', borderRadius: 2, border: '0.5px solid var(--color-danger)' }} />Congé</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ position: 'relative', display: 'inline-block', width: 16, height: 8, background: '#FFF8EC', border: '1.5px solid #E8A020', borderRadius: 2 }}>
-              <span style={{ position: 'absolute', top: 0, right: 0, width: 4, height: 4, background: '#E8A020', borderRadius: '0 0 0 3px' }} />
+            <span style={{ position: 'relative', display: 'inline-block', width: 16, height: 8, background: 'var(--color-warning-soft)', border: '1.5px solid var(--color-warning)', borderRadius: 2 }}>
+              <span style={{ position: 'absolute', top: 0, right: 0, width: 4, height: 4, background: 'var(--color-warning)', borderRadius: '0 0 0 3px' }} />
             </span>
             Conflit ressource
           </span>
@@ -681,10 +681,10 @@ export default function ProjetPlanning() {
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           {ZOOM_OPTIONS.map((z) => (
             <button key={z.key} onClick={() => setZoom(z.key)} style={{
-              padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)',
+              padding: '5px 10px', borderRadius: 6, border: '1px solid var(--color-border)',
               fontSize: 12, fontWeight: 500, cursor: 'pointer',
-              background: zoom === z.key ? '#1A1A18' : '#fff',
-              color: zoom === z.key ? '#fff' : '#5F5E5A',
+              background: zoom === z.key ? 'var(--color-text-primary)' : 'var(--color-bg-card)',
+              color: zoom === z.key ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
             }}>{z.label}</button>
           ))}
         </div>
@@ -693,23 +693,23 @@ export default function ProjetPlanning() {
           <button onClick={() => setStartDate(startOfWeek(new Date()))} style={{ ...navBtn, fontSize: 11, padding: '5px 8px' }}>Aujourd'hui</button>
           <button onClick={() => nav(1)} style={navBtn}><ChevronRight size={14} /></button>
         </div>
-        <span style={{ fontSize: 11, color: '#888780' }}>
+        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
           {startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → {endDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
         </span>
       </div>
 
       {/* Barre de filtres */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 24px', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#FAFAF9', flexShrink: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 500, color: '#888780', marginRight: 4 }}>Filtrer :</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 24px', borderBottom: '0.5px solid var(--color-border-soft)', background: 'var(--color-bg-hover)', flexShrink: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', marginRight: 4 }}>Filtrer :</span>
         <select value={filterCollab} onChange={(e) => setFilterCollab(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterCollab ? '#EFF6FF' : '#fff', color: filterCollab ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterCollab ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterCollab ? 'var(--color-info)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Affecté à : Tous</option>
           {collaborateurs.filter((c) => c.actif).map((c) => (
             <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
           ))}
         </select>
         <select value={filterStatut} onChange={(e) => setFilterStatut(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterStatut ? '#EFF6FF' : '#fff', color: filterStatut ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterStatut ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterStatut ? 'var(--color-info)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Statut : Tous</option>
           <option value="non_demarre">Non démarré</option>
           <option value="en_cours">En cours</option>
@@ -717,19 +717,19 @@ export default function ProjetPlanning() {
           <option value="bloque">Bloqué</option>
         </select>
         <select value={filterDelta} onChange={(e) => setFilterDelta(e.target.value)}
-          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: filterDelta ? '#EFF6FF' : '#fff', color: filterDelta ? '#378ADD' : '#5F5E5A', outline: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: filterDelta ? 'var(--color-accent-soft)' : 'var(--color-bg-card)', color: filterDelta ? 'var(--color-info)' : 'var(--color-text-secondary)', outline: 'none', cursor: 'pointer' }}>
           <option value="">Δ Prév−Réel : Tous</option>
           <option value="avance">En avance (Δ &gt; 0)</option>
           <option value="depasse">Dépassé (Δ &lt; 0)</option>
         </select>
         {hasFilter && (
           <button onClick={() => { setFilterCollab(''); setFilterStatut(''); setFilterDelta(''); }}
-            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#5F5E5A' }}>
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', color: 'var(--color-text-secondary)' }}>
             ✕ Réinitialiser
           </button>
         )}
         {visibleIds && (
-          <span style={{ fontSize: 11, color: '#888780', marginLeft: 4 }}>
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>
             {visibleIds.size > 0 ? `${projet.wbs.filter(n => visibleIds.has(n.id) && !projet.wbs.some(c => c.parent_id === n.id)).length} tâche(s)` : 'Aucun résultat'}
           </span>
         )}
@@ -742,37 +742,37 @@ export default function ProjetPlanning() {
       <div style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-            <tr style={{ background: '#EEEDF5' }}>
-              <th style={{ ...thFixed, background: '#EEEDF5' }}>Tâche / Collaborateur</th>
-              <th style={{ ...thCollab, background: '#EEEDF5' }}>Affecté à</th>
-              <th style={{ ...thStatut, background: '#EEEDF5' }}>Statut</th>
-              <th style={{ ...thTotal, background: '#EEEDF5' }}>Total</th>
-              <th style={{ ...thDelta, background: '#EEEDF5' }}>Δ</th>
+            <tr style={{ background: 'var(--color-bg-secondary)' }}>
+              <th style={{ ...thFixed, background: 'var(--color-bg-secondary)' }}>Tâche / Collaborateur</th>
+              <th style={{ ...thCollab, background: 'var(--color-bg-secondary)' }}>Affecté à</th>
+              <th style={{ ...thStatut, background: 'var(--color-bg-secondary)' }}>Statut</th>
+              <th style={{ ...thTotal, background: 'var(--color-bg-secondary)' }}>Total</th>
+              <th style={{ ...thDelta, background: 'var(--color-bg-secondary)' }}>Δ</th>
               {monthGroups.map((g) => (
-                <th key={g.key} colSpan={g.days.length} style={{ ...thDay, fontWeight: 700, fontSize: 11, borderLeft: '1px solid rgba(0,0,0,0.15)', background: '#EEEDF5' }}>
+                <th key={g.key} colSpan={g.days.length} style={{ ...thDay, fontWeight: 700, fontSize: 11, borderLeft: '1px solid var(--color-border)', background: 'var(--color-bg-secondary)' }}>
                   {g.label}
                 </th>
               ))}
             </tr>
-            <tr style={{ background: '#F5F4FB' }}>
-              <th style={{ ...thFixed, background: '#F5F4FB' }} />
-              <th style={{ ...thCollab, background: '#F5F4FB' }} />
-              <th style={{ ...thStatut, background: '#F5F4FB' }} />
-              <th style={{ ...thTotal, background: '#F5F4FB' }} />
-              <th style={{ ...thDelta, background: '#F5F4FB', fontSize: 9, color: '#888780' }}>Prév−Réel</th>
+            <tr style={{ background: 'var(--color-bg-secondary)' }}>
+              <th style={{ ...thFixed, background: 'var(--color-bg-secondary)' }} />
+              <th style={{ ...thCollab, background: 'var(--color-bg-secondary)' }} />
+              <th style={{ ...thStatut, background: 'var(--color-bg-secondary)' }} />
+              <th style={{ ...thTotal, background: 'var(--color-bg-secondary)' }} />
+              <th style={{ ...thDelta, background: 'var(--color-bg-secondary)', fontSize: 9, color: 'var(--color-text-tertiary)' }}>Prév−Réel</th>
               {days.map((d) => {
                 const iso = toISO(d); const wknd = isWeekend(d); const isToday = iso === today;
                 return (
                   <th key={iso} style={{
                     ...thDay,
-                    background: isToday ? '#EBF4FF' : wknd ? '#EEECE6' : '#F5F4FB',
-                    color: isToday ? '#378ADD' : wknd ? '#AAA9A4' : '#5F5E5A',
+                    background: isToday ? 'var(--color-accent-soft)' : wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
+                    color: isToday ? 'var(--color-info)' : wknd ? 'var(--color-text-tertiary)' : 'var(--color-text-secondary)',
                     fontWeight: isToday ? 700 : 400,
-                    borderLeft: d.getDay() === 1 ? '1px solid rgba(0,0,0,0.1)' : 'none',
-                    borderBottom: isToday ? '2px solid #378ADD' : undefined,
+                    borderLeft: d.getDay() === 1 ? '1px solid var(--color-border)' : 'none',
+                    borderBottom: isToday ? '2px solid var(--color-info)' : undefined,
                   }}>
                     <div style={{ fontSize: 10 }}>{JOURS[d.getDay()]}</div>
-                    <div style={{ fontSize: 9, color: isToday ? '#378ADD' : '#AAA9A4' }}>{d.getDate()}</div>
+                    <div style={{ fontSize: 9, color: isToday ? 'var(--color-info)' : 'var(--color-text-tertiary)' }}>{d.getDate()}</div>
                   </th>
                 );
               })}
@@ -790,17 +790,17 @@ export default function ProjetPlanning() {
             ))}
 
             {/* Ligne total global */}
-            <tr style={{ background: '#EEEDF5', position: 'sticky', bottom: 0, zIndex: 5 }}>
-              <td style={{ ...frozenLeft(0), background: '#EEEDF5', fontWeight: 700, fontSize: 12 }}>Total / jour</td>
-              <td style={{ ...collabCol, background: '#EEEDF5' }} />
-              <td style={{ ...statutCol, background: '#EEEDF5' }} />
-              <td style={{ ...totalCol, background: '#EEEDF5' }}>
-                {showPrev && <div style={{ fontSize: 10, color: '#378ADD', fontWeight: 700 }}>{fmtJours(grandTotalPrev)}j</div>}
-                {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? '#C0391B' : '#0E7A45', fontWeight: 700 }}>{fmtJours(grandTotalReel)}j</div>}
+            <tr style={{ background: 'var(--color-bg-secondary)', position: 'sticky', bottom: 0, zIndex: 5 }}>
+              <td style={{ ...frozenLeft(0), background: 'var(--color-bg-secondary)', fontWeight: 700, fontSize: 12 }}>Total / jour</td>
+              <td style={{ ...collabCol, background: 'var(--color-bg-secondary)' }} />
+              <td style={{ ...statutCol, background: 'var(--color-bg-secondary)' }} />
+              <td style={{ ...totalCol, background: 'var(--color-bg-secondary)' }}>
+                {showPrev && <div style={{ fontSize: 10, color: 'var(--color-info)', fontWeight: 700 }}>{fmtJours(grandTotalPrev)}j</div>}
+                {showReel && grandTotalReel > 0 && <div style={{ fontSize: 10, color: grandTotalReel > grandTotalPrev ? 'var(--color-critical)' : 'var(--color-success)', fontWeight: 700 }}>{fmtJours(grandTotalReel)}j</div>}
               </td>
-              <td style={{ ...deltaCellStyle('#EEEDF5') }}>
+              <td style={{ ...deltaCellStyle('var(--color-bg-secondary)') }}>
                 {(grandTotalPrev > 0 || grandTotalReel > 0) && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: grandTotalPrev - grandTotalReel < 0 ? '#C0391B' : '#0E7A45' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: grandTotalPrev - grandTotalReel < 0 ? 'var(--color-critical)' : 'var(--color-success)' }}>
                     {grandTotalPrev - grandTotalReel > 0 ? '+' : ''}{fmtJours(grandTotalPrev - grandTotalReel)}
                   </span>
                 )}
@@ -808,9 +808,9 @@ export default function ProjetPlanning() {
               {days.map((d) => {
                 const iso = toISO(d); const prev = grandPrevByDay[iso]; const reel = grandReelByDay[iso]; const wknd = isWeekend(d);
                 return (
-                  <td key={iso} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, border: '0.5px solid rgba(0,0,0,0.1)', background: wknd ? '#EEECE6' : '#EEEDF5', textAlign: 'center', fontSize: 10 }}>
-                    {showPrev && prev > 0 && <div style={{ color: '#378ADD', fontWeight: 700, lineHeight: 1.3 }}>{String(prev % 1 === 0 ? prev : prev.toFixed(1)).replace('.', ',')}</div>}
-                    {showReel && reel > 0 && <div style={{ color: reel > prev * 1.1 ? '#C0391B' : reel >= prev * 0.9 ? '#8A5A00' : '#0E7A45', fontWeight: 700, lineHeight: 1.3 }}>{String(reel % 1 === 0 ? reel : reel.toFixed(1)).replace('.', ',')}</div>}
+                  <td key={iso} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, border: '0.5px solid var(--color-border)', background: wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)', textAlign: 'center', fontSize: 10 }}>
+                    {showPrev && prev > 0 && <div style={{ color: 'var(--color-info)', fontWeight: 700, lineHeight: 1.3 }}>{String(prev % 1 === 0 ? prev : prev.toFixed(1)).replace('.', ',')}</div>}
+                    {showReel && reel > 0 && <div style={{ color: reel > prev * 1.1 ? 'var(--color-critical)' : reel >= prev * 0.9 ? 'var(--color-warning)' : 'var(--color-success)', fontWeight: 700, lineHeight: 1.3 }}>{String(reel % 1 === 0 ? reel : reel.toFixed(1)).replace('.', ',')}</div>}
                   </td>
                 );
               })}
@@ -822,14 +822,14 @@ export default function ProjetPlanning() {
   );
 }
 
-const thFixed = { position: 'sticky', left: COL_LEFT.tache, zIndex: 4, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thCollab = { position: 'sticky', left: COL_LEFT.collab, zIndex: 4, width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thStatut = { position: 'sticky', left: COL_LEFT.statut, zIndex: 4, width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thTotal = { position: 'sticky', left: COL_LEFT.total, zIndex: 4, width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)' };
-const thDelta = { position: 'sticky', left: COL_LEFT.delta, zIndex: 4, width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.1)', borderRight: '1px solid rgba(0,0,0,0.15)' };
-const collabCol = { position: 'sticky', left: COL_LEFT.collab, zIndex: 2, width: 130, minWidth: 130, padding: '2px 6px', borderRight: '1px solid rgba(0,0,0,0.1)', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
-const statutCol = { position: 'sticky', left: COL_LEFT.statut, zIndex: 2, width: 100, minWidth: 100, padding: '2px 6px', borderRight: '1px solid rgba(0,0,0,0.1)', borderBottom: '0.5px solid rgba(0,0,0,0.07)', verticalAlign: 'middle' };
-const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid rgba(0,0,0,0.15)', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
-const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
-const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: '#5F5E5A', border: '0.5px solid rgba(0,0,0,0.07)' };
-const navBtn = { padding: '5px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#5F5E5A' };
+const thFixed = { position: 'sticky', left: COL_LEFT.tache, zIndex: 4, width: 340, minWidth: 340, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)' };
+const thCollab = { position: 'sticky', left: COL_LEFT.collab, zIndex: 4, width: 130, minWidth: 130, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)' };
+const thStatut = { position: 'sticky', left: COL_LEFT.statut, zIndex: 4, width: 100, minWidth: 100, textAlign: 'left', padding: '6px 8px', fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)' };
+const thTotal = { position: 'sticky', left: COL_LEFT.total, zIndex: 4, width: 48, minWidth: 48, textAlign: 'right', paddingRight: 8, fontSize: 11, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)' };
+const thDelta = { position: 'sticky', left: COL_LEFT.delta, zIndex: 4, width: 46, minWidth: 46, textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)', borderRight: '1px solid var(--color-border)' };
+const collabCol = { position: 'sticky', left: COL_LEFT.collab, zIndex: 2, width: 130, minWidth: 130, padding: '2px 6px', borderRight: '1px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border-soft)', verticalAlign: 'middle' };
+const statutCol = { position: 'sticky', left: COL_LEFT.statut, zIndex: 2, width: 100, minWidth: 100, padding: '2px 6px', borderRight: '1px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border-soft)', verticalAlign: 'middle' };
+const collabSelectStyle = { width: '100%', fontSize: 11, border: '1px solid var(--color-border)', borderRadius: 4, padding: '2px 4px', background: 'var(--color-bg-card)', cursor: 'pointer', fontFamily: 'inherit', outline: 'none' };
+const statutSelectStyle = { width: '100%', fontSize: 11, border: '1px solid', borderRadius: 4, padding: '2px 4px', background: 'var(--color-bg-card)', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', fontWeight: 500 };
+const thDay = { width: COL_WIDTH, minWidth: COL_WIDTH, textAlign: 'center', padding: '3px 0', fontSize: 10, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border-soft)' };
+const navBtn = { padding: '5px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-text-secondary)' };

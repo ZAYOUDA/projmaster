@@ -5,12 +5,12 @@ import PageHeader from '../components/layout/PageHeader';
 import Modal from '../components/ui/Modal';
 import { Plus, Shield, User, UserCheck, UserX, Key, Lock } from 'lucide-react';
 
-const COLORS = ['#378ADD', '#1D9E75', '#D85A30', '#BA7517', '#8B5CF6', '#EC4899', '#0EA5E9', '#14B8A6'];
+const COLORS = ['#378ADD', 'var(--color-success)', 'var(--color-danger)', '#BA7517', '#8B5CF6', '#EC4899', '#0EA5E9', '#14B8A6'];
 const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
 const ROLE_META = {
-  admin: { label: 'Admin', bg: '#DBEAFE', color: '#1D4ED8' },
-  collaborateur: { label: 'Collaborateur', bg: '#F1EFE8', color: '#5F5E5A' },
+  admin: { label: 'Admin', bg: 'var(--color-info-soft)', color: 'var(--color-info)' },
+  collaborateur: { label: 'Collaborateur', bg: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)' },
 };
 
 // ── Modal création utilisateur ───────────────────────────────────
@@ -121,7 +121,7 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
                 <option key={c.id} value={c.id}>Lier à : {c.prenom} {c.nom}</option>
               ))}
             </select>
-            <span style={{ fontSize: 11, color: '#888780' }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
               {form.collaborateur_id
                 ? 'Ce compte sera lié au collaborateur existant.'
                 : 'Un profil collaborateur sera créé automatiquement et l\'utilisateur pourra être assigné aux tâches.'}
@@ -129,26 +129,26 @@ function CreateUserModal({ projets, collaborateurs, onClose, onLoadingChange }) 
           </label>
 
           <div>
-            <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: '#5F5E5A' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
               Projets accessibles
-              <span style={{ color: '#888780', fontWeight: 400, marginLeft: 6 }}>({form.projets_autorises.length} sélectionné{form.projets_autorises.length > 1 ? 's' : ''})</span>
+              <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 400, marginLeft: 6 }}>({form.projets_autorises.length} sélectionné{form.projets_autorises.length > 1 ? 's' : ''})</span>
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto', padding: 2 }}>
               {projets.map((p) => (
-                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 10px', borderRadius: 6, border: `1.5px solid ${form.projets_autorises.includes(p.id) ? '#378ADD' : 'rgba(0,0,0,0.12)'}`, background: form.projets_autorises.includes(p.id) ? '#EFF6FF' : '#fff' }}>
-                  <input type="checkbox" checked={form.projets_autorises.includes(p.id)} onChange={() => toggleProjet(p.id)} style={{ accentColor: '#378ADD' }} />
+                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 10px', borderRadius: 6, border: `1.5px solid ${form.projets_autorises.includes(p.id) ? 'var(--color-accent)' : 'var(--color-border)'}`, background: form.projets_autorises.includes(p.id) ? 'var(--color-accent-soft)' : 'var(--color-bg-card)' }}>
+                  <input type="checkbox" checked={form.projets_autorises.includes(p.id)} onChange={() => toggleProjet(p.id)} style={{ accentColor: 'var(--color-accent)' }} />
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
                   <span style={{ fontSize: 13 }}>{p.nom}</span>
                 </label>
               ))}
-              {projets.length === 0 && <p style={{ fontSize: 12, color: '#888780' }}>Aucun projet créé.</p>}
+              {projets.length === 0 && <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>Aucun projet créé.</p>}
             </div>
           </div>
         </>
       )}
 
       {error && (
-        <div style={{ padding: '10px 14px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, color: '#D85A30' }}>
+        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--color-danger-soft)', border: '1px solid var(--color-danger)', fontSize: 13, color: 'var(--color-danger)' }}>
           {error}
         </div>
       )}
@@ -182,13 +182,13 @@ function EditRightsModal({ user, projets, onClose }) {
 
   return (
     <div>
-      <p style={{ margin: '0 0 12px', fontSize: 13, color: '#5F5E5A' }}>
+      <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
         Projets accessibles pour <strong>{user.prenom} {user.nom}</strong>
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto', padding: 2 }}>
         {projets.map((p) => (
-          <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', borderRadius: 6, border: `1.5px solid ${projetsAut.includes(p.id) ? '#378ADD' : 'rgba(0,0,0,0.12)'}`, background: projetsAut.includes(p.id) ? '#EFF6FF' : '#fff' }}>
-            <input type="checkbox" checked={projetsAut.includes(p.id)} onChange={() => toggle(p.id)} style={{ accentColor: '#378ADD' }} />
+          <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', borderRadius: 6, border: `1.5px solid ${projetsAut.includes(p.id) ? 'var(--color-accent)' : 'var(--color-border)'}`, background: projetsAut.includes(p.id) ? 'var(--color-accent-soft)' : 'var(--color-bg-card)' }}>
+            <input type="checkbox" checked={projetsAut.includes(p.id)} onChange={() => toggle(p.id)} style={{ accentColor: 'var(--color-accent)' }} />
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
             <span style={{ fontSize: 13 }}>{p.nom}</span>
           </label>
@@ -230,8 +230,8 @@ function ChangePasswordModal({ user, onClose }) {
   if (done) return (
     <div style={{ textAlign: 'center', padding: '16px 0' }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: '#1D9E75' }}>Mot de passe mis à jour</p>
-      <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888780' }}>
+      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600, color: 'var(--color-success)' }}>Mot de passe mis à jour</p>
+      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--color-text-tertiary)' }}>
         {user.prenom} {user.nom} peut se connecter avec son nouveau mot de passe.
       </p>
       <button onClick={onClose} style={btnPrimStyle}>Fermer</button>
@@ -240,7 +240,7 @@ function ChangePasswordModal({ user, onClose }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <p style={{ margin: 0, fontSize: 13, color: '#5F5E5A' }}>
+      <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-secondary)' }}>
         Définir un nouveau mot de passe pour <strong>{user.prenom} {user.nom}</strong> ({user.email})
       </p>
       <label style={labelStyle}>
@@ -261,7 +261,7 @@ function ChangePasswordModal({ user, onClose }) {
         />
       </label>
       {error && (
-        <div style={{ padding: '10px 14px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, color: '#D85A30' }}>
+        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--color-danger-soft)', border: '1px solid var(--color-danger)', fontSize: 13, color: 'var(--color-danger)' }}>
           {error}
         </div>
       )}
@@ -311,24 +311,24 @@ export default function ConsoleAdmin() {
 
       {/* Admins */}
       <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Shield size={15} color="#1D4ED8" /> Administrateurs
+        <Shield size={15} color="var(--color-info)" /> Administrateurs
       </h3>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden', marginBottom: 28 }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 28 }}>
         {admins.length === 0 && (
-          <p style={{ padding: '20px 16px', color: '#888780', margin: 0, fontSize: 13 }}>Aucun admin.</p>
+          <p style={{ padding: '20px 16px', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 13 }}>Aucun admin.</p>
         )}
         {admins.map((u, i) => (
-          <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < admins.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Shield size={16} color="#1D4ED8" />
+          <div key={u.uid} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i < admins.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-info-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Shield size={16} color="var(--color-info)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1A1A18' }}>{u.prenom} {u.nom}</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#888780' }}>{u.email}</p>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.prenom} {u.nom}</p>
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>{u.email}</p>
             </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#DBEAFE', color: '#1D4ED8', fontWeight: 600 }}>Admin</span>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: 'var(--color-info-soft)', color: 'var(--color-info)', fontWeight: 600 }}>Admin</span>
             {u.derniere_connexion && (
-              <span style={{ fontSize: 11, color: '#888780', flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>
                 Connecté : {new Date(u.derniere_connexion?.seconds ? u.derniere_connexion.seconds * 1000 : u.derniere_connexion).toLocaleDateString('fr-FR')}
               </span>
             )}
@@ -345,11 +345,11 @@ export default function ConsoleAdmin() {
 
       {/* Collaborateurs */}
       <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <User size={15} color="#5F5E5A" /> Collaborateurs
+        <User size={15} color="var(--color-text-secondary)" /> Collaborateurs
       </h3>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
         {collabs.length === 0 && (
-          <p style={{ padding: '20px 16px', color: '#888780', margin: 0, fontSize: 13 }}>
+          <p style={{ padding: '20px 16px', color: 'var(--color-text-tertiary)', margin: 0, fontSize: 13 }}>
             Aucun collaborateur. Cliquez sur "Créer un utilisateur" pour en ajouter.
           </p>
         )}
@@ -357,18 +357,18 @@ export default function ConsoleAdmin() {
           const projetNames = getProjetNames(u.projets_autorises);
           const collab = collaborateurs.find((c) => c.id === u.collaborateur_id);
           return (
-            <div key={u.uid} style={{ padding: '14px 16px', borderBottom: i < collabs.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', opacity: u.actif === false ? 0.5 : 1 }}>
+            <div key={u.uid} style={{ padding: '14px 16px', borderBottom: i < collabs.length - 1 ? '0.5px solid var(--color-border-soft)' : 'none', opacity: u.actif === false ? 0.5 : 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: collab?.couleur || '#E8E7E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: collab?.couleur || 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 600, color: '#FFFFFF' }}>
                   {collab?.initiales || `${u.prenom?.[0] || ''}${u.nom?.[0] || ''}`}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1A1A18' }}>{u.prenom} {u.nom}</p>
-                    {u.actif === false && <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 99, background: '#F8F8F7', color: '#888780', border: '0.5px solid rgba(0,0,0,0.12)' }}>Inactif</span>}
-                    {collab && <span style={{ fontSize: 11, color: '#888780' }}>· lié à {collab.prenom} {collab.nom}</span>}
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.prenom} {u.nom}</p>
+                    {u.actif === false && <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 99, background: 'var(--color-bg-secondary)', color: 'var(--color-text-tertiary)', border: '0.5px solid var(--color-border)' }}>Inactif</span>}
+                    {collab && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>· lié à {collab.prenom} {collab.nom}</span>}
                   </div>
-                  <p style={{ margin: 0, fontSize: 12, color: '#888780' }}>{u.email}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-tertiary)' }}>{u.email}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   {!collab && u.actif !== false && (
@@ -381,7 +381,7 @@ export default function ConsoleAdmin() {
                         await updateCollaborateur(newCollab.id, { user_id: u.uid });
                         await updateUserAdmin(u.uid, { collaborateur_id: newCollab.id });
                       }}
-                      style={{ ...iconBtn, color: '#1D9E75', fontSize: 11, padding: '5px 8px', gap: 4, whiteSpace: 'nowrap' }}
+                      style={{ ...iconBtn, color: 'var(--color-success)', fontSize: 11, padding: '5px 8px', gap: 4, whiteSpace: 'nowrap' }}
                     >
                       <User size={12} /> Créer profil
                     </button>
@@ -397,11 +397,11 @@ export default function ConsoleAdmin() {
                     <Key size={13} />
                   </button>
                   {u.actif !== false ? (
-                    <button onClick={() => { if (confirm(`Désactiver ${u.prenom} ${u.nom} ?`)) deactivateUserAdmin(u.uid); }} title="Désactiver" style={{ ...iconBtn, color: '#D85A30' }}>
+                    <button onClick={() => { if (confirm(`Désactiver ${u.prenom} ${u.nom} ?`)) deactivateUserAdmin(u.uid); }} title="Désactiver" style={{ ...iconBtn, color: 'var(--color-danger)' }}>
                       <UserX size={13} />
                     </button>
                   ) : (
-                    <button onClick={() => activateUserAdmin(u.uid)} title="Réactiver" style={{ ...iconBtn, color: '#1D9E75' }}>
+                    <button onClick={() => activateUserAdmin(u.uid)} title="Réactiver" style={{ ...iconBtn, color: 'var(--color-success)' }}>
                       <UserCheck size={13} />
                     </button>
                   )}
@@ -412,7 +412,7 @@ export default function ConsoleAdmin() {
                   {projetNames.map((nom) => {
                     const p = projets.find((pr) => pr.nom === nom);
                     return (
-                      <span key={nom} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, border: '0.5px solid rgba(0,0,0,0.12)', background: '#F8F8F7', color: '#5F5E5A', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span key={nom} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, border: '0.5px solid var(--color-border)', background: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                         {p && <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.couleur }} />}
                         {nom}
                       </span>
@@ -421,12 +421,12 @@ export default function ConsoleAdmin() {
                 </div>
               )}
               {projetNames.length === 0 && u.actif !== false && (
-                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 12, color: '#D85A30' }}>
+                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 12, color: 'var(--color-danger)' }}>
                   ⚠ Aucun projet assigné — cliquez sur 🔑 pour assigner des projets
                 </p>
               )}
               {u.derniere_connexion && (
-                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 11, color: '#BDBCB8' }}>
+                <p style={{ margin: '4px 0 0', paddingLeft: 48, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
                   Dernière connexion : {new Date(u.derniere_connexion?.seconds ? u.derniere_connexion.seconds * 1000 : u.derniere_connexion).toLocaleDateString('fr-FR')}
                 </p>
               )}
@@ -456,8 +456,8 @@ export default function ConsoleAdmin() {
   );
 }
 
-const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: '#5F5E5A' };
-const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: '#fff', boxSizing: 'border-box' };
-const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: '#1A1A18', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
-const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.15)', background: '#fff', fontSize: 13, cursor: 'pointer' };
-const iconBtn = { padding: '6px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', color: '#5F5E5A' };
+const labelStyle = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' };
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13, outline: 'none', fontFamily: 'inherit', width: '100%', background: 'var(--color-bg-card)', boxSizing: 'border-box' };
+const btnPrimStyle = { display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
+const btnSecStyle = { padding: '7px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 13, cursor: 'pointer' };
+const iconBtn = { padding: '6px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', cursor: 'pointer', display: 'flex', color: 'var(--color-text-secondary)' };

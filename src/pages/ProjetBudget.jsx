@@ -30,12 +30,12 @@ export default function ProjetBudget() {
 
       {/* Budget livrables */}
       <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 12px' }}>Budget par livrable</h3>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden', marginBottom: 32 }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 32 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+            <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
               {['Livrable', 'Budget prév.', 'Budget conso.', 'Reste', '% consommé'].map((h) => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
+                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -44,26 +44,26 @@ export default function ProjetBudget() {
               const b = calculerBudgetNoeud(n, projet.wbs, projet.tjm);
               const pct = b.prev > 0 ? Math.round(b.conso / b.prev * 100) : 0;
               return (
-                <tr key={n.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+                <tr key={n.id} style={{ borderBottom: '0.5px solid var(--color-border-soft)' }}>
                   <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500 }}>{n.nom}</td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatCurrency(b.prev)}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: b.conso > b.prev ? '#D85A30' : '#1A1A18' }}>{formatCurrency(b.conso)}</td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>{formatCurrency(b.reste)}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: b.conso > b.prev ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>{formatCurrency(b.conso)}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{formatCurrency(b.reste)}</td>
                   <td style={{ padding: '12px 16px', width: 180 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <ProgressBar value={pct} />
-                      <span style={{ fontSize: 12, color: '#5F5E5A', flexShrink: 0 }}>{pct}%</span>
+                      <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', flexShrink: 0 }}>{pct}%</span>
                     </div>
                   </td>
                 </tr>
               );
             })}
-            <tr style={{ background: '#F8F8F7', fontWeight: 600 }}>
+            <tr style={{ background: 'var(--color-bg-secondary)', fontWeight: 600 }}>
               <td style={{ padding: '12px 16px', fontSize: 13 }}>Total</td>
               <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatCurrency(totalPrev)}</td>
-              <td style={{ padding: '12px 16px', fontSize: 13, color: totalConso > totalPrev ? '#D85A30' : '#1A1A18' }}>{formatCurrency(totalConso)}</td>
+              <td style={{ padding: '12px 16px', fontSize: 13, color: totalConso > totalPrev ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>{formatCurrency(totalConso)}</td>
               <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatCurrency(totalPrev - totalConso)}</td>
-              <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>
+              <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
                 {totalPrev > 0 ? `${Math.round(totalConso / totalPrev * 100)}%` : '—'}
               </td>
             </tr>
@@ -73,34 +73,34 @@ export default function ProjetBudget() {
 
       {/* Charge collaborateurs */}
       <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 12px' }}>Charge par collaborateur</h3>
-      <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#F8F8F7', borderBottom: '0.5px solid rgba(0,0,0,0.08)' }}>
+            <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
               {['Collaborateur', 'Profil', 'TJM', 'J. prév.', 'J. réels', 'Coût prév.', 'Coût réel'].map((h) => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#888780' }}>{h}</th>
+                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--color-text-tertiary)' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {chargeCollab.map((c) => (
-              <tr key={c.id} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <tr key={c.id} style={{ borderBottom: '0.5px solid var(--color-border-soft)' }}>
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Avatar collaborateur={c} size={28} />
                     <span style={{ fontSize: 13, fontWeight: 500 }}>{c.prenom} {c.nom}</span>
                   </div>
                 </td>
-                <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.profil}</td>
-                <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.tjm} €</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{c.profil}</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{c.tjm} €</td>
                 <td style={{ padding: '12px 16px', fontSize: 13 }}>{c.joursPrev} j</td>
-                <td style={{ padding: '12px 16px', fontSize: 13, color: '#5F5E5A' }}>{c.joursReels} j</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>{c.joursReels} j</td>
                 <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatCurrency(c.coutPrev)}</td>
-                <td style={{ padding: '12px 16px', fontSize: 13, color: c.coutReel > c.coutPrev ? '#D85A30' : '#5F5E5A' }}>{formatCurrency(c.coutReel)}</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, color: c.coutReel > c.coutPrev ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>{formatCurrency(c.coutReel)}</td>
               </tr>
             ))}
             {chargeCollab.length === 0 && (
-              <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#888780' }}>Aucune affectation sur ce projet.</td></tr>
+              <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-tertiary)' }}>Aucune affectation sur ce projet.</td></tr>
             )}
           </tbody>
         </table>
