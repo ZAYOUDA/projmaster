@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
 import PageHeader from '../components/layout/PageHeader';
 import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
-import { formatCurrency, calculerBudgetProjet } from '../data/calculations';
+import { formatCurrency, calculerBudgetProjet, calculerBudgetParTypeCollab, estCollaborateurExterne } from '../data/calculations';
 import { exporterFactureExcel } from '../utils/factureExport';
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -21,6 +21,18 @@ function moisCourt(moisStr) {
 // toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
 // retombe sur la veille. On formate donc à partir des composants locaux du Date.
 function localIso(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+
+// Jours réalisés d'une affectation BUILD pour un mois donné : priorité à la saisie mensuelle
+// explicite (panneau détail WBS, jours_realises_par_mois), sinon dérivé du planning réel jour
+// par jour (Planning > ligne "Réel", planning_reel) agrégé sur le mois. Centralisé ici pour que
+// le Suivi mensuel (calculerSuiviCollab) et la génération de facture (ModalCreation) ne divergent
+// jamais — avant, la génération de facture ignorait planning_reel et sortait toujours 0j pour un
+// PM qui saisit uniquement via Planning sans jamais toucher au panneau détail WBS.
+function joursRealisesAffectationMois(aff, mois) {
+  const hasMensuel = Object.keys(aff.jours_realises_par_mois || {}).length > 0;
+  if (hasMensuel) return aff.jours_realises_par_mois[mois] || 0;
+  return Object.entries(aff.planning_reel || {}).reduce((s, [date, j]) => s + (date.slice(0, 7) === mois ? j : 0), 0);
+}
 
 function montantFacture(f) { return f.lignes.reduce((s, l) => s + l.montant, 0); }
 function montantTTC(f) { return montantFacture(f) * (1 + (f.tva || 0) / 100); }
@@ -100,6 +112,9 @@ function SuiviRow({ collab, suivi, moisList, highlightMois }) {
             {collab.initiales}
           </div>
           <span style={{ fontSize: 12, fontWeight: 500 }}>{collab.prenom} {collab.nom}</span>
+          {estCollaborateurExterne(collab) && (
+            <span style={{ fontSize: 9, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }} title="Collaborateur externe (co-traitance / client)">EXT</span>
+          )}
         </div>
       </td>
       {/* TJM */}
@@ -454,21 +469,36 @@ function ModalCreation({ projet, collaborateurs, onClose }) {
   const [generated, setGenerated] = useState(false);
 
   const dejaFacture = (projet.factures || []).some((f) => f.mois === mois);
+  const isRun = projet.type === 'RUN';
 
+  // BUILD : une ligne par collaborateur, jours réalisés du mois (cf. joursRealisesAffectationMois)
+  // × TJM projet. RUN : une ligne par ligne de commande active, jours imputés du mois
+  // (projet.consoMensuelle[mois][ligneId], alimenté par l'import CRA / saisie manuelle du suivi
+  // mensuel RUN) × PU de la ligne — même source que calculerFacturableMois côté runCalculs.js.
   const handleGenerate = () => {
-    const parCollab = {};
-    projet.wbs.forEach((n) => {
-      n.affectations.forEach((a) => {
-        const j = a.jours_realises_par_mois?.[mois] || 0;
-        if (j > 0) parCollab[a.collaborateur_id] = (parCollab[a.collaborateur_id] || 0) + j;
-      });
-    });
-    const gen = Object.entries(parCollab).map(([id, j]) => {
-      const tjm = projet.tjm.find((t) => t.collaborateur_id === id)?.montant || 0;
-      const c = collaborateurs.find((x) => x.id === id);
-      const nom = c ? `${c.prenom} ${c.nom}` : 'Inconnu';
-      return { id: uuidv4(), collaborateur_id: id, collaborateur_nom: nom, jours: j, tjm, montant: j * tjm, description: `${nom} — ${formatMois(mois)}` };
-    });
+    const gen = isRun
+      ? (projet.commandes || []).flatMap((cmd) => (cmd.lignes || []).map((l) => {
+          const j = projet.consoMensuelle?.[mois]?.[l.id] || 0;
+          if (j <= 0) return null;
+          const c = collaborateurs.find((x) => x.id === l.collabId);
+          const nom = c ? `${c.prenom} ${c.nom}` : 'Inconnu';
+          return { id: uuidv4(), collaborateur_id: l.collabId, collaborateur_nom: nom, jours: j, tjm: l.pu, montant: j * l.pu, description: `${nom} — ${cmd.numero} — ${formatMois(mois)}` };
+        }).filter(Boolean))
+      : (() => {
+          const parCollab = {};
+          projet.wbs.forEach((n) => {
+            n.affectations.forEach((a) => {
+              const j = joursRealisesAffectationMois(a, mois);
+              if (j > 0) parCollab[a.collaborateur_id] = (parCollab[a.collaborateur_id] || 0) + j;
+            });
+          });
+          return Object.entries(parCollab).map(([id, j]) => {
+            const tjm = projet.tjm.find((t) => t.collaborateur_id === id)?.montant || 0;
+            const c = collaborateurs.find((x) => x.id === id);
+            const nom = c ? `${c.prenom} ${c.nom}` : 'Inconnu';
+            return { id: uuidv4(), collaborateur_id: id, collaborateur_nom: nom, jours: j, tjm, montant: j * tjm, description: `${nom} — ${formatMois(mois)}` };
+          });
+        })();
     setLignes(gen);
     setGenerated(true);
   };
@@ -577,6 +607,14 @@ function OngletFactures({ projet, collaborateurs }) {
   const enAttente = factures.filter((f) => f.statut === 'emise').reduce((s, f) => s + montantFacture(f), 0);
   const budgetConso = calculerBudgetProjet(projet).conso;
 
+  // Décomposition interne/externe du budget consommé — utile sur les projets en co-construction
+  // avec le client (une partie des jours réalisés est portée par des collaborateurs "EXT-").
+  // Le total "Budget consommé" ci-dessus inclut déjà ces jours (calculerBudgetProjet ne distingue
+  // pas les collaborateurs) — cette décomposition ne fait que rendre la part externe visible.
+  const { consoInterne, consoExterne } = calculerBudgetParTypeCollab(projet, collaborateurs);
+  const hasExternes = consoExterne > 0;
+  const pctExterne = budgetConso > 0 ? Math.round(consoExterne / budgetConso * 100) : 0;
+
   const handleEmettre = (f) => {
     const date_emission = localIso(new Date());
     const delai = projet.facturation_params?.delai_paiement || 30;
@@ -601,6 +639,34 @@ function OngletFactures({ projet, collaborateurs }) {
           </div>
         ))}
       </div>
+
+      {/* Répartition interne / externe du budget consommé — visible seulement si des jours ont
+          été réalisés par des collaborateurs "EXT-" (co-traitance). Le budget consommé global
+          (KPI ci-dessus) les inclut déjà ; on isole juste leur part pour la lisibilité. */}
+      {hasExternes && (
+        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 10, padding: '14px 16px', marginBottom: 24, marginTop: -10 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+            Budget consommé — dont externe
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--color-bg-tertiary)' }}>
+              <div style={{ width: `${100 - pctExterne}%`, background: 'var(--color-info)' }} />
+              <div style={{ width: `${pctExterne}%`, background: 'var(--color-warning)' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexShrink: 0, fontSize: 12 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-info)' }} />
+                Interne <strong>{formatCurrency(consoInterne)}</strong>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-warning)' }} />
+                Externe <strong style={{ color: 'var(--color-warning)' }}>{formatCurrency(consoExterne)}</strong>
+                <span style={{ color: 'var(--color-text-tertiary)' }}>({pctExterne}%)</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bouton + tableau */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
@@ -630,7 +696,7 @@ function OngletFactures({ projet, collaborateurs }) {
                   <td style={{ padding: '11px 8px' }}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button onClick={() => setDetailId(f.id)} style={iconBtn} title="Détail"><Eye size={13} /></button>
-                      <button onClick={() => exporterFactureExcel(projet, f)} style={iconBtn} title="Exporter Excel"><Download size={13} /></button>
+                      <button onClick={() => exporterFactureExcel(projet, f, collaborateurs)} style={iconBtn} title="Exporter Excel"><Download size={13} /></button>
                       {f.statut === 'brouillon' && <button onClick={() => handleEmettre(f)} style={iconBtn} title="Émettre"><Send size={13} /></button>}
                       {f.statut === 'emise' && <button onClick={() => handlePayer(f)} style={{ ...iconBtn, color: 'var(--color-success)' }} title="Marquer payée"><CheckCircle size={13} /></button>}
                       {f.statut === 'brouillon' && <button onClick={() => { if (confirm(`Supprimer ${f.numero} ?`)) deleteFacture(projet.id, f.id); }} style={{ ...iconBtn, color: 'var(--color-danger)' }}><Trash2 size={13} /></button>}
@@ -674,7 +740,7 @@ function OngletFactures({ projet, collaborateurs }) {
               <div style={{ display: 'flex', gap: 24, borderTop: '1px solid var(--color-border)', paddingTop: 5 }}><span style={{ fontSize: 14, fontWeight: 600 }}>TTC</span><span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-success)', width: 100, textAlign: 'right' }}>{formatCurrency(montantTTC(detail))}</span></div>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', borderTop: '0.5px solid var(--color-border-soft)', paddingTop: 10 }}>
-              <button onClick={() => exporterFactureExcel(projet, detail)} style={btnSecStyle}><Download size={13} style={{ marginRight: 5 }} /> Exporter Excel</button>
+              <button onClick={() => exporterFactureExcel(projet, detail, collaborateurs)} style={btnSecStyle}><Download size={13} style={{ marginRight: 5 }} /> Exporter Excel</button>
               <button onClick={() => setDetailId(null)} style={btnSecStyle}>Fermer</button>
               {detail.statut === 'brouillon' && <button onClick={() => { handleEmettre(detail); setDetailId(null); }} style={btnPrimStyle}><Send size={13} style={{ marginRight: 5 }} /> Émettre</button>}
               {detail.statut === 'emise' && <button onClick={() => { handlePayer(detail); setDetailId(null); }} style={{ ...btnPrimStyle, background: 'var(--color-success)', color: '#FFFFFF' }}><CheckCircle size={13} style={{ marginRight: 5 }} /> Marquer payée</button>}

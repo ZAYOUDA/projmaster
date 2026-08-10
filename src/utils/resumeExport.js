@@ -3,8 +3,10 @@ import { calculerNumeroWBS, flattenWBS, getLeaves } from '../data/calculations';
 
 /**
  * resumeExport.js — Données + export Excel de l'onglet "Résumé" : planning tâches/sous-tâches
- * indenté par niveau, imputations réelles jour par jour + total, colonne collaborateur — pensé
- * pour être partagé tel quel avec un client.
+ * indenté par niveau, imputations jour par jour + total, colonne collaborateur — pensé pour être
+ * partagé tel quel avec un client. Supporte 3 vues (`vue`: 'reel' | 'prev' | 'les_deux') pour
+ * choisir entre charge réalisée, charge planifiée, ou les deux — même principe que le picklist
+ * Prév./Réel/Les deux de Planning (src/pages/ProjetPlanning.jsx).
  *
  * Utilise exceljs (pas xlsx/SheetJS comme factureExport.js) car SheetJS Community Edition
  * n'écrit pas les styles (couleurs, remplissages) dans le .xlsx — voir le commentaire en tête de
@@ -19,20 +21,23 @@ const STATUT_COLORS = { non_demarre: 'FF888780', en_cours: 'FF378ADD', termine: 
 function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 function addDays(iso, n) { const d = new Date(iso); d.setDate(d.getDate() + n); return toISO(d); }
 function isWeekendIso(iso) { const day = new Date(iso).getDay(); return day === 0 || day === 6; }
+function arrondi(n) { return Math.round((n || 0) * 100) / 100; }
 
-// Charge réelle (jours réalisés) d'un nœud, tous jours confondus : direct pour une feuille,
-// somme des feuilles descendantes pour un livrable/parent (même logique que Planning/Budget).
-function chargeReelleNoeud(node, allNodes) {
+// Charge (jours) d'un nœud, tous jours confondus : direct pour une feuille, somme des feuilles
+// descendantes pour un livrable/parent (même logique que Planning/Budget). `champ` = 'jours_prev'
+// ou 'jours_realises' selon la vue voulue.
+function chargeNoeud(node, allNodes, champ) {
   return getLeaves(node, allNodes)
     .flatMap((l) => l.affectations || [])
-    .reduce((s, a) => s + (a.jours_realises || 0), 0);
+    .reduce((s, a) => s + (a[champ] || 0), 0);
 }
 
-// Charge réelle d'un nœud pour un jour ISO précis (même logique de rollup, au jour le jour).
-function chargeReelleNoeudJour(node, allNodes, iso) {
+// Charge d'un nœud pour un jour ISO précis (même logique de rollup, au jour le jour). `champ` =
+// 'planning' (prév.) ou 'planning_reel' (réel).
+function chargeNoeudJour(node, allNodes, champ, iso) {
   return getLeaves(node, allNodes)
     .flatMap((l) => l.affectations || [])
-    .reduce((s, a) => s + ((a.planning_reel || {})[iso] || 0), 0);
+    .reduce((s, a) => s + ((a[champ] || {})[iso] || 0), 0);
 }
 
 function collaborateursNoeud(node, allNodes, collaborateurs) {
@@ -42,12 +47,13 @@ function collaborateursNoeud(node, allNodes, collaborateurs) {
     .filter(Boolean);
 }
 
-// Plage de jours (bornes incluses) couvrant toutes les imputations réelles saisies sur le
-// projet, tous nœuds confondus — vide si rien n'a encore été imputé.
-export function calculerPlageJoursReels(projet) {
+// Plage de jours (bornes incluses) couvrant les imputations saisies sur le projet, selon la vue :
+// 'reel' → planning_reel, 'prev' → planning, 'les_deux' → union des deux. Vide si rien saisi.
+export function calculerPlageJours(projet, vue = 'reel') {
+  const champs = vue === 'les_deux' ? ['planning', 'planning_reel'] : [vue === 'prev' ? 'planning' : 'planning_reel'];
   const isos = projet.wbs
     .flatMap((n) => n.affectations || [])
-    .flatMap((a) => Object.keys(a.planning_reel || {}))
+    .flatMap((a) => champs.flatMap((champ) => Object.keys(a[champ] || {})))
     .filter(Boolean)
     .sort();
   if (isos.length === 0) return [];
@@ -58,9 +64,16 @@ export function calculerPlageJoursReels(projet) {
   return days;
 }
 
+// Conservé pour compat (ancien nom, vue réel par défaut).
+export function calculerPlageJoursReels(projet) {
+  return calculerPlageJours(projet, 'reel');
+}
+
 // Construit les lignes du résumé (une par nœud WBS, dans l'ordre d'affichage) avec, pour
-// chacune : numéro, nom, profondeur (indentation), collaborateurs, charge réelle totale, statut,
-// et le détail jour par jour sur `jours` (map iso -> valeur, 0 si rien ce jour-là).
+// chacune : numéro, nom, profondeur (indentation), collaborateurs, charges prév./réelle totales,
+// statut, et le détail jour par jour sur `jours` (map iso -> { prev, reel }). Les deux charges
+// sont toujours calculées (coût négligeable) pour que l'UI/l'export choisissent librement quoi
+// afficher selon la vue sélectionnée, sans redemander une construction différente par vue.
 export function construireLignesResume(projet, collaborateurs, jours) {
   const numeros = calculerNumeroWBS(projet.wbs);
   return flattenWBS(projet.wbs).map(({ node, depth }) => ({
@@ -70,14 +83,20 @@ export function construireLignesResume(projet, collaborateurs, jours) {
     depth,
     isLeaf: !projet.wbs.some((n) => n.parent_id === node.id),
     collaborateurs: collaborateursNoeud(node, projet.wbs, collaborateurs),
-    chargeReelle: chargeReelleNoeud(node, projet.wbs),
+    chargePrev: chargeNoeud(node, projet.wbs, 'jours_prev'),
+    chargeReelle: chargeNoeud(node, projet.wbs, 'jours_realises'),
     statut: node.statut,
-    parJour: Object.fromEntries(jours.map((iso) => [iso, chargeReelleNoeudJour(node, projet.wbs, iso)])),
+    parJour: Object.fromEntries(jours.map((iso) => [
+      iso,
+      { prev: chargeNoeudJour(node, projet.wbs, 'planning', iso), reel: chargeNoeudJour(node, projet.wbs, 'planning_reel', iso) },
+    ])),
   }));
 }
 
-export async function genererClasseurResume(projet, collaborateurs) {
-  const jours = calculerPlageJoursReels(projet);
+export async function genererClasseurResume(projet, collaborateurs, vue = 'reel') {
+  const showPrev = vue === 'prev' || vue === 'les_deux';
+  const showReel = vue === 'reel' || vue === 'les_deux';
+  const jours = calculerPlageJours(projet, vue);
   const lignes = construireLignesResume(projet, collaborateurs, jours);
 
   const wb = new ExcelJS.Workbook();
@@ -87,17 +106,19 @@ export async function genererClasseurResume(projet, collaborateurs) {
     { header: '#', key: 'numero', width: 8 },
     { header: 'Tâche', key: 'nom', width: 50 },
     { header: 'Collaborateur', key: 'collaborateur', width: 26 },
-    { header: 'Charge réelle (j)', key: 'charge', width: 16 },
+    ...(showPrev ? [{ header: 'Charge prév. (j)', key: 'chargePrev', width: 16 }] : []),
+    ...(showReel ? [{ header: 'Charge réelle (j)', key: 'chargeReelle', width: 16 }] : []),
     { header: 'Statut', key: 'statut', width: 14 },
   ];
   ws.columns = [
     ...colsFixes,
-    ...jours.map((iso) => ({ header: new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }), key: iso, width: 6 })),
+    ...jours.map((iso) => ({ header: new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }), key: iso, width: vue === 'les_deux' ? 9 : 6 })),
   ];
 
   // Titre + sous-titre au-dessus du tableau
+  const VUE_LABEL = { reel: 'réel', prev: 'prévisionnel', les_deux: 'prévisionnel & réel' };
   ws.insertRow(1, [projet.nom]);
-  ws.insertRow(2, [`Résumé planning — export du ${new Date().toLocaleDateString('fr-FR')}`]);
+  ws.insertRow(2, [`Résumé planning (${VUE_LABEL[vue] || vue}) — export du ${new Date().toLocaleDateString('fr-FR')}`]);
   ws.insertRow(3, []);
   ws.mergeCells(1, 1, 1, colsFixes.length + jours.length);
   ws.mergeCells(2, 1, 2, colsFixes.length + jours.length);
@@ -119,9 +140,19 @@ export async function genererClasseurResume(projet, collaborateurs) {
       numero: l.numero,
       nom: l.nom,
       collaborateur: l.collaborateurs.map((c) => `${c.prenom} ${c.nom}`).join(', '),
-      charge: l.chargeReelle > 0 ? Math.round(l.chargeReelle * 100) / 100 : null,
+      ...(showPrev ? { chargePrev: l.chargePrev > 0 ? arrondi(l.chargePrev) : null } : {}),
+      ...(showReel ? { chargeReelle: l.chargeReelle > 0 ? arrondi(l.chargeReelle) : null } : {}),
       statut: STATUT_LABELS[l.statut] || l.statut,
-      ...Object.fromEntries(jours.map((iso) => [iso, l.parJour[iso] > 0 ? Math.round(l.parJour[iso] * 100) / 100 : null])),
+      ...Object.fromEntries(jours.map((iso) => {
+        const { prev, reel } = l.parJour[iso];
+        let val = null;
+        if (vue === 'prev') val = prev > 0 ? arrondi(prev) : null;
+        else if (vue === 'reel') val = reel > 0 ? arrondi(reel) : null;
+        else if (prev > 0 && reel > 0) val = `${arrondi(prev)} / ${arrondi(reel)}`;
+        else if (prev > 0) val = arrondi(prev);
+        else if (reel > 0) val = arrondi(reel);
+        return [iso, val];
+      })),
     });
 
     // Indentation native Excel (pas de tabulations dans le texte — plus fiable à l'ouverture)
@@ -130,21 +161,31 @@ export async function genererClasseurResume(projet, collaborateurs) {
     // Les livrables/modules (profondeur 0) ressortent avec un fond légèrement teinté, comme
     // dans le WBS de l'appli — les sous-tâches restent sur fond blanc.
     if (l.depth === 0) {
-      ['numero', 'nom', 'collaborateur', 'charge', 'statut'].forEach((k) => {
+      colsFixes.map((c) => c.key).forEach((k) => {
         row.getCell(k).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0EFF9' } };
       });
     }
     row.getCell('statut').font = { color: { argb: STATUT_COLORS[l.statut] || 'FF5F5E5A' }, bold: true };
-    row.getCell('charge').alignment = { horizontal: 'right' };
-    row.getCell('charge').font = { ...(row.getCell('charge').font || {}), bold: l.chargeReelle > 0 };
+    if (showPrev) {
+      row.getCell('chargePrev').alignment = { horizontal: 'right' };
+      row.getCell('chargePrev').font = { ...(row.getCell('chargePrev').font || {}), bold: l.chargePrev > 0 };
+    }
+    if (showReel) {
+      row.getCell('chargeReelle').alignment = { horizontal: 'right' };
+      row.getCell('chargeReelle').font = { ...(row.getCell('chargeReelle').font || {}), bold: l.chargeReelle > 0 };
+    }
 
     jours.forEach((iso) => {
+      const { prev, reel } = l.parJour[iso];
       const cell = row.getCell(iso);
       cell.alignment = { horizontal: 'center' };
       cell.font = { size: 9 };
       if (isWeekendIso(iso)) {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEECE6' } };
-      } else if (l.parJour[iso] > 0) {
+      } else if (vue === 'les_deux' && prev > 0 && reel > 0) {
+        // Écart visible d'un coup d'œil : réel qui dépasse le prévisionnel ressort en orange.
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: reel > prev ? 'FFFBEBD0' : 'FFDAEEF8' } };
+      } else if ((vue !== 'prev' && reel > 0) || (vue === 'prev' && prev > 0)) {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDAEEF8' } };
       }
     });
@@ -154,14 +195,15 @@ export async function genererClasseurResume(projet, collaborateurs) {
   return wb;
 }
 
-export async function exporterResumeExcel(projet, collaborateurs) {
-  const wb = await genererClasseurResume(projet, collaborateurs);
+export async function exporterResumeExcel(projet, collaborateurs, vue = 'reel') {
+  const wb = await genererClasseurResume(projet, collaborateurs, vue);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${projet.nom} - Résumé.xlsx`;
+  const VUE_SUFFIX = { reel: 'réel', prev: 'prévisionnel', les_deux: 'prév-réel' };
+  a.download = `${projet.nom} - Résumé (${VUE_SUFFIX[vue] || vue}).xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }

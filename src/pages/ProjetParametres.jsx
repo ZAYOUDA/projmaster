@@ -5,7 +5,8 @@ import { useAuth } from '../hooks/useAuth';
 import PageHeader from '../components/layout/PageHeader';
 import Avatar from '../components/ui/Avatar';
 import CommandesRunSection from '../components/projet/CommandesRunSection';
-import { Plus, Trash2 } from 'lucide-react';
+import { exportProjetData } from '../data/storage';
+import { Plus, Trash2, Download } from 'lucide-react';
 
 const PALETTE = ['#378ADD', '#1D9E75', '#BA7517', '#D4537E', '#7F77DD', '#D85A30', '#888780', '#5DCAA5', '#EF9F27', '#E24B4A'];
 
@@ -196,6 +197,24 @@ export default function ProjetParametres() {
           </button>
         )}
       </section>
+      )}
+
+      {/* Export / migration — réservé à Admin/Manager. Pensé pour recopier un projet d'une base
+          Firestore vers une autre (ex. dev/sandbox → prod) : voir "Importer un projet" dans
+          Paramètres. Les collaborateurs ne sont pas inclus dans l'export (cf. storage.js). */}
+      {hasFullAccess && (
+        <section style={cardStyle}>
+          <h3 style={{ ...h3Style, marginBottom: 4 }}>Export / migration</h3>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
+            Exporte ce projet (WBS, planning, budget, facturation…) en JSON, pour l'importer dans une autre base
+            (ex. de dev vers prod) depuis Paramètres → « Importer un projet ». Les fiches collaborateur ne sont
+            pas incluses — seules leurs références sont listées dans le fichier, à vérifier côté cible.
+          </p>
+          <button onClick={() => exportProjetData(projet, collaborateurs)} style={btnSecStyle}>
+            <Download size={14} style={{ marginRight: 6 }} />
+            Exporter ce projet (JSON)
+          </button>
+        </section>
       )}
 
       {/* Zone dangereuse — suppression réservée à Admin/Manager (Chef de Projet peut éditer mais pas supprimer) */}

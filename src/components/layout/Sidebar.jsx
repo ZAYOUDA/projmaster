@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon, Receipt } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon, Receipt, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../firebase/auth';
@@ -30,6 +30,13 @@ export default function Sidebar() {
   const canCreateProjet = hasFullAccess || isChefProjet;
   const [showNewProjet, setShowNewProjet] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // Sidebar repliable en rail d'icônes — préférence purement visuelle, persistée en local
+  // (pas de sens à la synchroniser via Firestore) pour rester repliée d'une session à l'autre.
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('pm_sidebar_collapsed') === '1');
+  useEffect(() => {
+    localStorage.setItem('pm_sidebar_collapsed', collapsed ? '1' : '0');
+  }, [collapsed]);
 
   const handleCreateProjet = async (type) => {
     const newP = await addProjet({
@@ -61,67 +68,97 @@ export default function Sidebar() {
 
   const linkStyle = ({ isActive }) => ({
     display: 'flex', alignItems: 'center', gap: 8,
-    padding: '6px 12px', borderRadius: 6, textDecoration: 'none',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    padding: collapsed ? '8px 0' : '6px 12px', borderRadius: 6, textDecoration: 'none',
     fontSize: 13, fontWeight: 500,
     color: isActive ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
     background: isActive ? 'var(--color-bg-tertiary)' : 'transparent',
     transition: 'background 0.15s',
   });
+  // Bouton "outil" (thème, déconnexion, nouveau projet) — même logique de repli que linkStyle.
+  const toolBtnStyle = {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+    justifyContent: collapsed ? 'center' : 'flex-start',
+    padding: collapsed ? '8px 0' : '6px 12px', borderRadius: 6, border: 'none',
+    background: 'transparent', cursor: 'pointer', fontSize: 13,
+    color: 'var(--color-text-tertiary)', fontWeight: 500,
+  };
+  const sectionLabelStyle = { margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' };
 
   return (
     <aside style={{
-      width: 200, flexShrink: 0, background: 'var(--color-bg-sidebar)',
+      width: collapsed ? 56 : 200, flexShrink: 0, background: 'var(--color-bg-sidebar)',
       borderRight: '0.5px solid var(--color-border)',
       display: 'flex', flexDirection: 'column',
       height: '100vh', position: 'sticky', top: 0, overflow: 'hidden',
+      transition: 'width 0.15s ease',
     }}>
-      {/* Logo */}
-      <div style={{ padding: '20px 16px 16px', borderBottom: '0.5px solid var(--color-border-soft)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <FolderOpen size={18} color="var(--color-accent)" />
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)' }}>MisterProject</span>
+      {/* Logo + repli */}
+      <div style={{ padding: collapsed ? '16px 8px' : '20px 16px 16px', borderBottom: '0.5px solid var(--color-border-soft)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+            <FolderOpen size={18} color="var(--color-accent)" style={{ flexShrink: 0 }} />
+            {!collapsed && <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap' }}>MisterProject</span>}
+          </div>
+          {!collapsed && (
+            <button
+              onClick={() => setCollapsed(true)}
+              title="Replier le panneau"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', display: 'flex', padding: 2, flexShrink: 0 }}
+            >
+              <ChevronsLeft size={15} />
+            </button>
+          )}
         </div>
-        <div style={{
-          marginTop: 8,
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-          background: import.meta.env.DEV ? '#FFF3CD' : '#D1FAE5',
-          color: import.meta.env.DEV ? '#92400E' : '#065F46',
-        }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%',
-            background: import.meta.env.DEV ? '#D97706' : '#059669',
-            flexShrink: 0,
-          }} />
-          {import.meta.env.DEV ? 'DEV' : 'PROD'}
-        </div>
+        {collapsed ? (
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Déplier le panneau"
+            style={{ display: 'flex', margin: '10px auto 0', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', padding: 2 }}
+          >
+            <ChevronsRight size={15} />
+          </button>
+        ) : (
+          <div style={{
+            marginTop: 8,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+            background: import.meta.env.DEV ? '#FFF3CD' : '#D1FAE5',
+            color: import.meta.env.DEV ? '#92400E' : '#065F46',
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: import.meta.env.DEV ? '#D97706' : '#059669',
+              flexShrink: 0,
+            }} />
+            {import.meta.env.DEV ? 'DEV' : 'PROD'}
+          </div>
+        )}
       </div>
 
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 8px' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '8px 8px' }}>
         {/* Dashboard */}
-        <NavLink to="/" end style={linkStyle}>
+        <NavLink to="/" end style={linkStyle} title="Vue d'ensemble">
           <LayoutDashboard size={15} />
-          Vue d'ensemble
+          {!collapsed && "Vue d'ensemble"}
         </NavLink>
 
         {/* Projets */}
-        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Projets
-        </div>
+        {!collapsed && <div style={sectionLabelStyle}>Projets</div>}
 
         {projets.filter((p) => p.statut !== 'cloture').map((p) => (
-          <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={linkStyle}>
+          <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={linkStyle} title={p.nom}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
+            {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>}
           </NavLink>
         ))}
 
         {projets.filter((p) => p.statut === 'cloture').length > 0 && (
           <>
             {projets.filter((p) => p.statut === 'cloture').map((p) => (
-              <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })}>
+              <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })} title={p.nom}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
+                {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>}
               </NavLink>
             ))}
           </>
@@ -129,73 +166,62 @@ export default function Sidebar() {
 
         {canCreateProjet && <button
           onClick={() => setShowNewProjet(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            padding: '6px 12px', borderRadius: 6, border: 'none',
-            background: 'transparent', cursor: 'pointer', fontSize: 13,
-            color: 'var(--color-text-tertiary)', fontWeight: 500, marginTop: 4,
-          }}
+          title="Nouveau projet"
+          style={{ ...toolBtnStyle, marginTop: 4 }}
           onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <Plus size={14} />
-          Nouveau projet
+          {!collapsed && 'Nouveau projet'}
         </button>}
 
         {/* Outils */}
-        <div style={{ margin: '16px 4px 6px', fontSize: 11, fontWeight: 500, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Outils
-        </div>
+        {!collapsed && <div style={sectionLabelStyle}>Outils</div>}
         {hasFullAccess && (
-          <NavLink to="/admin" style={linkStyle}>
+          <NavLink to="/admin" style={linkStyle} title="Console Admin">
             <ShieldCheck size={15} />
-            Console Admin
+            {!collapsed && 'Console Admin'}
           </NavLink>
         )}
         {hasFullAccess && (
-          <NavLink to="/import-cra" style={linkStyle}>
+          <NavLink to="/import-cra" style={linkStyle} title="Import CRA">
             <UploadCloud size={15} />
-            Import CRA
+            {!collapsed && 'Import CRA'}
           </NavLink>
         )}
         {hasFullAccess && (
-          <NavLink to="/facturation-portefeuille" style={linkStyle}>
+          <NavLink to="/facturation-portefeuille" style={linkStyle} title="Facturation">
             <Receipt size={15} />
-            Facturation
+            {!collapsed && 'Facturation'}
           </NavLink>
         )}
-        <NavLink to="/collaborateurs" style={linkStyle}>
+        <NavLink to="/collaborateurs" style={linkStyle} title="Collaborateurs">
           <Users size={15} />
-          Collaborateurs
+          {!collapsed && 'Collaborateurs'}
         </NavLink>
-        <NavLink to="/conges" style={linkStyle}>
+        <NavLink to="/conges" style={linkStyle} title="Congés équipe">
           <CalendarOff size={15} />
-          Congés équipe
+          {!collapsed && 'Congés équipe'}
         </NavLink>
-        <NavLink to="/parametres" style={linkStyle}>
+        <NavLink to="/parametres" style={linkStyle} title="Paramètres">
           <Settings size={15} />
-          Paramètres
+          {!collapsed && 'Paramètres'}
         </NavLink>
       </nav>
 
       {/* Déconnexion */}
-      <div style={{ padding: '8px 8px 16px', borderTop: '0.5px solid var(--color-border-soft)' }}>
+      <div style={{ padding: collapsed ? '8px 4px 12px' : '8px 8px 16px', borderTop: '0.5px solid var(--color-border-soft)' }}>
         <button
           onClick={toggleTheme}
           title={theme === 'light' ? 'Passer en thème sombre' : 'Passer en thème clair'}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            padding: '6px 12px', borderRadius: 6, border: 'none',
-            background: 'transparent', cursor: 'pointer', fontSize: 13,
-            color: 'var(--color-text-tertiary)', fontWeight: 500,
-          }}
+          style={toolBtnStyle}
           onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
-          {theme === 'light' ? 'Thème sombre' : 'Thème clair'}
+          {!collapsed && (theme === 'light' ? 'Thème sombre' : 'Thème clair')}
         </button>
-        {userDoc && (
+        {userDoc && !collapsed && (
           <div style={{ padding: '4px 12px 8px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 2 }}>
               {userDoc.prenom} {userDoc.nom}
@@ -209,19 +235,27 @@ export default function Sidebar() {
             </span>
           </div>
         )}
+        {userDoc && collapsed && (
+          <div title={`${userDoc.prenom} ${userDoc.nom} — ${ROLE_BADGE[userDoc.role]?.label || userDoc.role}`} style={{ display: 'flex', justifyContent: 'center', padding: '6px 0' }}>
+            <span style={{
+              width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 700,
+              background: ROLE_BADGE[userDoc.role]?.bg || 'var(--color-bg-tertiary)',
+              color: ROLE_BADGE[userDoc.role]?.color || 'var(--color-text-secondary)',
+            }}>
+              {(userDoc.prenom?.[0] || '') + (userDoc.nom?.[0] || '')}
+            </span>
+          </div>
+        )}
         <button
           onClick={handleLogout}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            padding: '6px 12px', borderRadius: 6, border: 'none',
-            background: 'transparent', cursor: 'pointer', fontSize: 13,
-            color: 'var(--color-text-tertiary)', fontWeight: 500,
-          }}
+          title="Déconnexion"
+          style={toolBtnStyle}
           onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-danger-soft)'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
           <LogOut size={14} />
-          Déconnexion
+          {!collapsed && 'Déconnexion'}
         </button>
       </div>
 

@@ -71,6 +71,40 @@ export function calculerBudgetProjet(projet) {
   return { prev, conso, reste: prev - conso };
 }
 
+// Un collaborateur externe (co-traitance / client, projets en co-construction) est identifié par
+// un préfixe "EXT" sur son prénom ou son nom — convention de nommage à la création (pas de champ
+// dédié), ex. "EXT-Dupont". Fonction centrale : utilisée par Planning (KPI charge) et Facturation
+// (KPI budget consommé) pour rester cohérentes entre elles.
+export function estCollaborateurExterne(c) {
+  if (!c) return false;
+  return (c.nom || '').trim().toUpperCase().startsWith('EXT') || (c.prenom || '').trim().toUpperCase().startsWith('EXT');
+}
+
+// Décompose le budget d'un projet BUILD (prév. et consommé, jours_prev/jours_realises × TJM)
+// entre collaborateurs internes et externes — cf. estCollaborateurExterne. Ne recalcule pas via
+// calculerBudgetNoeud (qui agrège récursivement les enfants) : comme les affectations ne vivent
+// que sur les feuilles, sommer directement leurs affectations donne le même total sans risque de
+// double comptage, et permet de trancher interne/externe par affectation.
+export function calculerBudgetParTypeCollab(projet, collaborateurs) {
+  const feuilles = projet.wbs.filter((n) => !projet.wbs.some((c) => c.parent_id === n.id));
+  let prevInterne = 0, prevExterne = 0, consoInterne = 0, consoExterne = 0;
+  feuilles.forEach((node) => {
+    (node.affectations || []).forEach((aff) => {
+      const tjmEntry = projet.tjm.find((t) => t.collaborateur_id === aff.collaborateur_id);
+      const tjm = tjmEntry ? tjmEntry.montant : 0;
+      const externe = estCollaborateurExterne(collaborateurs.find((c) => c.id === aff.collaborateur_id));
+      if (externe) {
+        prevExterne += (aff.jours_prev || 0) * tjm;
+        consoExterne += (aff.jours_realises || 0) * tjm;
+      } else {
+        prevInterne += (aff.jours_prev || 0) * tjm;
+        consoInterne += (aff.jours_realises || 0) * tjm;
+      }
+    });
+  });
+  return { prevInterne, prevExterne, consoInterne, consoExterne };
+}
+
 // Feuilles descendantes d'un nœud (lui-même s'il n'a pas d'enfants).
 export function getLeaves(node, allNodes) {
   const children = allNodes.filter((n) => n.parent_id === node.id);

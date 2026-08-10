@@ -998,6 +998,23 @@ const useAppStore = create((set, get) => ({
     get()._touch();
   },
 
+  // Import d'un seul projet (fichier généré par exportProjetData, cf. storage.js) — utilisé pour
+  // recopier un projet d'une base Firestore vers une autre (ex. sandbox → prod). Conserve l'id
+  // d'origine par défaut (comme importAll) sauf si newId est demandé (évite une collision si le
+  // même fichier est réimporté deux fois, ou si on veut dupliquer un projet dans la même base).
+  importProjet: async (projetData, { newId = false } = {}) => {
+    const id = newId ? uuidv4() : projetData.id;
+    const incoming = migrateProjet({ ...projetData, id });
+    await saveProjet(id, incoming);
+    set((s) => ({
+      projets: s.projets.some((p) => p.id === id)
+        ? s.projets.map((p) => (p.id === id ? incoming : p))
+        : [...s.projets, incoming],
+    }));
+    get()._touch();
+    return incoming;
+  },
+
   // ── Tâches (to-do personnelle du PM, 4 statuts + deadline) ────────
   addTache: async (tache) => {
     const id = uuidv4();

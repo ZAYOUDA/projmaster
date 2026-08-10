@@ -62,3 +62,46 @@ export function importData(file) {
     reader.readAsText(file);
   });
 }
+
+// ── Export / import d'un seul projet (migration dev → prod, ou entre bases) ─
+// Contrairement à exportData/importData (backup complet), ceci cible un projet précis :
+// utile pour recopier un projet de la base sandbox vers la base prod (ou inversement)
+// sans écraser le reste des données. Les collaborateurs ne sont PAS inclus dans l'export —
+// seuls leurs id sont référencés dans le WBS/TJM/commandes du projet — car les fiches
+// collaborateur (et leurs id) diffèrent en général entre sandbox et prod (vrais users vs
+// données de test). `collaborateursReferences` liste ces id + noms lisibles au moment de
+// l'export, pour que la personne qui importe puisse vérifier/recréer les correspondances
+// manquantes côté cible avant ou après l'import (cf. handleImportProjet dans Parametres.jsx).
+function collecterCollaborateurIds(projet) {
+  const ids = new Set();
+  (projet.tjm || []).forEach((t) => t.collaborateur_id && ids.add(t.collaborateur_id));
+  (projet.wbs || []).forEach((n) => (n.affectations || []).forEach((a) => a.collaborateur_id && ids.add(a.collaborateur_id)));
+  (projet.commandes || []).forEach((c) => (c.lignes || []).forEach((l) => l.collabId && ids.add(l.collabId)));
+  return [...ids];
+}
+
+export function exportProjetData(projet, collaborateurs = []) {
+  const ids = collecterCollaborateurIds(projet);
+  const payload = {
+    meta: {
+      type: 'projmaster_projet_export',
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      dbId: import.meta.env.VITE_FIRESTORE_DB_ID || 'default',
+    },
+    projet,
+    collaborateursReferences: ids.map((cid) => {
+      const c = collaborateurs.find((x) => x.id === cid);
+      return { id: cid, nom: c ? `${c.prenom} ${c.nom}` : null };
+    }),
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const slug = (projet.nom || projet.id).toString().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  a.download = `projet_${slug}_${localIso(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}

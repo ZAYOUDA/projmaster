@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
-import { calculerNumeroWBS, getLeaves } from '../data/calculations';
+import { calculerNumeroWBS, getLeaves, estCollaborateurExterne as estExterne } from '../data/calculations';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 // ── Utilitaires date ──────────────────────────────────────────────
@@ -380,6 +380,9 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                         {collab.initiales}
                       </div>
                       <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', }}>{collab.prenom} {collab.nom}</span>
+                      {estExterne(collab) && (
+                        <span style={{ fontSize: 9, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }} title="Collaborateur externe (co-traitance / client)">EXT</span>
+                      )}
                       <span style={{ fontSize: 9, background: 'var(--color-info-soft)', color: 'var(--color-info)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>PRÉ</span>
                       <button
                         onClick={() => { setFilling(aff.id); setFillVal('1'); }}
@@ -429,6 +432,9 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
                       {collab.initiales}
                     </div>
                     <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', }}>{collab.prenom} {collab.nom}</span>
+                    {estExterne(collab) && (
+                      <span style={{ fontSize: 9, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }} title="Collaborateur externe (co-traitance / client)">EXT</span>
+                    )}
                     <span style={{ fontSize: 9, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600 }}>RÉE</span>
                   </div>
                 </td>
@@ -633,6 +639,21 @@ export default function ProjetPlanning() {
   const grandTotalPrev = projet.wbs.reduce((s, n) => s + (n.affectations || []).reduce((sa, a) => sa + (a.jours_prev || 0), 0), 0);
   const grandTotalReel = projet.wbs.reduce((s, n) => s + (n.affectations || []).reduce((sa, a) => sa + (a.jours_realises || 0), 0), 0);
 
+  // KPI interne / externe — utile sur les projets en co-construction avec le client, où une partie
+  // des tâches est affectée à des collaborateurs "EXT-" (cf. estExterne). Basé sur jours_prev
+  // (charge affectée) et jours_realises, toutes tâches confondues.
+  const { prevInterne, prevExterne, reelInterne, reelExterne } = useMemo(() => {
+    let prevInterne = 0, prevExterne = 0, reelInterne = 0, reelExterne = 0;
+    projet.wbs.forEach((n) => (n.affectations || []).forEach((a) => {
+      const ext = estExterne(collaborateurs.find((c) => c.id === a.collaborateur_id));
+      if (ext) { prevExterne += a.jours_prev || 0; reelExterne += a.jours_realises || 0; }
+      else { prevInterne += a.jours_prev || 0; reelInterne += a.jours_realises || 0; }
+    }));
+    return { prevInterne, prevExterne, reelInterne, reelExterne };
+  }, [projet.wbs, collaborateurs]);
+  const hasExternes = prevExterne > 0 || reelExterne > 0;
+  const pctExterne = (prevInterne + prevExterne) > 0 ? Math.round(prevExterne / (prevInterne + prevExterne) * 100) : 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: `calc(100vh - ${headerHeight}px)`, overflow: 'hidden' }}>
       {/* Toolbar */}
@@ -732,6 +753,25 @@ export default function ProjetPlanning() {
           <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginLeft: 4 }}>
             {visibleIds.size > 0 ? `${projet.wbs.filter(n => visibleIds.has(n.id) && !projet.wbs.some(c => c.parent_id === n.id)).length} tâche(s)` : 'Aucun résultat'}
           </span>
+        )}
+
+        {/* KPI Interne / Externe — visible seulement si des collaborateurs "EXT-" sont affectés
+            sur ce projet (co-construction avec le client). */}
+        {hasExternes && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', fontSize: 11 }} title="Charge affectée : collaborateurs internes vs externes (préfixe EXT-)">
+            <span style={{ color: 'var(--color-text-tertiary)', fontWeight: 500 }}>Interne / Externe :</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-info)', flexShrink: 0 }} />
+              <strong style={{ color: 'var(--color-text-primary)' }}>{fmtJours(prevInterne)}j</strong>
+              {reelInterne > 0 && <span style={{ color: 'var(--color-text-tertiary)' }}>({fmtJours(reelInterne)}j réel)</span>}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-warning)', flexShrink: 0 }} />
+              <strong style={{ color: 'var(--color-warning)' }}>{fmtJours(prevExterne)}j</strong>
+              {reelExterne > 0 && <span style={{ color: 'var(--color-text-tertiary)' }}>({fmtJours(reelExterne)}j réel)</span>}
+            </span>
+            <span style={{ color: 'var(--color-text-tertiary)' }}>({pctExterne}% externe)</span>
+          </div>
         )}
       </div>
 
