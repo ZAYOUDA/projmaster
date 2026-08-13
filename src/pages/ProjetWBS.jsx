@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
-import { calculerNumeroWBS, calculerBudgetNoeud, formatCurrency, agregerDatesEtAvancement } from '../data/calculations';
+import { calculerNumeroWBS, calculerBudgetNoeud, formatCurrency, agregerDatesEtAvancement, calculerAvancementAutoNoeud, calculerJoursNoeud, flattenWBS } from '../data/calculations';
 import PageHeader from '../components/layout/PageHeader';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import Modal from '../components/ui/Modal';
-import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare, Calendar, GripVertical, Upload } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Trash2, UserPlus, ClipboardPaste, CheckSquare, Calendar, GripVertical, Upload, RefreshCw } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
@@ -78,6 +78,56 @@ function JoursRealisesParMois({ projetId, nodeId, affId, jours_realises_par_mois
 
 const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', termine: 'Terminé', bloque: 'Bloqué' };
 
+// ── Champ Avancement (%) — auto-calculé (jours réalisés / jours prévus) mais modifiable ───
+// Se pré-remplit tout seul tant que `avancement_auto` n'est pas passé à false (posé
+// automatiquement dès que l'utilisateur tape une valeur à la main) ; un bouton "auto" permet de
+// revenir au calcul automatique. Rouge quand jours réalisés > jours prévus (dépassement) — sur une
+// feuille directement, sur un livrable/parent en agrégeant ses feuilles descendantes.
+function AvancementField({ projetId, node, allNodes }) {
+  const updateWBSNode = useAppStore((s) => s.updateWBSNode);
+  const isLeaf = !allNodes.some((c) => c.parent_id === node.id);
+  const jours = calculerJoursNoeud(node, allNodes);
+  const depasse = jours.prev > 0 && jours.reel > jours.prev;
+  const isAuto = node.avancement_auto !== false;
+  const autoSuggestion = isLeaf ? calculerAvancementAutoNoeud(node) : null;
+
+  return (
+    <label style={labelStyle}>
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <span>Avancement (%)</span>
+        {isLeaf && autoSuggestion !== null && (
+          isAuto ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 500, color: 'var(--color-info)' }} title="Calculé automatiquement à partir des jours réalisés">
+              <RefreshCw size={9} /> auto
+            </span>
+          ) : (
+            <button type="button"
+              onClick={() => updateWBSNode(projetId, node.id, { avancement_auto: true, avancement: autoSuggestion })}
+              title="Revenir au calcul automatique (jours réalisés / jours prévus)"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--color-border)', borderRadius: 4, padding: '1px 5px', background: 'var(--color-bg-card)', cursor: 'pointer', fontSize: 10, color: 'var(--color-text-tertiary)' }}>
+              <RefreshCw size={9} /> auto
+            </button>
+          )
+        )}
+      </span>
+      {/* Pas de max=100 : un dépassement (jours réalisés > prévus) peut légitimement pousser le %
+          au-delà de 100 — écrêter masquerait l'ampleur du dépassement. */}
+      <input type="number" min={0}
+        style={{ ...inputStyle, color: depasse ? 'var(--color-critical)' : undefined, borderColor: depasse ? 'var(--color-critical)' : undefined, fontWeight: depasse ? 700 : undefined }}
+        value={node.avancement}
+        onChange={(e) => updateWBSNode(projetId, node.id, {
+          avancement: Math.max(0, parseInt(e.target.value, 10) || 0),
+          avancement_auto: false,
+        })} />
+      {depasse && (
+        <span style={{ fontSize: 10, color: 'var(--color-critical)', fontWeight: 500 }}>
+          ⚠ Dépassement : {jours.reel}j réalisés pour {jours.prev}j prévus
+        </span>
+      )}
+    </label>
+  );
+}
+
 // ── Panneau détail ───────────────────────────────────────────────
 function DetailPanel({ projetId, nodeId, numeros }) {
   const projet = useAppStore((s) => s.projets.find((p) => p.id === projetId));
@@ -119,10 +169,9 @@ function DetailPanel({ projetId, nodeId, numeros }) {
             {Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
-        <label style={{ ...labelStyle, marginBottom: 10 }}>Avancement (%)
-          <input type="number" min={0} max={100} style={inputStyle} value={node.avancement}
-            onChange={(e) => updateWBSNode(projetId, node.id, { avancement: Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)) })} />
-        </label>
+        <div style={{ marginBottom: 10 }}>
+          <AvancementField projetId={projetId} node={node} allNodes={projet.wbs} />
+        </div>
         <label style={{ ...labelStyle, marginBottom: 10 }}>Colonne Kanban
           <select style={inputStyle} value={node.kanban_colonne || 'backlog'}
             onChange={(e) => updateWBSNode(projetId, node.id, { kanban_colonne: e.target.value })}>
@@ -168,6 +217,43 @@ function DetailPanel({ projetId, nodeId, numeros }) {
           defaultValue={node.description}
           onBlur={(e) => updateWBSNode(projetId, node.id, { description: e.target.value })} />
       </label>
+      {/* Affecter/déplacer cette tâche sous n'importe quel autre nœud (livrable racine OU
+          sous-tâche à n'importe quelle profondeur, ex. mettre "Rework" sous "Support") — masqué
+          pour un livrable racine (parent_id null), qui n'a rien "au-dessus" auquel se rattacher.
+          Exclut le nœud lui-même et tous ses descendants (sinon cycle dans l'arbre) ainsi que les
+          jalons (pas de sous-tâches sous un jalon). Rattache en bout de liste des enfants du nœud
+          choisi ; tout sous-arbre existant de la tâche déplacée suit puisque son parent_id à lui
+          ne change pas. */}
+      {node.parent_id !== null && (() => {
+        const exclus = new Set();
+        (function collect(id) {
+          exclus.add(id);
+          projet.wbs.filter((n) => n.parent_id === id).forEach((c) => collect(c.id));
+        })(node.id);
+        const candidats = flattenWBS(projet.wbs).filter(({ node: n }) => n.type !== 'jalon' && !exclus.has(n.id));
+        return (
+          <label style={{ ...labelStyle, marginTop: 10 }}>Rattacher sous
+            <select style={inputStyle} value={node.parent_id || ''}
+              onChange={(e) => {
+                const newParentId = e.target.value;
+                if (!newParentId || newParentId === node.parent_id) return;
+                const parent = projet.wbs.find((n) => n.id === newParentId);
+                const siblings = projet.wbs.filter((n) => n.parent_id === newParentId);
+                updateWBSNode(projetId, node.id, {
+                  parent_id: newParentId,
+                  niveau: (parent?.niveau || 1) + 1,
+                  ordre: siblings.length + 1,
+                });
+              }}>
+              {candidats.map(({ node: n, depth }) => (
+                <option key={n.id} value={n.id}>
+                  {'    '.repeat(depth)}{numeros[n.id] ? `${numeros[n.id]} ` : ''}{n.nom}
+                </option>
+              ))}
+            </select>
+          </label>
+        );
+      })()}
       {node.prerequis && (
         <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 6, background: 'var(--color-bg-secondary)', fontSize: 12, color: 'var(--color-text-secondary)' }}>
           <strong style={{ color: 'var(--color-text-primary)' }}>Prérequis :</strong> {node.prerequis}
@@ -206,10 +292,7 @@ function DetailPanel({ projetId, nodeId, numeros }) {
             {Object.entries(STATUT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
-        <label style={labelStyle}>Avancement (%)
-          <input type="number" min={0} max={100} style={inputStyle} value={node.avancement}
-            onChange={(e) => updateWBSNode(projetId, node.id, { avancement: Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)) })} />
-        </label>
+        <AvancementField projetId={projetId} node={node} allNodes={projet.wbs} />
         <label style={labelStyle}>Kanban
           <select style={inputStyle} value={node.kanban_colonne}
             onChange={(e) => updateWBSNode(projetId, node.id, { kanban_colonne: e.target.value })}>
@@ -335,6 +418,10 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
   // Dates prév. et avancement remontés depuis les sous-tâches (min/max dates, moyenne d'avancement) —
   // pour une feuille, ça retombe simplement sur ses propres valeurs.
   const agg = agregerDatesEtAvancement(node, allNodes);
+  // Dépassement (jours réalisés > jours prévus, agrégé sur les feuilles descendantes) — colore le
+  // % d'avancement en rouge pour signaler que le rythme réel dépasse le prévisionnel.
+  const joursAgg = calculerJoursNoeud(node, allNodes);
+  const depasseJours = joursAgg.prev > 0 && joursAgg.reel > joursAgg.prev;
   const totalJours = node.affectations.reduce((s, a) => s + a.jours_prev, 0);
   const affCollab = (node.affectations || []).map((a) => collaborateurs.find((c) => c.id === a.collaborateur_id)).filter(Boolean);
   const isSelected = selectedIds.has(node.id);
@@ -399,13 +486,16 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
           {agg.date_debut_prev && agg.date_fin_prev
             ? `${fmtDate(agg.date_debut_prev)} → ${fmtDate(agg.date_fin_prev)}` : '—'}
         </td>
-        {/* Avancement — moyenne des sous-tâches pour un livrable/parent */}
-        <td style={{ padding: '8px 8px', width: 110 }}>
+        {/* Avancement — moyenne des sous-tâches pour un livrable/parent. Rouge si jours réalisés
+            > jours prévus (dépassement) — signal visuel indépendant du % lui-même. */}
+        <td style={{ padding: '8px 8px', width: 110 }} title={depasseJours ? `Dépassement : ${joursAgg.reel}j réalisés pour ${joursAgg.prev}j prévus` : undefined}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ flex: 1, height: 4, background: 'var(--color-bg-tertiary)', borderRadius: 99 }}>
-              <div style={{ height: '100%', width: `${agg.avancement}%`, background: 'var(--color-accent)', borderRadius: 99 }} />
+              {/* Largeur de la barre écrêtée à 100% (au-delà ça ne veut plus rien dire visuellement),
+                  mais le texte à côté affiche le vrai %, non écrêté, pour montrer l'ampleur du dépassement. */}
+              <div style={{ height: '100%', width: `${Math.min(100, agg.avancement)}%`, background: depasseJours ? 'var(--color-critical)' : 'var(--color-accent)', borderRadius: 99 }} />
             </div>
-            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)', flexShrink: 0 }}>{agg.avancement}%</span>
+            <span style={{ fontSize: 11, fontWeight: depasseJours ? 700 : 400, color: depasseJours ? 'var(--color-critical)' : 'var(--color-text-tertiary)', flexShrink: 0 }}>{agg.avancement}%</span>
           </div>
         </td>
         {/* Statut */}

@@ -8,7 +8,7 @@ import {
 } from '../firebase/firestore';
 import { defaultData } from '../data/defaultData';
 import { exportData, importData } from '../data/storage';
-import { deriverDatesReellesNoeud } from '../data/calculations';
+import { deriverDatesReellesNoeud, calculerAvancementAutoNoeud } from '../data/calculations';
 
 function calculerQuadrant(influence, interet) {
   if (influence >= 3 && interet >= 3) return 'gerer_activement';
@@ -68,6 +68,20 @@ function propagerStatutWBS(wbs, nodeId) {
 
 const DEFAULT_ESCALADE_NIVEAUX = ['Niveau Projet', 'Comité 1', 'Comité 2'];
 
+// Recalcule `avancement` automatiquement pour une feuille dont l'auto-calcul est actif
+// (avancement_auto !== false), à partir de ses affectations à jour (jours réalisés / jours prévus)
+// — appelé après toute modification touchant jours_prev/jours_realises (planning, réalisé mensuel,
+// ajout/suppression d'affectation). Sans effet sur un nœud avec enfants (l'avancement d'un
+// livrable/parent reste manuel ou remonté par agrégation à l'affichage, cf.
+// agregerDatesEtAvancement) ni sur une feuille gelée manuellement (avancement_auto: false, posé
+// par l'édition manuelle du % dans ProjetWBS.jsx).
+function withAvancementAuto(node, wbs) {
+  if (node.avancement_auto === false) return node;
+  if (wbs.some((c) => c.parent_id === node.id)) return node;
+  const auto = calculerAvancementAutoNoeud(node);
+  return auto === null ? node : { ...node, avancement: auto };
+}
+
 function migrateProjet(p) {
   const escalade_niveaux = p.escalade_niveaux || DEFAULT_ESCALADE_NIVEAUX;
   const riad = p.riad || {
@@ -95,24 +109,35 @@ function migrateProjet(p) {
       actions: riad.actions || [],
       decisions: riad.decisions || [],
     },
-    wbs: (p.wbs || []).map((n) => {
-      const affectations = (n.affectations || []).map((a) => {
-        const base = { jours_realises_par_mois: {}, ...a };
-        const fromPlanning = Object.values(base.planning_reel || {}).reduce((acc, v) => acc + v, 0);
-        const fromMois = Object.values(base.jours_realises_par_mois || {}).reduce((acc, v) => acc + v, 0);
-        const jours_realises = Math.max(fromPlanning, fromMois, base.jours_realises || 0);
-        return { ...base, jours_realises };
+    wbs: (() => {
+      const withAffectations = (p.wbs || []).map((n) => {
+        const affectations = (n.affectations || []).map((a) => {
+          const base = { jours_realises_par_mois: {}, ...a };
+          const fromPlanning = Object.values(base.planning_reel || {}).reduce((acc, v) => acc + v, 0);
+          const fromMois = Object.values(base.jours_realises_par_mois || {}).reduce((acc, v) => acc + v, 0);
+          const jours_realises = Math.max(fromPlanning, fromMois, base.jours_realises || 0);
+          return { ...base, jours_realises };
+        });
+        // Rattrapage rétroactif : déduit Début réel/Fin réelle depuis l'imputation existante
+        // (pour les tâches déjà imputées avant l'introduction de cette déduction automatique).
+        const derived = deriverDatesReellesNoeud({ affectations });
+        return {
+          ...n,
+          affectations,
+          // Nouveau champ (2026-08-13), actif par défaut sur les nœuds existants comme sur les
+          // nouveaux.
+          avancement_auto: n.avancement_auto ?? true,
+          date_debut_reel: derived.date_debut_reel || n.date_debut_reel || null,
+          date_fin_reel: derived.date_fin_reel || n.date_fin_reel || null,
+        };
       });
-      // Rattrapage rétroactif : déduit Début réel/Fin réelle depuis l'imputation existante
-      // (pour les tâches déjà imputées avant l'introduction de cette déduction automatique).
-      const derived = deriverDatesReellesNoeud({ affectations });
-      return {
-        ...n,
-        affectations,
-        date_debut_reel: derived.date_debut_reel || n.date_debut_reel || null,
-        date_fin_reel: derived.date_fin_reel || n.date_fin_reel || null,
-      };
-    }),
+      // Recalcule `avancement` à CHAQUE chargement (pas seulement à la prochaine saisie) pour les
+      // feuilles en mode auto — sinon les tâches déjà imputées avant l'introduction de cette
+      // fonctionnalité restent bloquées à leur ancien % tant qu'on n'y retouche pas manuellement
+      // (constaté : jours réalisés saisis sur Planning, % toujours à 0 sur WBS). Sans effet sur une
+      // feuille gelée manuellement (avancement_auto: false).
+      return withAffectations.map((n) => withAvancementAuto(n, withAffectations));
+    })(),
   };
 }
 
@@ -309,6 +334,7 @@ const useAppStore = create((set, get) => ({
       id: node.id || uuidv4(),
       ordre: 999,
       avancement: 0,
+      avancement_auto: true,
       statut: 'non_demarre',
       kanban_colonne: 'backlog',
       affectations: [],
@@ -376,7 +402,7 @@ const useAppStore = create((set, get) => ({
       ...affectation,
     };
     const wbs = p.wbs.map((n) =>
-      n.id !== nodeId ? n : { ...n, affectations: [...n.affectations, newAff] }
+      n.id !== nodeId ? n : withAvancementAuto({ ...n, affectations: [...n.affectations, newAff] }, p.wbs)
     );
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();
@@ -386,10 +412,10 @@ const useAppStore = create((set, get) => ({
     const p = get().projets.find((p) => p.id === projetId);
     if (!p) return;
     const wbs = p.wbs.map((n) =>
-      n.id !== nodeId ? n : {
+      n.id !== nodeId ? n : withAvancementAuto({
         ...n,
         affectations: n.affectations.map((a) => a.id === affId ? { ...a, ...updates } : a),
-      }
+      }, p.wbs)
     );
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();
@@ -410,11 +436,11 @@ const useAppStore = create((set, get) => ({
       });
       // Déduit Début réel / Fin réelle depuis l'imputation, pour éviter d'avoir à les saisir en plus.
       const derived = deriverDatesReellesNoeud({ affectations });
-      return {
+      return withAvancementAuto({
         ...n, affectations,
         date_debut_reel: derived.date_debut_reel || n.date_debut_reel || null,
         date_fin_reel: derived.date_fin_reel || n.date_fin_reel || null,
-      };
+      }, p.wbs);
     });
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();
@@ -436,11 +462,11 @@ const useAppStore = create((set, get) => ({
       });
       // Déduit Début réel / Fin réelle depuis l'imputation, pour éviter d'avoir à les saisir en plus.
       const derived = deriverDatesReellesNoeud({ affectations });
-      return {
+      return withAvancementAuto({
         ...n, affectations,
         date_debut_reel: derived.date_debut_reel || n.date_debut_reel || null,
         date_fin_reel: derived.date_fin_reel || n.date_fin_reel || null,
-      };
+      }, p.wbs);
     });
 
     wbs = wbs.map((n) => {
@@ -473,7 +499,7 @@ const useAppStore = create((set, get) => ({
       const allDates = affectations.flatMap((a) => Object.keys(a.planning || {})).filter(Boolean);
       const date_debut_prev = allDates.length > 0 ? allDates.sort()[0] : n.date_debut_prev;
       const date_fin_prev   = allDates.length > 0 ? allDates.sort().at(-1) : n.date_fin_prev;
-      return { ...n, affectations, date_debut_prev, date_fin_prev };
+      return withAvancementAuto({ ...n, affectations, date_debut_prev, date_fin_prev }, p.wbs);
     });
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();
@@ -483,7 +509,7 @@ const useAppStore = create((set, get) => ({
     const p = get().projets.find((p) => p.id === projetId);
     if (!p) return;
     const wbs = p.wbs.map((n) =>
-      n.id !== nodeId ? n : { ...n, affectations: n.affectations.filter((a) => a.id !== affId) }
+      n.id !== nodeId ? n : withAvancementAuto({ ...n, affectations: n.affectations.filter((a) => a.id !== affId) }, p.wbs)
     );
     await saveProjet(projetId, { ...p, wbs });
     get()._touch();
@@ -613,7 +639,10 @@ const useAppStore = create((set, get) => ({
         date_fin_prev: importDates ? t.finPrev : null,
         date_debut_reel: importDates ? t.debutReel : null,
         date_fin_reel: importDates ? t.finReel : null,
-        avancement: t.statut === 'termine' ? 100 : 0,
+        avancement: t.statut === 'termine' ? 100 : (affectations[0]?.jours_prev > 0
+          ? Math.min(100, Math.round((affectations[0].jours_realises / affectations[0].jours_prev) * 100))
+          : 0),
+        avancement_auto: true,
         statut: STATUT_MAP[t.statut] || 'non_demarre',
         kanban_colonne: KANBAN_MAP[t.statut] || 'backlog',
         affectations,

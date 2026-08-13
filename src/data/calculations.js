@@ -105,6 +105,34 @@ export function calculerBudgetParTypeCollab(projet, collaborateurs) {
   return { prevInterne, prevExterne, consoInterne, consoExterne };
 }
 
+// % d'avancement auto-suggéré pour une feuille, basé sur jours réalisés / jours prévus — null si
+// aucun jour prévu (rien à calculer, on ne force pas 0). Volontairement PAS borné à 100 : en cas de
+// dépassement (jours réalisés > jours prévus), le % dépasse 100 pour signaler l'ampleur du
+// dépassement (ex. 150%) plutôt que d'être écrêté et de masquer l'info — l'affichage le colore en
+// rouge (cf. ProjetWBS.jsx) pour rester lisible. Utilisé pour pré-remplir `avancement`
+// automatiquement (voir `avancement_auto` sur les nœuds WBS dans useAppStore.js), sans empêcher la
+// correction manuelle : l'utilisateur reste maître du chiffre affiché.
+export function calculerAvancementAutoNoeud(node) {
+  const affs = node.affectations || [];
+  const prev = affs.reduce((s, a) => s + (a.jours_prev || 0), 0);
+  const reel = affs.reduce((s, a) => s + (a.jours_realises || 0), 0);
+  if (prev <= 0) return null;
+  return Math.round((reel / prev) * 100);
+}
+
+// Jours prév./réels agrégés sur toutes les feuilles descendantes d'un nœud (lui-même s'il est déjà
+// une feuille) — sert à détecter un dépassement (jours réalisés > jours prévus) pour colorer le %
+// d'avancement en rouge, aussi bien sur une tâche que sur un livrable/parent (agrégation).
+export function calculerJoursNoeud(node, allNodes) {
+  const leaves = getLeaves(node, allNodes).filter((n) => n.type !== 'jalon');
+  let prev = 0, reel = 0;
+  leaves.forEach((l) => (l.affectations || []).forEach((a) => {
+    prev += a.jours_prev || 0;
+    reel += a.jours_realises || 0;
+  }));
+  return { prev, reel };
+}
+
 // Feuilles descendantes d'un nœud (lui-même s'il n'a pas d'enfants).
 export function getLeaves(node, allNodes) {
   const children = allNodes.filter((n) => n.parent_id === node.id);
