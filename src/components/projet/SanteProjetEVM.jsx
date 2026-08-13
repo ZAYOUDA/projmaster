@@ -17,7 +17,7 @@ function KpiPill({ label, value }) {
       background: s.bg, color: s.color, fontSize: 11, fontWeight: 600,
       padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap',
     }}>
-      {label} {value === null ? '—' : value.toFixed(2)}
+      {label} {value === null ? '—' : value.toFixed(2).replace('.', ',')}
     </span>
   );
 }
@@ -35,7 +35,7 @@ function KpiCard({ label, formule, value, definition }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1 }}>
-          {value === null ? '—' : value.toFixed(2)}
+          {value === null ? '—' : value.toFixed(2).replace('.', ',')}
         </span>
         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: s.bg, color: s.color }}>
           {s.label}

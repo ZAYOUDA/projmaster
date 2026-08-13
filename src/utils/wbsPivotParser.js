@@ -153,7 +153,7 @@ export function parseWbsPivot(arrayBuffer) {
       const somme = sommeParTache[t.id] || 0;
       const declare = t.chargeReelle || 0;
       if (Math.abs(somme - declare) > 0.01) {
-        warnings.push(`${t.id} (${t.tache}) : réalisé mensuel = ${somme.toFixed(3)} j ≠ Charge_Reelle_j = ${declare} j.`);
+        warnings.push(`${t.id} (${t.tache}) : réalisé mensuel = ${somme.toFixed(3).replace('.', ',')} j ≠ Charge_Reelle_j = ${declare} j.`);
       }
     });
   }

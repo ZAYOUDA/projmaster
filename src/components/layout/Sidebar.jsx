@@ -14,8 +14,8 @@ const ROLE_BADGE = {
   chef_projet:   { label: 'Chef de Projet', bg: 'var(--color-warning-soft)', color: 'var(--color-warning)' },
   collaborateur: { label: 'Collaborateur',  bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)' },
 };
-// Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS.
-const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'wbs');
+// Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS/Sanity Check.
+const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'sanity');
 // toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
 // retombe sur la veille. On formate donc à partir des composants locaux du Date.
 const localIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

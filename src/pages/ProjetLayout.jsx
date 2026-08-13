@@ -4,13 +4,14 @@ import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
 import { calculerEVMProjet, calculerEarnedSchedule, detecterAvancementNonAJour } from '../utils/evmCalculs';
 import SanteProjetEVM from '../components/projet/SanteProjetEVM';
-import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp, FileSpreadsheet } from 'lucide-react';
+import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, CalendarDays, Users, Receipt, TrendingUp, FileSpreadsheet, ClipboardCheck } from 'lucide-react';
 
 // Rôles avec édition complète sur un projet (WBS/Planning/Gantt/Kanban) : tous sauf Collaborateur,
 // qui garde son accès actuel (assignation, mise à jour de son propre avancement).
 const ROLES_GESTION = ['admin', 'manager', 'chef_projet'];
 
 const ALL_TABS = [
+  { path: 'sanity',        label: 'Sanity Check',     icon: ClipboardCheck, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'gantt',         label: 'Gantt',            icon: BarChart2,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },

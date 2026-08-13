@@ -184,7 +184,7 @@ export default function CongesEquipe() {
                 const iso = toISO(d); const wknd = isWeekend(d); const tot = totalParJour[iso] || 0;
                 return (
                   <td key={iso} style={{ width: COL_WIDTH, minWidth: COL_WIDTH, border: '0.5px solid var(--color-border)', background: wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)', textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#DC2626' }}>
-                    {tot > 0 ? (tot % 1 === 0 ? tot : tot.toFixed(1)) : ''}
+                    {tot > 0 ? (tot % 1 === 0 ? tot : tot.toFixed(1).replace('.', ',')) : ''}
                   </td>
                 );
               })}

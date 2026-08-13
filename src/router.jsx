@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Collaborateurs from './pages/Collaborateurs';
 import Parametres from './pages/Parametres';
 import ProjetLayout from './pages/ProjetLayout';
+import ProjetSanityCheck from './pages/ProjetSanityCheck';
 import ProjetWBS from './pages/ProjetWBS';
 import ProjetGantt from './pages/ProjetGantt';
 import ProjetPlanning from './pages/ProjetPlanning';
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
         path: 'projet/:id',
         element: <ProjetLayout />,
         children: [
+          { path: 'sanity',       element: <ProjetSanityCheck /> },
           { path: 'wbs',          element: <ProjetWBS /> },
           { path: 'planning',     element: <ProjetPlanning /> },
           { path: 'gantt',        element: <ProjetGantt /> },

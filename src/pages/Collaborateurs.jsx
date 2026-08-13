@@ -154,7 +154,7 @@ export default function Collaborateurs() {
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     {nbConges > 0 ? (
-                      <span style={{ fontSize: 12, color: 'var(--color-danger)', fontWeight: 600 }}>{nbConges % 1 === 0 ? nbConges : nbConges.toFixed(1)}j</span>
+                      <span style={{ fontSize: 12, color: 'var(--color-danger)', fontWeight: 600 }}>{nbConges % 1 === 0 ? nbConges : nbConges.toFixed(1).replace('.', ',')}j</span>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>—</span>
                     )}

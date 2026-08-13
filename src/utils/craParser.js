@@ -142,7 +142,7 @@ export function parseCraExport(text) {
       const sum = sums[mission]?.[consultant] || 0;
       if (Math.abs(sum - total) > 0.01) {
         warnings.push(
-          `${mission} / ${consultant} : total annuel ${total} j ≠ somme mensuelle ${sum.toFixed(2)} j ` +
+          `${mission} / ${consultant} : total annuel ${total} j ≠ somme mensuelle ${sum.toFixed(2).replace('.', ',')} j ` +
           `(l'export ne couvre peut-être pas tous les mois — l'import utilisera le détail mensuel).`
         );
       }

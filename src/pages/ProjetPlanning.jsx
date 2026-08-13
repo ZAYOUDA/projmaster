@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { calculerNumeroWBS, getLeaves, estCollaborateurExterne as estExterne } from '../data/calculations';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon, ChevronUp } from 'lucide-react';
 
 // ── Utilitaires date ──────────────────────────────────────────────
 const JOURS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -57,14 +57,14 @@ function reelColor(reel, prev) {
 }
 
 // ── Δ helpers ─────────────────────────────────────────────────────
-function DeltaCell({ delta, bg }) {
+function DeltaCell({ delta, bg, size = 11 }) {
   if (delta === null || delta === undefined) return <td style={deltaCellStyle(bg)} />;
   const isNeg = delta < 0;
   const isZero = delta === 0;
   return (
     <td style={deltaCellStyle(bg)}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: isZero ? 'var(--color-text-tertiary)' : isNeg ? 'var(--color-critical)' : 'var(--color-success)' }}>
-        {isNeg ? '' : '+'}{delta % 1 === 0 ? delta : delta.toFixed(1)}
+      <span style={{ fontSize: size, fontWeight: 600, color: isZero ? 'var(--color-text-tertiary)' : isNeg ? 'var(--color-critical)' : 'var(--color-success)' }}>
+        {isNeg ? '' : '+'}{delta % 1 === 0 ? delta : delta.toFixed(1).replace('.', ',')}
       </span>
     </td>
   );
@@ -262,9 +262,16 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 
   const headerBg = depth === 0 ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)';
 
+  // Vue simple (Prév seul OU Réel seul) : la ligne titre et la ligne collaborateur fusionnent en
+  // une seule ligne éditable (MergedTaskRow). En vue "Les deux", comportement historique inchangé
+  // (ligne titre + une ligne Prév/Réel par affectation).
+  const singleVue = (showPrev && !showReel) || (!showPrev && showReel);
+  const mergedVue = showPrev ? 'prévisionnel' : 'réel';
+
   return (
     <>
-      {/* Ligne titre tâche */}
+      {/* Ligne titre tâche — masquée pour une feuille en vue simple (fusionnée dans MergedTaskRow) */}
+      {!(isLeaf && singleVue) && (
       <tr style={{ background: headerBg }}>
         <td style={{ ...frozenLeft(depth), background: headerBg }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -343,9 +350,20 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
           );
         })}
       </tr>
+      )}
 
-      {/* Lignes collaborateur */}
-      {isLeaf && expanded && (showPrev || showReel) && (node.affectations || []).map((aff) => {
+      {/* Ligne fusionnée (vue simple, feuille uniquement) */}
+      {isLeaf && singleVue && (
+        <MergedTaskRow
+          node={node} projetId={projetId} depth={depth} numero={numero} headerBg={headerBg}
+          collaborateurs={collaborateurs} days={days} colWidth={colWidth} vue={mergedVue}
+          totalJoursPrev={totalJoursPrev} totalJoursReel={totalJoursReel} delta={delta}
+          congesParCollab={congesParCollab} chargeParCollabJour={chargeParCollabJour}
+        />
+      )}
+
+      {/* Lignes collaborateur — vue "Les deux" uniquement (sinon fusionnées ci-dessus) */}
+      {isLeaf && !singleVue && expanded && (node.affectations || []).map((aff) => {
         const collab = collaborateurs.find((c) => c.id === aff.collaborateur_id);
         if (!collab) return null;
         const joursPrev = aff.jours_prev || 0;
@@ -484,6 +502,298 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
   );
 }
 
+// ── Ligne fusionnée (vue simple) ────────────────────────────────────
+// Tâche + collaborateur(s) sur une seule ligne éditable, utilisée quand le filtre Prév/Réel est
+// sur une seule vue (voir `singleVue` dans TaskRows) — en "Les deux" on garde le comportement
+// historique à 3 lignes. Une tâche peut avoir plusieurs collaborateurs affectés : des chips sous
+// le nom de la tâche permettent de choisir lequel est "actif" (dont les jours s'affichent/éditent
+// dans la grille) sans perdre les autres — "toujours fusionner, peu importe le nombre de collabs".
+function MergedTaskRow({ node, projetId, depth, numero, headerBg, collaborateurs, days, colWidth, vue, totalJoursPrev, totalJoursReel, delta, congesParCollab, chargeParCollabJour }) {
+  const [explicitActive, setExplicitActive] = useState(null);
+  const [filling, setFilling] = useState(false);
+  const [fillVal, setFillVal] = useState('1');
+  const [addingCollab, setAddingCollab] = useState(false);
+  const updateWBSNode = useAppStore((s) => s.updateWBSNode);
+  const setChargePlanning = useAppStore((s) => s.setChargePlanning);
+  const setChargePlanningReel = useAppStore((s) => s.setChargePlanningReel);
+  const addAffectation = useAppStore((s) => s.addAffectation);
+  const deleteAffectation = useAppStore((s) => s.deleteAffectation);
+
+  const affs = node.affectations || [];
+  const activeId = affs.some((a) => a.id === explicitActive) ? explicitActive : affs[0]?.id;
+  const activeAff = affs.find((a) => a.id === activeId) || null;
+  const activeCollab = activeAff ? collaborateurs.find((c) => c.id === activeAff.collaborateur_id) : null;
+
+  const isPrev = vue === 'prévisionnel';
+  const planningKey = isPrev ? 'planning' : 'planning_reel';
+  const setCharge = isPrev ? setChargePlanning : setChargePlanningReel;
+  const badgeLabel = isPrev ? 'PRÉ' : 'RÉE';
+  const badgeStyle = isPrev
+    ? { background: 'var(--color-info-soft)', color: 'var(--color-info)' }
+    : { background: 'var(--color-warning-soft)', color: 'var(--color-warning)' };
+
+  const availableToAdd = collaborateurs.filter((c) => c.actif && !affs.some((a) => a.collaborateur_id === c.id));
+
+  const doFill = () => {
+    if (!activeAff) return;
+    const v = Math.min(1, Math.max(0, parseFloat(String(fillVal).replace(',', '.')) || 0));
+    days.forEach((d) => {
+      const iso = toISO(d);
+      if (isWeekend(d)) return;
+      if ((congesParCollab[activeAff.collaborateur_id] || {})[iso]) return;
+      setCharge(projetId, node.id, activeAff.id, iso, v);
+    });
+    setFilling(false);
+  };
+
+  return (
+    <tr style={{ background: headerBg }}>
+      <td style={{ ...frozenLeft(depth), background: headerBg }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+          <span style={{ width: 16, flexShrink: 0 }} />
+          <span style={{ fontSize: 9, color: 'var(--color-text-tertiary)', fontFamily: 'monospace', marginRight: 4, flexShrink: 0 }}>{numero}</span>
+          <span style={{ fontSize: 11, fontWeight: 500 }}>{node.nom}</span>
+          <span style={{ fontSize: 8, borderRadius: 4, padding: '1px 4px', flexShrink: 0, fontWeight: 600, marginLeft: 'auto', ...badgeStyle }}>{badgeLabel}</span>
+        </div>
+
+        {filling ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: 20 }}>
+            <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', flexShrink: 0 }}>Remplir :</span>
+            <input
+              autoFocus value={fillVal} onChange={(e) => setFillVal(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') doFill(); if (e.key === 'Escape') setFilling(false); }}
+              style={{ width: 36, padding: '1px 4px', border: '1.5px solid var(--color-info)', borderRadius: 4, fontSize: 11, textAlign: 'center', fontFamily: 'inherit', outline: 'none' }}
+            />
+            <button onClick={doFill} style={{ padding: '1px 6px', borderRadius: 4, border: 'none', background: 'var(--color-info)', color: '#FFFFFF', fontSize: 11, cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}>OK</button>
+            <button onClick={() => setFilling(false)} style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', fontSize: 11, cursor: 'pointer', color: 'var(--color-text-tertiary)', flexShrink: 0 }}>✕</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', paddingLeft: 20 }}>
+            {affs.map((a) => {
+              const c = collaborateurs.find((x) => x.id === a.collaborateur_id);
+              if (!c) return null;
+              const active = a.id === activeId;
+              return (
+                <span key={a.id} onClick={() => setExplicitActive(a.id)}
+                  title={`${c.prenom} ${c.nom}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer',
+                    border: active ? '1.5px solid var(--color-info)' : '1px solid var(--color-border)',
+                    borderRadius: 99, padding: '1px 4px 1px 1px',
+                    background: active ? 'var(--color-info-soft)' : 'var(--color-bg-card)',
+                  }}>
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>{c.initiales}</span>
+                  <span style={{ fontSize: 9, color: active ? 'var(--color-info)' : 'var(--color-text-secondary)', fontWeight: active ? 600 : 400 }}>{c.prenom}</span>
+                  {estExterne(c) && <span style={{ fontSize: 8, color: 'var(--color-warning)', fontWeight: 700 }}>EXT</span>}
+                  {affs.length > 1 && (
+                    <span onClick={(e) => { e.stopPropagation(); deleteAffectation(projetId, node.id, a.id); }} title="Retirer" style={{ fontSize: 9, color: 'var(--color-text-tertiary)', marginLeft: 1 }}>✕</span>
+                  )}
+                </span>
+              );
+            })}
+            {addingCollab ? (
+              <select autoFocus defaultValue=""
+                onChange={(e) => { if (e.target.value) addAffectation(projetId, node.id, { collaborateur_id: e.target.value, jours_prev: 0, jours_realises: 0 }); setAddingCollab(false); }}
+                onBlur={() => setAddingCollab(false)}
+                style={{ fontSize: 9, border: '1px solid var(--color-border)', borderRadius: 99, padding: '1px 4px', fontFamily: 'inherit' }}>
+                <option value="">— choisir —</option>
+                {availableToAdd.map((c) => <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>)}
+              </select>
+            ) : (
+              <button onClick={() => setAddingCollab(true)} title="Ajouter un collaborateur" style={{ width: 15, height: 15, borderRadius: '50%', border: '1px dashed var(--color-border)', background: 'none', cursor: 'pointer', color: 'var(--color-text-tertiary)', fontSize: 10, lineHeight: 1, padding: 0, flexShrink: 0 }}>+</button>
+            )}
+            {activeAff && (
+              <button onClick={() => { setFilling(true); setFillVal('1'); }} title="Remplir tous les jours visibles" style={{ padding: '1px 5px', borderRadius: 4, border: '1px solid var(--color-border)', background: 'var(--color-info-soft)', color: 'var(--color-info)', fontSize: 10, cursor: 'pointer', flexShrink: 0, marginLeft: 'auto' }}>↔</button>
+            )}
+          </div>
+        )}
+      </td>
+
+      <td style={{ ...collabCol, background: headerBg }} />
+
+      <td style={{ ...statutCol, background: headerBg }}>
+        {(() => {
+          const s = STATUT_OPTIONS.find((o) => o.value === node.statut) || STATUT_OPTIONS[0];
+          return (
+            <select
+              value={node.statut || 'non_demarre'}
+              onChange={(e) => updateWBSNode(projetId, node.id, { statut: e.target.value })}
+              style={{ ...statutSelectStyle, color: s.color, borderColor: s.color + '55' }}
+            >
+              {STATUT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          );
+        })()}
+      </td>
+
+      <td style={{ ...totalCol, background: headerBg, fontSize: 10, color: isPrev ? 'var(--color-info)' : (totalJoursReel > totalJoursPrev ? 'var(--color-critical)' : 'var(--color-success)') }}>
+        {isPrev ? (totalJoursPrev > 0 ? `${fmtJours(totalJoursPrev)}j` : '') : (totalJoursReel > 0 ? `${fmtJours(totalJoursReel)}j` : '')}
+      </td>
+
+      <DeltaCell delta={delta} bg={headerBg} size={10} />
+
+      {days.map((d) => {
+        const iso = toISO(d);
+        const wknd = isWeekend(d);
+        if (!activeAff) {
+          return <td key={iso} style={{ width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid var(--color-border-soft)', background: wknd ? 'var(--color-bg-tertiary)' : headerBg }} />;
+        }
+        const value = (activeAff[planningKey] || {})[iso] || 0;
+        const prevVal = (activeAff.planning || {})[iso] || 0;
+        const isConge = (congesParCollab[activeAff.collaborateur_id]?.[iso] || 0) > 0;
+        if (isConge) {
+          return (
+            <td key={iso} title={`Congé — ${activeCollab?.prenom} ${activeCollab?.nom}`} style={{
+              width: colWidth, minWidth: colWidth, height: 26, border: '0.5px solid var(--color-border-soft)',
+              background: 'var(--color-danger-soft)', textAlign: 'center', verticalAlign: 'middle', cursor: 'not-allowed',
+            }}>
+              <span style={{ fontSize: 10, color: 'var(--color-danger)' }}>✕</span>
+            </td>
+          );
+        }
+        if (isPrev) {
+          const totalJourCollab = (chargeParCollabJour[activeAff.collaborateur_id] || {})[iso] || 0;
+          const autresTaches = totalJourCollab - value;
+          const conflict = autresTaches > 0 ? activeCollab?.prenom : null;
+          const bg = wknd ? 'var(--color-bg-tertiary)' : value > 0 ? 'var(--color-info-soft)' : 'var(--color-bg-card)';
+          return (
+            <ChargeCell key={iso} value={value} colWidth={colWidth} bg={bg} color="var(--color-info)" conflict={conflict}
+              onChange={(v) => setChargePlanning(projetId, node.id, activeAff.id, iso, v)} />
+          );
+        }
+        const bg = wknd ? 'var(--color-bg-tertiary)' : reelBg(value, prevVal, false);
+        return (
+          <ChargeCell key={iso} value={value} colWidth={colWidth} bg={bg} color={reelColor(value, prevVal)}
+            onChange={(v) => setChargePlanningReel(projetId, node.id, activeAff.id, iso, v)} />
+        );
+      })}
+    </tr>
+  );
+}
+
+// ── Lignes du résumé par collaborateur (lecture seule) ─────────────
+// Une ligne Prév + une ligne Réel en vue "les deux" (même logique visuelle que TaskRows),
+// une seule ligne sinon — toujours en lecture seule : ce résumé est un agrégat de toutes les
+// tâches du collaborateur, pas un point de saisie.
+function CollabSummaryRows({ collab, totalPrev, totalReel, days, colWidth, showPrev, showReel, prevByDay, reelByDay }) {
+  const rowCell = (iso, value, color) => (
+    <td key={iso} style={{
+      width: colWidth, minWidth: colWidth, height: SUMMARY_ROW_H,
+      border: '0.5px solid var(--color-border-soft)',
+      background: isWeekend(new Date(iso)) ? 'var(--color-bg-tertiary)' : 'var(--color-bg-card)',
+      textAlign: 'center', fontSize: 9,
+      borderLeft: new Date(iso).getDay() === 1 ? '1px solid var(--color-border)' : undefined,
+    }}>
+      {value > 0 && <span style={{ color, fontWeight: 600 }}>{String(value % 1 === 0 ? value : value.toFixed(1)).replace('.', ',')}</span>}
+    </td>
+  );
+
+  return (
+    <>
+      {showPrev && (
+        <tr>
+          <td style={{ ...summaryFrozenLeft, background: 'var(--color-bg-card)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>
+                {collab.initiales}
+              </div>
+              <span style={{ fontSize: 10.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.prenom} {collab.nom}</span>
+              {estExterne(collab) && (
+                <span style={{ fontSize: 8, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 3, padding: '0 3px', flexShrink: 0, fontWeight: 600 }}>EXT</span>
+              )}
+            </div>
+          </td>
+          <td style={{ ...summaryTotalCol, color: 'var(--color-info)' }}>{totalPrev > 0 ? `${fmtJours(totalPrev)}j` : ''}</td>
+          <td style={summarySpacerCol} />
+          {days.map((d) => rowCell(toISO(d), prevByDay[toISO(d)] || 0, 'var(--color-info)'))}
+        </tr>
+      )}
+      {showReel && (
+        <tr>
+          <td style={{ ...summaryFrozenLeft, background: 'var(--color-bg-card)', borderBottom: showPrev ? '1px solid var(--color-border-soft)' : undefined }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', background: collab.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#FFFFFF', flexShrink: 0, opacity: showPrev ? 0.6 : 1 }}>
+                {collab.initiales}
+              </div>
+              <span style={{ fontSize: 10.5, fontWeight: 500, color: showPrev ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{collab.prenom} {collab.nom}</span>
+              {estExterne(collab) && (
+                <span style={{ fontSize: 8, background: 'var(--color-warning-soft)', color: 'var(--color-warning)', borderRadius: 3, padding: '0 3px', flexShrink: 0, fontWeight: 600 }}>EXT</span>
+              )}
+            </div>
+          </td>
+          <td style={{ ...summaryTotalCol, borderBottom: showPrev ? '1px solid var(--color-border-soft)' : undefined, color: totalReel > totalPrev ? 'var(--color-critical)' : 'var(--color-success)' }}>
+            {totalReel > 0 ? `${fmtJours(totalReel)}j` : ''}
+          </td>
+          <td style={{ ...summarySpacerCol, borderBottom: showPrev ? '1px solid var(--color-border-soft)' : undefined }} />
+          {days.map((d) => rowCell(toISO(d), reelByDay[toISO(d)] || 0, 'var(--color-success)'))}
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ── Styles compacts du bloc "Résumé par collaborateur" ─────────────
+// Volontairement distincts des styles de la grille principale (frozenLeft/totalCol/thFixed...) :
+// ce bloc est un simple aperçu, pas une grille de saisie, donc lignes plus basses pour ne pas
+// monopoliser l'espace vertical (cf. retour utilisateur) — MAIS les colonnes de jours doivent
+// rester alignées pixel pour pixel avec celles de la grille principale juste en dessous (même
+// largeur COL_WIDTH, même décalage de départ COL_LEFT.delta + 46), sinon les dates des deux
+// tableaux ne tombent plus sous les mêmes jours. On regroupe donc Tâche/Collab/Statut de la
+// grille principale (0→570) en une seule colonne "Collaborateur", Total (570→618) reste tel
+// quel, et une colonne fantôme de 46px (largeur de la colonne Δ) referme l'alignement avant le
+// premier jour — le défilement horizontal des deux tableaux est aussi synchronisé (voir refs
+// gridScrollRef/summaryScrollRef plus bas).
+// Valeurs codées en dur (et non dérivées de COL_LEFT, défini plus bas dans ce fichier) pour éviter
+// une référence à une const non encore initialisée à ce point du module — mais elles DOIVENT
+// rester synchronisées avec COL_LEFT = { tache:0, collab:340, statut:470, total:570, delta:618 }.
+const SUMMARY_ROW_H = 20;
+const SUMMARY_NAME_W = 570; // = COL_LEFT.total — fusion Tâche+Collab+Statut de la grille principale
+const SUMMARY_TOTAL_W = 48; // = COL_LEFT.delta - COL_LEFT.total — même largeur que la colonne Total
+const SUMMARY_SPACER_W = 46; // même largeur que la colonne Δ de la grille principale
+// `background` explicite sur CHAQUE colonne figée (et non hérité) : une cellule `position:sticky`
+// sans fond opaque à elle laisse transparaître les colonnes de jours qui défilent en dessous
+// pendant le scroll horizontal — piège déjà documenté plus bas pour la grille principale
+// (frozenLeft/totalCol), reproduit ici faute d'avoir mis le même fond sur Total et la colonne
+// fantôme (corrigé — cf. retour utilisateur "pbm d'affichage sur les colonnes figées").
+const summaryFrozenLeft = {
+  position: 'sticky', left: 0, zIndex: 2, background: 'var(--color-bg-card)',
+  width: SUMMARY_NAME_W, minWidth: SUMMARY_NAME_W,
+  padding: '2px 10px', borderRight: '1px solid var(--color-border)',
+  borderBottom: '0.5px solid var(--color-border-soft)', height: SUMMARY_ROW_H,
+};
+const summaryTotalCol = {
+  position: 'sticky', left: SUMMARY_NAME_W, zIndex: 2, background: 'var(--color-bg-card)',
+  width: SUMMARY_TOTAL_W, minWidth: SUMMARY_TOTAL_W, textAlign: 'right', paddingRight: 8,
+  fontSize: 11, fontWeight: 600,
+  borderRight: '1px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border-soft)',
+  verticalAlign: 'middle',
+};
+const summarySpacerCol = {
+  position: 'sticky', left: SUMMARY_NAME_W + SUMMARY_TOTAL_W, zIndex: 2, background: 'var(--color-bg-card)',
+  width: SUMMARY_SPACER_W, minWidth: SUMMARY_SPACER_W,
+  borderRight: '1px solid var(--color-border)', borderBottom: '0.5px solid var(--color-border-soft)',
+};
+const summaryThFixed = {
+  position: 'sticky', left: 0, zIndex: 7, background: 'var(--color-bg-secondary)',
+  width: SUMMARY_NAME_W, minWidth: SUMMARY_NAME_W,
+  textAlign: 'left', padding: '3px 10px', fontSize: 11, fontWeight: 600,
+  color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)',
+};
+const summaryThTotal = {
+  position: 'sticky', left: SUMMARY_NAME_W, zIndex: 7, background: 'var(--color-bg-secondary)',
+  width: SUMMARY_TOTAL_W, minWidth: SUMMARY_TOTAL_W,
+  textAlign: 'right', paddingRight: 8, fontSize: 11, fontWeight: 600,
+  color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border)',
+};
+const summaryThSpacer = {
+  position: 'sticky', left: SUMMARY_NAME_W + SUMMARY_TOTAL_W, zIndex: 7, background: 'var(--color-bg-secondary)',
+  width: SUMMARY_SPACER_W, minWidth: SUMMARY_SPACER_W, border: '0.5px solid var(--color-border)',
+};
+const summaryThDay = {
+  width: 34, minWidth: 34, textAlign: 'center', padding: '2px 0', // = COL_WIDTH (défini plus bas)
+  fontSize: 9, color: 'var(--color-text-secondary)', border: '0.5px solid var(--color-border-soft)',
+};
+
 // ── Styles ────────────────────────────────────────────────────────
 // Colonnes figées : Tâche / Collab / Statut / Total / Δ (Prév−Réel) — les jours défilent seuls.
 // Le premier essai (session précédente) causait un décalage visuel : la table utilisait
@@ -540,6 +850,33 @@ export default function ProjetPlanning() {
   const [filterCollab, setFilterCollab] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
   const [filterDelta, setFilterDelta] = useState('');
+  const [summaryOpen, setSummaryOpen] = useState(true);
+
+  // ── Synchro défilement horizontal grille ↔ résumé collaborateur ────
+  // Les deux tableaux ont des colonnes de jours de même largeur (COL_WIDTH) et un même décalage
+  // de départ (voir SUMMARY_NAME_W/SUMMARY_TOTAL_W/SUMMARY_SPACER_W), mais restent deux conteneurs
+  // de scroll indépendants (le résumé a son propre scroll vertical interne) — sans cette synchro,
+  // faire défiler l'un désaligne ses dates de celles de l'autre. `syncingScroll` évite la boucle
+  // infinie (set scrollLeft déclenche lui-même un évènement scroll).
+  const gridScrollRef = useRef(null);
+  const summaryScrollRef = useRef(null);
+  const syncingScroll = useRef(false);
+  const handleGridScroll = useCallback((e) => {
+    if (syncingScroll.current) return;
+    if (summaryScrollRef.current && summaryScrollRef.current.scrollLeft !== e.target.scrollLeft) {
+      syncingScroll.current = true;
+      summaryScrollRef.current.scrollLeft = e.target.scrollLeft;
+      syncingScroll.current = false;
+    }
+  }, []);
+  const handleSummaryScroll = useCallback((e) => {
+    if (syncingScroll.current) return;
+    if (gridScrollRef.current && gridScrollRef.current.scrollLeft !== e.target.scrollLeft) {
+      syncingScroll.current = true;
+      gridScrollRef.current.scrollLeft = e.target.scrollLeft;
+      syncingScroll.current = false;
+    }
+  }, []);
   // Toutes les tâches ayant des sous-tâches démarrent pliées à l'ouverture du projet —
   // même logique/état que sur WBS, avec un bouton "tout plier / tout déplier".
   const [collapsedIds, setCollapsedIds] = useState(() => new Set(
@@ -611,6 +948,41 @@ export default function ProjetPlanning() {
     });
     return map;
   }, [projet.wbs]);
+
+  // ── Charge totale réelle par collaborateur par jour (toutes tâches) ──
+  // Même construction que chargeParCollabJour ci-dessus, côté planning_reel — nécessaire pour le
+  // résumé par collaborateur (vue Prév/Réel/Les deux) sans dupliquer la boucle sur le WBS.
+  const chargeReelParCollabJour = useMemo(() => {
+    const map = {};
+    projet.wbs.forEach((node) => {
+      (node.affectations || []).forEach((aff) => {
+        if (!map[aff.collaborateur_id]) map[aff.collaborateur_id] = {};
+        Object.entries(aff.planning_reel || {}).forEach(([date, v]) => {
+          map[aff.collaborateur_id][date] = (map[aff.collaborateur_id][date] || 0) + v;
+        });
+      });
+    });
+    return map;
+  }, [projet.wbs]);
+
+  // ── Résumé par collaborateur : un collaborateur = une ligne (ou deux en vue "les deux"),
+  // total jours_prev/jours_realises (toute la durée du projet) + détail jour par jour sur la
+  // plage affichée (chargeParCollabJour / chargeReelParCollabJour). Respecte le filtre "Affecté à".
+  const collabSummary = useMemo(() => {
+    const ids = new Set([...Object.keys(chargeParCollabJour), ...Object.keys(chargeReelParCollabJour)]);
+    return [...ids]
+      .map((cid) => collaborateurs.find((c) => c.id === cid))
+      .filter(Boolean)
+      .filter((c) => !filterCollab || c.id === filterCollab)
+      .map((c) => {
+        const totalPrev = projet.wbs.reduce((s, n) => s + (n.affectations || [])
+          .filter((a) => a.collaborateur_id === c.id).reduce((sa, a) => sa + (a.jours_prev || 0), 0), 0);
+        const totalReel = projet.wbs.reduce((s, n) => s + (n.affectations || [])
+          .filter((a) => a.collaborateur_id === c.id).reduce((sa, a) => sa + (a.jours_realises || 0), 0), 0);
+        return { collab: c, totalPrev, totalReel };
+      })
+      .sort((a, b) => (b.totalPrev + b.totalReel) - (a.totalPrev + a.totalReel));
+  }, [collaborateurs, projet.wbs, filterCollab, chargeParCollabJour, chargeReelParCollabJour]);
 
   // ── Jours de congés par collaborateur ────────────────────────────
   const congesParCollab = useMemo(() => {
@@ -775,11 +1147,75 @@ export default function ProjetPlanning() {
         )}
       </div>
 
+      {/* Résumé par collaborateur — charge jour par jour, suit la vue Prév/Réel/Les deux et le
+          filtre "Affecté à". Collapsible pour ne pas monopoliser l'espace sur les gros projets. */}
+      {collabSummary.length > 0 && (
+        <div style={{ flexShrink: 0, borderBottom: '0.5px solid var(--color-border)', background: 'var(--color-bg-card)' }}>
+          <button
+            onClick={() => setSummaryOpen((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left',
+              padding: '8px 24px', border: 'none', background: 'none', cursor: 'pointer',
+              fontSize: 12.5, fontWeight: 600, color: 'var(--color-text-primary)',
+            }}
+          >
+            {summaryOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            Résumé par collaborateur
+            <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--color-text-tertiary)' }}>({collabSummary.length})</span>
+          </button>
+          {summaryOpen && (
+            <div ref={summaryScrollRef} onScroll={handleSummaryScroll} style={{ overflowX: 'auto', maxHeight: 170, overflowY: 'auto' }}>
+              <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
+                <thead style={{ position: 'sticky', top: 0, zIndex: 6 }}>
+                  <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                    <th style={summaryThFixed}>Collaborateur</th>
+                    <th style={summaryThTotal}>Total</th>
+                    <th style={summaryThSpacer} />
+                    {monthGroups.map((g) => (
+                      <th key={g.key} colSpan={g.days.length} style={{ ...summaryThDay, fontWeight: 700, fontSize: 10, borderLeft: '1px solid var(--color-border)' }}>
+                        {g.label}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr style={{ background: 'var(--color-bg-secondary)' }}>
+                    <th style={summaryThFixed} />
+                    <th style={summaryThTotal} />
+                    <th style={summaryThSpacer} />
+                    {days.map((d) => {
+                      const iso = toISO(d); const wknd = isWeekend(d); const isToday = iso === today;
+                      return (
+                        <th key={iso} style={{
+                          ...summaryThDay,
+                          background: isToday ? 'var(--color-accent-soft)' : wknd ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
+                          color: isToday ? 'var(--color-info)' : wknd ? 'var(--color-text-tertiary)' : 'var(--color-text-secondary)',
+                          fontWeight: isToday ? 700 : 400,
+                          borderLeft: d.getDay() === 1 ? '1px solid var(--color-border)' : 'none',
+                        }}>
+                          <div style={{ fontSize: 8.5 }}>{JOURS[d.getDay()]}</div>
+                          <div style={{ fontSize: 8, color: isToday ? 'var(--color-info)' : 'var(--color-text-tertiary)' }}>{d.getDate()}</div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {collabSummary.map(({ collab, totalPrev, totalReel }) => (
+                    <CollabSummaryRows key={collab.id} collab={collab} totalPrev={totalPrev} totalReel={totalReel}
+                      days={days} colWidth={COL_WIDTH} showPrev={showPrev} showReel={showReel}
+                      prevByDay={chargeParCollabJour[collab.id] || {}} reelByDay={chargeReelParCollabJour[collab.id] || {}} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Grille */}
       {/* contain: 'paint' isole ce tableau (nombreuses colonnes + en-têtes/colonnes sticky) de la
           recomposition déclenchée par un overlay position:fixed (ex. modale) affiché par-dessus —
           sans ça Chrome peut afficher un damier gris (« checkerboarding ») le temps de repeindre. */}
-      <div style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
+      <div ref={gridScrollRef} onScroll={handleGridScroll} style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ background: 'var(--color-bg-secondary)' }}>

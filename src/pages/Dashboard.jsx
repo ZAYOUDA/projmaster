@@ -279,7 +279,7 @@ export default function Dashboard() {
                   return (
                     <tr
                       key={p.id}
-                      onClick={() => navigate(`/projet/${p.id}/${isRun ? 'suivi-mensuel' : 'wbs'}`)}
+                      onClick={() => navigate(`/projet/${p.id}/${isRun ? 'suivi-mensuel' : 'sanity'}`)}
                       style={{ borderBottom: '0.5px solid var(--color-border-soft)', cursor: 'pointer', transition: 'background 0.1s' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = ''}
