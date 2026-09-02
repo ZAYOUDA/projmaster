@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export default function Modal({ title, onClose, children, width = 520, preventClose = false }) {
@@ -8,7 +9,14 @@ export default function Modal({ title, onClose, children, width = 520, preventCl
     return () => document.removeEventListener('keydown', handler);
   }, [onClose, preventClose]);
 
-  return (
+  // Rendu via portail dans document.body — pas dans l'arbre React local (ex. Sidebar). Sans ça,
+  // un ancêtre quelconque (Sidebar ou autre) peut créer un contexte d'empilement CSS qui piège
+  // notre z-index:1000, et un élément `position: sticky` ailleurs sur la page (ex. l'en-tête
+  // figé d'un tableau) se retrouve à s'afficher PAR-DESSUS la modale — bug constaté sur "Nouveau
+  // projet" avec l'en-tête du tableau "Charge des collaborateurs" du Dashboard qui passait
+  // devant. Le portail garantit que la modale est toujours un enfant direct de <body>, donc
+  // toujours au sommet de la pile d'empilement, quel que soit l'endroit d'où elle est ouverte.
+  return createPortal(
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -30,6 +38,7 @@ export default function Modal({ title, onClose, children, width = 520, preventCl
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

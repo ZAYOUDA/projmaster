@@ -15,7 +15,11 @@ const ROLE_BADGE = {
   collaborateur: { label: 'Collaborateur',  bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)' },
 };
 // Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS/Sanity Check.
-const defaultTab = (p) => (p.type === 'RUN' ? 'suivi-mensuel' : 'sanity');
+// Sanity Check n'est pas dans les onglets d'un Collaborateur (cf. ProjetLayout.jsx) : on
+// l'envoie directement sur WBS pour ne pas le faire atterrir sur une page sans onglet actif
+// dans sa propre navigation (rôle PAR PROJET — isCollabSur, pas le rôle global).
+const defaultTab = (p, isCollabSur) =>
+  p.type === 'RUN' ? 'suivi-mensuel' : (isCollabSur(p.id) ? 'wbs' : 'sanity');
 // toISOString() convertit en UTC : pour un Date à minuit local (fuseau UTC+, ex. France), ça
 // retombe sur la veille. On formate donc à partir des composants locaux du Date.
 const localIso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -24,7 +28,7 @@ export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
   const addProjet = useAppStore((s) => s.addProjet);
   const navigate = useNavigate();
-  const { userDoc, hasFullAccess, isChefProjet } = useAuth();
+  const { userDoc, hasFullAccess, isChefProjet, isCollabSur } = useAuth();
   // Chef de Projet peut créer des projets (ils s'ajoutent automatiquement à son périmètre),
   // mais reste sans accès à la Console Admin / Import CRA — voir plus bas.
   const canCreateProjet = hasFullAccess || isChefProjet;
@@ -147,7 +151,7 @@ export default function Sidebar() {
         {!collapsed && <div style={sectionLabelStyle}>Projets</div>}
 
         {projets.filter((p) => p.statut !== 'cloture').map((p) => (
-          <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={linkStyle} title={p.nom}>
+          <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p, isCollabSur)}`} style={linkStyle} title={p.nom}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
             {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>}
           </NavLink>
@@ -156,7 +160,7 @@ export default function Sidebar() {
         {projets.filter((p) => p.statut === 'cloture').length > 0 && (
           <>
             {projets.filter((p) => p.statut === 'cloture').map((p) => (
-              <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p)}`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })} title={p.nom}>
+              <NavLink key={p.id} to={`/projet/${p.id}/${defaultTab(p, isCollabSur)}`} style={({ isActive }) => ({ ...linkStyle({ isActive }), opacity: 0.5 })} title={p.nom}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
                 {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>}
               </NavLink>

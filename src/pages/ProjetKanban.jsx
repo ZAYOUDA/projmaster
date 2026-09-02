@@ -91,8 +91,9 @@ const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', term
 
 function KanbanCard({ node, projet, numero, collaborateurs }) {
   const updateWBSNode = useAppStore((s) => s.updateWBSNode);
-  const { user, userDoc } = useAuth();
-  const isCollab = userDoc?.role === 'collaborateur';
+  const { user, userDoc, isCollabSur } = useAuth();
+  // Rôle PAR PROJET, pas le rôle global (cf. ProjetWBS.jsx pour la même logique).
+  const isCollab = isCollabSur(projet.id);
   // Cherche le profil collaborateur par user_id (plus fiable que collaborateur_id sur userDoc)
   const myCollab = collaborateurs.find((c) => c.user_id === user?.uid);
   const myCollabId = myCollab?.id || userDoc?.collaborateur_id;

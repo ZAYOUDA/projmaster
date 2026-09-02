@@ -4,6 +4,20 @@
   * {
     box-sizing: border-box;
   }
+}
+
+/* Masque la barre de défilement visuelle sans désactiver le scroll (molette/trackpad/clavier
+   fonctionnent toujours) — retour utilisateur : la barre de la page d'accueil (<main> dans
+   App.jsx, conteneur de scroll partagé par toutes les pages) est jugée visuellement encombrante. */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* anciens Edge/IE */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome / Edge / Safari */
+}
+
+@layer base {
   body {
     font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--color-bg-primary);

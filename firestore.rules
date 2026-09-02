@@ -17,6 +17,25 @@ service cloud.firestore {
     function isCollab() {
       return request.auth != null && getRole() == "collaborateur";
     }
+    // Rôle EFFECTIF d'une personne sur un projet précis : surcharge dans
+    // users/{uid}.projets_roles[projetId] si présente, sinon le rôle global (getRole()).
+    // Permet à un même profil d'être collaborateur sur un projet et chef de projet sur un
+    // autre. Absence de projets_roles ou d'entrée pour ce projet = comportement inchangé
+    // (rétrocompatible, aucune migration de données requise).
+    function getRoleSurProjet(projetId) {
+      let u = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return u.get('projets_roles', {}).get(projetId, u.role);
+    }
+    function isChefProjetSur(projetId) {
+      return request.auth != null && getRoleSurProjet(projetId) == "chef_projet";
+    }
+    // Utilisé pour les droits "collaborateur" sur /projets : indispensable pour le cas de
+    // rétrogradation (rôle global chef_projet, mais surchargé en collaborateur sur CE projet)
+    // — sans ça, isCollab() global renverrait false et la personne perdrait tout accès au lieu
+    // de retomber sur les droits collaborateur.
+    function isCollabSur(projetId) {
+      return request.auth != null && getRoleSurProjet(projetId) == "collaborateur";
+    }
     // Admin + Manager : accès total, indépendant de projets_autorises.
     function hasFullAccess() {
       return isAdmin() || isManager();
@@ -27,9 +46,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid))
           .data.projets_autorises.hasAny([projetId]);
     }
-    // Écriture complète sur ce projet précis (Chef de Projet sur ses projets).
+    // Écriture complète sur ce projet précis (Chef de Projet — au sens du rôle PAR PROJET,
+    // pas du rôle global : cf. getRoleSurProjet ci-dessus).
     function canManageProjet(projetId) {
-      return hasFullAccess() || (isChefProjet() && canAccessProjet(projetId));
+      return hasFullAccess() || (isChefProjetSur(projetId) && canAccessProjet(projetId));
     }
 
     match /users/{userId} {
@@ -37,12 +57,14 @@ service cloud.firestore {
 
       allow create: if isAdmin() || (isManager() && request.resource.data.role != "admin");
 
-      // Un utilisateur peut toujours mettre à jour sa propre derniere_connexion.
+      // Un utilisateur peut toujours mettre à jour sa propre derniere_connexion, et lever/poser
+      // lui-même doit_changer_mdp (écran de changement de mot de passe à la première connexion
+      // / après une réinitialisation admin — cf. terminerPremiereConnexion dans firebase/auth.js).
       // Chef de Projet peut mettre à jour son propre projets_autorises (auto-ajout lors de la
       // création d'un projet — cf. addProjet dans useAppStore.js) et rien d'autre sur son doc.
       // Admin gère tout le monde. Manager gère tout sauf les comptes Admin (ni cible, ni état actuel).
       allow update: if (request.auth.uid == userId
-                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['derniere_connexion']))
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['derniere_connexion', 'doit_changer_mdp']))
                     || (request.auth.uid == userId && isChefProjet()
                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['projets_autorises']))
                     || isAdmin()
@@ -65,8 +87,11 @@ service cloud.firestore {
       // projets_autorises via la règle /users ci-dessus — voir addProjet dans useAppStore.js).
       allow create: if isChefProjet();
       // Collaborateur : lecture + mise à jour limitée (assignation/avancement) sur ses projets.
-      allow read: if isCollab() && canAccessProjet(projetId);
-      allow update: if isCollab() && canAccessProjet(projetId);
+      // isCollabSur (rôle PAR PROJET), pas isCollab (rôle global) : sinon quelqu'un dont le
+      // rôle global est chef_projet mais rétrogradé en collaborateur sur CE projet précis
+      // perdrait tout accès au lieu de retomber sur les droits collaborateur.
+      allow read: if isCollabSur(projetId) && canAccessProjet(projetId);
+      allow update: if isCollabSur(projetId) && canAccessProjet(projetId);
     }
 
     match /app_config/{doc} {

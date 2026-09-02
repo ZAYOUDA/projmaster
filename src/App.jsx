@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
+import ForcePasswordChange from './components/auth/ForcePasswordChange';
 import useAppStore from './store/useAppStore';
 import { useAuth } from './hooks/useAuth';
 import './index.css';
@@ -10,7 +11,7 @@ export default function App() {
   const destroy = useAppStore((s) => s.destroy);
   const savedAt = useAppStore((s) => s.savedAt);
   const [showSaved, setShowSaved] = useState(false);
-  const { user, userDoc } = useAuth();
+  const { user, userDoc, doitChangerMdp } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +31,13 @@ export default function App() {
     return () => clearTimeout(t);
   }, [savedAt]);
 
+  // Première connexion (mot de passe créé par l'admin) ou réinitialisation admin : écran
+  // bloquant tant que l'utilisateur n'a pas choisi son propre mot de passe. Avant Sidebar/Outlet
+  // pour qu'aucune donnée/page ne soit accessible entre-temps.
+  if (user && userDoc && doitChangerMdp) {
+    return <ForcePasswordChange />;
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: 'var(--color-bg-primary)' }}>
       <Sidebar />
@@ -37,7 +45,7 @@ export default function App() {
           disponible au lieu de grandir avec son contenu — sans ça, overflowY:'auto' ne scrolle
           jamais (c'est la fenêtre entière qui défile), ce qui empêche tout header "sticky" des
           pages enfants (ex. ProjetLayout) de rester fixé à l'écran. */}
-      <main style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto' }}>
+      <main className="no-scrollbar" style={{ flex: 1, minWidth: 0, minHeight: 0, overflowY: 'auto' }}>
         <Outlet />
       </main>
       {showSaved && (

@@ -11,7 +11,9 @@ import { GitBranch, BarChart2, DollarSign, Columns, AlertTriangle, Settings, Cal
 const ROLES_GESTION = ['admin', 'manager', 'chef_projet'];
 
 const ALL_TABS = [
-  { path: 'sanity',        label: 'Sanity Check',     icon: ClipboardCheck, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  // Sanity Check : réservé à la gestion (admin/manager/chef de projet) — le Collaborateur ne
+  // voit que WBS/Planning/Gantt/Kanban sur un projet.
+  { path: 'sanity',        label: 'Sanity Check',     icon: ClipboardCheck, roles: ROLES_GESTION,                       types: ['BUILD'] },
   { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'gantt',         label: 'Gantt',            icon: BarChart2,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
@@ -29,7 +31,7 @@ const ALL_TABS = [
 export default function ProjetLayout() {
   const { id } = useParams();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
-  const { userDoc } = useAuth();
+  const { roleSurProjet } = useAuth();
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -51,7 +53,10 @@ export default function ProjetLayout() {
   const evm = calculerEVMProjet(projet); // null pour les projets RUN (non applicable)
   const earnedSchedule = calculerEarnedSchedule(projet);
   const alertesAvancement = detecterAvancementNonAJour(projet);
-  const role = userDoc?.role || 'collaborateur';
+  // Rôle EFFECTIF sur CE projet (pas le rôle global) : un même profil peut être Collaborateur
+  // sur un projet et Chef de Projet sur un autre, donc les onglets visibles doivent suivre le
+  // rôle par projet (cf. roleSurProjet dans useAuth.jsx).
+  const role = roleSurProjet(projet.id) || 'collaborateur';
   const type = projet.type || 'BUILD';
   const tabs = ALL_TABS.filter((t) => t.roles.includes(role) && t.types.includes(type));
 

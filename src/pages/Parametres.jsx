@@ -1,10 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
 import PageHeader from '../components/layout/PageHeader';
 import { exportData, importData } from '../data/storage';
 import { defaultData } from '../data/defaultData';
-import { Download, Upload, Trash2, FolderInput } from 'lucide-react';
+import { changeMyPassword } from '../firebase/auth';
+import { Download, Upload, Trash2, FolderInput, KeyRound } from 'lucide-react';
 
 const DB_ID = import.meta.env.VITE_FIRESTORE_DB_ID || 'default';
 
@@ -74,9 +75,92 @@ export default function Parametres() {
     }
   };
 
+  // ── Changement de mon propre mot de passe ─────────────────────────
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState(null); // { type: 'error' | 'success', text }
+  const [pwdLoading, setPwdLoading] = useState(false);
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwdMsg(null);
+    if (newPwd.length < 6) {
+      setPwdMsg({ type: 'error', text: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      setPwdMsg({ type: 'error', text: 'La confirmation ne correspond pas au nouveau mot de passe.' });
+      return;
+    }
+    setPwdLoading(true);
+    try {
+      await changeMyPassword(currentPwd, newPwd);
+      setPwdMsg({ type: 'success', text: 'Mot de passe mis à jour avec succès.' });
+      setCurrentPwd('');
+      setNewPwd('');
+      setConfirmPwd('');
+    } catch (err) {
+      const text =
+        err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
+          ? 'Mot de passe actuel incorrect.'
+          : err.code === 'auth/weak-password'
+          ? 'Le nouveau mot de passe est trop faible (6 caractères minimum).'
+          : err.code === 'auth/too-many-requests'
+          ? 'Trop de tentatives, réessaie plus tard.'
+          : 'Erreur : ' + err.message;
+      setPwdMsg({ type: 'error', text });
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: 32, maxWidth: 640 }}>
       <PageHeader title="Paramètres" />
+
+      <section style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Changer mon mot de passe</h3>
+        <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
+          Modifie le mot de passe de ton propre compte. Ton mot de passe actuel te sera demandé.
+        </p>
+        <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 320 }}>
+          <input
+            type="password"
+            placeholder="Mot de passe actuel"
+            value={currentPwd}
+            onChange={(e) => setCurrentPwd(e.target.value)}
+            required
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            placeholder="Nouveau mot de passe"
+            value={newPwd}
+            onChange={(e) => setNewPwd(e.target.value)}
+            required
+            minLength={6}
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            placeholder="Confirmer le nouveau mot de passe"
+            value={confirmPwd}
+            onChange={(e) => setConfirmPwd(e.target.value)}
+            required
+            minLength={6}
+            style={inputStyle}
+          />
+          {pwdMsg && (
+            <p style={{ margin: 0, fontSize: 12, color: pwdMsg.type === 'error' ? 'var(--color-critical)' : 'var(--color-success, #1D9E75)' }}>
+              {pwdMsg.text}
+            </p>
+          )}
+          <button type="submit" disabled={pwdLoading} style={{ ...btnStyle, alignSelf: 'flex-start', opacity: pwdLoading ? 0.6 : 1 }}>
+            <KeyRound size={14} /> {pwdLoading ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
+          </button>
+        </form>
+      </section>
 
       <section style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
         <h3 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Export / Import des données</h3>
@@ -127,3 +211,4 @@ export default function Parametres() {
 
 const btnStyle = { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer' };
 const btnSecStyle = { ...btnStyle, background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' };
+const inputStyle = { padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontSize: 13 };

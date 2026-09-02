@@ -850,7 +850,7 @@ export default function ProjetPlanning() {
   const [filterCollab, setFilterCollab] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
   const [filterDelta, setFilterDelta] = useState('');
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // ── Synchro défilement horizontal grille ↔ résumé collaborateur ────
   // Les deux tableaux ont des colonnes de jours de même largeur (COL_WIDTH) et un même décalage
@@ -1028,34 +1028,59 @@ export default function ProjetPlanning() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: `calc(100vh - ${headerHeight}px)`, overflow: 'hidden' }}>
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderBottom: '0.5px solid var(--color-border)', flexShrink: 0, background: 'var(--color-bg-card)', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>Planning de charge</span>
+      {/* Toolbar — scindée en 2 lignes distinctes (retour utilisateur : la ligne unique se
+          repliait sur une nouvelle ligne selon la vue Prév/Réel/Les deux, car la légende change
+          de largeur selon la vue, ce qui poussait les boutons de navigation de date à la ligne
+          suivante). La légende, seule à varier en largeur, a maintenant sa propre ligne : elle
+          peut se replier librement sans jamais déplacer le zoom/la navigation de date. */}
+      <div style={{ flexShrink: 0, borderBottom: '0.5px solid var(--color-border)', background: 'var(--color-bg-card)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 24px 8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>Planning de charge</span>
 
-        {parentIds.length > 0 && (
-          <button onClick={allCollapsed ? expandAll : collapseAll}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-tertiary)', padding: 0 }}>
-            {allCollapsed ? <ChevronDown size={13} /> : <ChevronRightIcon size={13} />}
-            {allCollapsed ? 'Tout déplier' : 'Tout plier'}
-          </button>
-        )}
+          {parentIds.length > 0 && (
+            <button onClick={allCollapsed ? expandAll : collapseAll}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-tertiary)', padding: 0 }}>
+              {allCollapsed ? <ChevronDown size={13} /> : <ChevronRightIcon size={13} />}
+              {allCollapsed ? 'Tout déplier' : 'Tout plier'}
+            </button>
+          )}
 
-        {/* Picklist */}
-        <div style={{ display: 'flex', background: 'var(--color-bg-tertiary)', borderRadius: 8, padding: 3, gap: 2 }}>
-          {[['prévisionnel', '📘 Prév.'], ['réel', '📙 Réel'], ['les deux', '📊 Les deux']].map(([v, label]) => (
-            <button key={v} onClick={() => setVue(v)} style={{
-              padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 500,
-              background: vue === v ? 'var(--color-bg-card)' : 'transparent',
-              color: vue === v ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-              boxShadow: vue === v ? '0 1px 3px var(--color-border)' : 'none',
-              transition: 'all 0.15s',
-            }}>{label}</button>
-          ))}
+          {/* Picklist */}
+          <div style={{ display: 'flex', background: 'var(--color-bg-tertiary)', borderRadius: 8, padding: 3, gap: 2 }}>
+            {[['prévisionnel', '📘 Prév.'], ['réel', '📙 Réel'], ['les deux', '📊 Les deux']].map(([v, label]) => (
+              <button key={v} onClick={() => setVue(v)} style={{
+                padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 500,
+                background: vue === v ? 'var(--color-bg-card)' : 'transparent',
+                color: vue === v ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+                boxShadow: vue === v ? '0 1px 3px var(--color-border)' : 'none',
+                transition: 'all 0.15s',
+              }}>{label}</button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+            {ZOOM_OPTIONS.map((z) => (
+              <button key={z.key} onClick={() => setZoom(z.key)} style={{
+                padding: '5px 10px', borderRadius: 6, border: '1px solid var(--color-border)',
+                fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                background: zoom === z.key ? 'var(--color-text-primary)' : 'var(--color-bg-card)',
+                color: zoom === z.key ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
+              }}>{z.label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => nav(-1)} style={navBtn}><ChevronLeft size={14} /></button>
+            <button onClick={() => setStartDate(startOfWeek(new Date()))} style={{ ...navBtn, fontSize: 11, padding: '5px 8px' }}>Aujourd'hui</button>
+            <button onClick={() => nav(1)} style={navBtn}><ChevronRight size={14} /></button>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+            {startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → {endDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </span>
         </div>
 
-        {/* Légende */}
-        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'var(--color-text-secondary)' }}>
+        {/* Légende — ligne dédiée, largeur variable selon showPrev/showReel */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 11, color: 'var(--color-text-secondary)', padding: '0 24px 10px' }}>
           {showPrev && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-info-soft)', borderRadius: 2 }} />Prév.</span>}
           {showReel && <>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ display: 'inline-block', width: 16, height: 8, background: 'var(--color-success-soft)', borderRadius: 2 }} />OK</span>
@@ -1070,25 +1095,6 @@ export default function ProjetPlanning() {
             Conflit ressource
           </span>
         </div>
-
-        <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-          {ZOOM_OPTIONS.map((z) => (
-            <button key={z.key} onClick={() => setZoom(z.key)} style={{
-              padding: '5px 10px', borderRadius: 6, border: '1px solid var(--color-border)',
-              fontSize: 12, fontWeight: 500, cursor: 'pointer',
-              background: zoom === z.key ? 'var(--color-text-primary)' : 'var(--color-bg-card)',
-              color: zoom === z.key ? 'var(--color-bg-primary)' : 'var(--color-text-secondary)',
-            }}>{z.label}</button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={() => nav(-1)} style={navBtn}><ChevronLeft size={14} /></button>
-          <button onClick={() => setStartDate(startOfWeek(new Date()))} style={{ ...navBtn, fontSize: 11, padding: '5px 8px' }}>Aujourd'hui</button>
-          <button onClick={() => nav(1)} style={navBtn}><ChevronRight size={14} /></button>
-        </div>
-        <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-          {startDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })} → {endDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-        </span>
       </div>
 
       {/* Barre de filtres */}
@@ -1164,7 +1170,13 @@ export default function ProjetPlanning() {
             <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--color-text-tertiary)' }}>({collabSummary.length})</span>
           </button>
           {summaryOpen && (
-            <div ref={summaryScrollRef} onScroll={handleSummaryScroll} style={{ overflowX: 'auto', maxHeight: 170, overflowY: 'auto' }}>
+            /* overflowX: 'hidden' (et non 'auto') volontaire — retour utilisateur : deux barres de
+               défilement horizontal visibles (une sous ce bloc, une tout en bas sous la grille
+               principale) était confus. On garde la synchro JS (handleGridScroll écrit dans
+               summaryScrollRef.current.scrollLeft) mais on masque la barre de CE conteneur : le
+               défilement horizontal du bloc résumé suit maintenant uniquement celui de la grille
+               du dessous, seule une barre reste visible, tout en bas de page. */
+            <div ref={summaryScrollRef} onScroll={handleSummaryScroll} style={{ overflowX: 'hidden', maxHeight: 170, overflowY: 'auto' }}>
               <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
                 <thead style={{ position: 'sticky', top: 0, zIndex: 6 }}>
                   <tr style={{ background: 'var(--color-bg-secondary)' }}>

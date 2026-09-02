@@ -138,12 +138,14 @@ function DetailPanel({ projetId, nodeId, numeros }) {
   const deleteAffectation = useAppStore((s) => s.deleteAffectation);
   const [addingCollab, setAddingCollab] = useState(false);
   const [newCollabId, setNewCollabId] = useState('');
-  const { user, userDoc } = useAuth();
+  const { user, userDoc, isCollabSur } = useAuth();
 
   const node = projet?.wbs.find((n) => n.id === nodeId);
   if (!node) return null;
 
-  const isCollab = userDoc?.role === 'collaborateur';
+  // Rôle PAR PROJET, pas le rôle global : un chef de projet globalement peut être simple
+  // collaborateur sur CE projet précis (et inversement).
+  const isCollab = isCollabSur(projetId);
   const myCollab = collaborateurs.find((c) => c.user_id === user?.uid);
   const myCollabId = myCollab?.id || userDoc?.collaborateur_id;
   const isAssigned = isCollab && (node.affectations || []).some((a) => a.collaborateur_id === myCollabId);
@@ -403,8 +405,8 @@ function WBSRow({ node, projetId, numeros, depth = 0, allNodes, onSelectNode, se
   const addWBSNode = useAppStore((s) => s.addWBSNode);
   const deleteWBSNode = useAppStore((s) => s.deleteWBSNode);
   const projet = useAppStore((s) => s.projets.find((p) => p.id === projetId));
-  const { user, userDoc } = useAuth();
-  const isCollab = userDoc?.role === 'collaborateur';
+  const { user, userDoc, isCollabSur } = useAuth();
+  const isCollab = isCollabSur(projetId);
   const myCollab = collaborateurs.find((c) => c.user_id === user?.uid);
   const myCollabId = myCollab?.id || userDoc?.collaborateur_id;
   const isAssigned = isCollab && (node.affectations || []).some((a) => a.collaborateur_id === myCollabId);
@@ -755,8 +757,8 @@ export default function ProjetWBS() {
   const deleteWBSNodesBulk = useAppStore((s) => s.deleteWBSNodesBulk);
   const reorderWBSChildren = useAppStore((s) => s.reorderWBSChildren);
   const collaborateurs = useAppStore((s) => s.collaborateurs);
-  const { userDoc } = useAuth();
-  const isCollab = userDoc?.role === 'collaborateur';
+  const { isCollabSur } = useAuth();
+  const isCollab = isCollabSur(id);
 
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -852,10 +854,13 @@ export default function ProjetWBS() {
   };
 
   return (
-    <div style={{ padding: 32 }}>
-      {/* Titre + actions + filtres figés sous le header du projet, pour garder les filtres
-          accessibles même en scrollant une longue liste de tâches. */}
-      <div style={{ position: 'sticky', top: headerHeight, zIndex: 15, background: 'var(--color-bg-primary)', paddingBottom: 4 }}>
+    // Colonne flex de hauteur bornée (comme ProjetPlanning) plutôt qu'un scroll de toute la page :
+    // seule la zone tableau défile (overflow:auto plus bas), le titre/filtres restent visibles
+    // sans avoir besoin d'être eux-mêmes sticky, et l'en-tête du tableau (thead) peut être
+    // sticky top:0 par rapport à SA zone de scroll — ce qui ne marchait pas quand c'était toute
+    // la page qui défilait (retour utilisateur : "l'entête n'est pas figé quand je scroll").
+    <div style={{ display: 'flex', flexDirection: 'column', height: `calc(100vh - ${headerHeight}px)`, overflow: 'hidden', padding: '32px 32px 0' }}>
+      <div style={{ flexShrink: 0, paddingBottom: 4 }}>
         <PageHeader
           title="WBS"
           subtitle={`${projet.wbs.length} tâche${projet.wbs.length > 1 ? 's' : ''}`}
@@ -913,7 +918,7 @@ export default function ProjetWBS() {
       </div>
 
       {parentIds.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ flexShrink: 0, marginBottom: 16 }}>
           <button onClick={allCollapsed ? expandAll : collapseAll}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--color-text-tertiary)', padding: 0 }}>
             {allCollapsed ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -923,7 +928,7 @@ export default function ProjetWBS() {
       )}
 
       {!isCollab && selectedIds.size > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '10px 16px', background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent)', borderRadius: 8 }}>
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '10px 16px', background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent)', borderRadius: 8 }}>
           <CheckSquare size={16} color="var(--color-accent)" />
           <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', flex: 1 }}>
             {selectedIds.size} tâche{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
@@ -936,9 +941,13 @@ export default function ProjetWBS() {
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div style={{ background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, overflow: 'hidden' }}>
+        {/* flex:1 + overflow:auto = seule zone qui défile désormais ; c'est ce qui permet au
+            thead sticky juste en dessous de fonctionner (il lui faut son propre conteneur de
+            scroll direct, pas toute la page). overflow:'auto' (et non 'hidden' comme avant)
+            garde le clip des coins arrondis tout en autorisant le scroll. */}
+        <div style={{ flex: 1, overflow: 'auto', background: 'var(--color-bg-card)', border: '0.5px solid var(--color-border)', borderRadius: 12, marginBottom: 16 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 5 }}>
               <tr style={{ background: 'var(--color-bg-secondary)', borderBottom: '0.5px solid var(--color-border-soft)' }}>
                 <th style={{ width: 24, padding: '10px 4px 10px 8px' }} />
                 <th style={{ padding: '10px 8px', width: 32 }}>

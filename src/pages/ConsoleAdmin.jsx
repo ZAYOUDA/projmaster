@@ -171,18 +171,32 @@ function CreateUserModal({ projets, collaborateurs, allowedRoles, onClose, onLoa
 }
 
 // ── Modal édition droits ─────────────────────────────────────────
+// Un même profil peut être Collaborateur sur un projet et Chef de Projet sur un autre : en plus
+// de la case à cocher "accès à ce projet" (projets_autorises), chaque projet coché a maintenant
+// son propre sélecteur de rôle (projets_roles = { [projetId]: 'chef_projet'|'collaborateur' }).
+// Sans entrée dans projets_roles pour un projet, le rôle global de la personne s'applique (cf.
+// roleSurProjet dans useAuth.jsx et getRoleSurProjet dans firestore.rules) — donc initialiser le
+// sélecteur sur le rôle global tant que l'admin n'a rien changé ne modifie aucun droit existant.
 function EditRightsModal({ user, projets, onClose }) {
   const updateUserAdmin = useAppStore((s) => s.updateUserAdmin);
   const [projetsAut, setProjetsAut] = useState(user.projets_autorises || []);
+  const [projetsRoles, setProjetsRoles] = useState(user.projets_roles || {});
   const [loading, setLoading] = useState(false);
 
   const toggle = (pid) => setProjetsAut((prev) =>
     prev.includes(pid) ? prev.filter((id) => id !== pid) : [...prev, pid]
   );
+  const roleFor = (pid) => projetsRoles[pid] || user.role;
+  const setRoleFor = (pid, role) => setProjetsRoles((prev) => ({ ...prev, [pid]: role }));
 
   const handleSave = async () => {
     setLoading(true);
-    await updateUserAdmin(user.uid, { projets_autorises: projetsAut });
+    // On ne garde que les surcharges de rôle pour des projets encore cochés — inutile de
+    // conserver une entrée pour un projet dont l'accès vient d'être retiré.
+    const rolesPropres = Object.fromEntries(
+      Object.entries(projetsRoles).filter(([pid]) => projetsAut.includes(pid))
+    );
+    await updateUserAdmin(user.uid, { projets_autorises: projetsAut, projets_roles: rolesPropres });
     setLoading(false);
     onClose();
   };
@@ -192,14 +206,30 @@ function EditRightsModal({ user, projets, onClose }) {
       <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--color-text-secondary)' }}>
         Projets accessibles pour <strong>{user.prenom} {user.nom}</strong>
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto', padding: 2 }}>
-        {projets.map((p) => (
-          <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 10px', borderRadius: 6, border: `1.5px solid ${projetsAut.includes(p.id) ? 'var(--color-accent)' : 'var(--color-border)'}`, background: projetsAut.includes(p.id) ? 'var(--color-accent-soft)' : 'var(--color-bg-card)' }}>
-            <input type="checkbox" checked={projetsAut.includes(p.id)} onChange={() => toggle(p.id)} style={{ accentColor: 'var(--color-accent)' }} />
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
-            <span style={{ fontSize: 13 }}>{p.nom}</span>
-          </label>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto', padding: 2 }}>
+        {projets.map((p) => {
+          const checked = projetsAut.includes(p.id);
+          return (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 6, border: `1.5px solid ${checked ? 'var(--color-accent)' : 'var(--color-border)'}`, background: checked ? 'var(--color-accent-soft)' : 'var(--color-bg-card)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1, minWidth: 0 }}>
+                <input type="checkbox" checked={checked} onChange={() => toggle(p.id)} style={{ accentColor: 'var(--color-accent)' }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
+              </label>
+              {checked && (
+                <select
+                  value={roleFor(p.id)}
+                  onChange={(e) => setRoleFor(p.id, e.target.value)}
+                  style={{ fontSize: 11, padding: '3px 6px', borderRadius: 5, border: '1px solid var(--color-border)', background: 'var(--color-bg-card)', color: 'var(--color-text-primary)', flexShrink: 0 }}
+                  title="Rôle sur ce projet précis"
+                >
+                  <option value="collaborateur">Collaborateur</option>
+                  <option value="chef_projet">Chef de Projet</option>
+                </select>
+              )}
+            </div>
+          );
+        })}
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
         <button onClick={onClose} style={btnSecStyle}>Annuler</button>
