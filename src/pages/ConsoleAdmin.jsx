@@ -61,7 +61,9 @@ function CreateUserModal({ projets, collaborateurs, allowedRoles, onClose, onLoa
     try {
       let collabId = form.collaborateur_id;
 
-      if (scoped) {
+      // Un Client n'a jamais de fiche collaborateur (profil externe, jamais assigné à des
+      // tâches) — cf. le sélecteur "Profil collaborateur" déjà masqué plus bas pour ce rôle.
+      if (scoped && form.role !== 'client') {
         if (collabId) {
           // Lier le compte à un collaborateur existant (user_id sera mis à jour après)
         } else {
