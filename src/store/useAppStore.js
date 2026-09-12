@@ -144,6 +144,7 @@ function migrateProjet(p) {
 const useAppStore = create((set, get) => ({
   collaborateurs: [],
   projets: [],
+  projetsLoaded: false,
   usersAdmin: [],
   taches: [],
   savedAt: null,
@@ -152,6 +153,10 @@ const useAppStore = create((set, get) => ({
 
   init: (userDoc) => {
     get()._unsubscribers.forEach((u) => u());
+    // Remis à false à chaque (ré)init : le composant qui attend le premier chargement des
+    // projets (ex. ProjetLayout, pour un Client redirigé directement vers son projet) doit
+    // repasser par un état "en attente" tant que ce nouvel abonnement n'a pas encore répondu.
+    set({ projetsLoaded: false });
 
     const role = userDoc?.role;
     const uid = userDoc?.uid;
@@ -170,7 +175,7 @@ const useAppStore = create((set, get) => ({
 
     const projetIds = isScopedToProjets ? (userDoc.projets_autorises || []) : null;
     const unsubProjets = subscribeProjets((items) => {
-      set({ projets: items.map(migrateProjet) });
+      set({ projets: items.map(migrateProjet), projetsLoaded: true });
     }, projetIds);
 
     const unsubUsers = subscribeUsers((items) => {
@@ -200,7 +205,7 @@ const useAppStore = create((set, get) => ({
 
   destroy: () => {
     get()._unsubscribers.forEach((u) => u());
-    set({ _unsubscribers: [], usersAdmin: [], taches: [], _uid: null });
+    set({ _unsubscribers: [], usersAdmin: [], taches: [], _uid: null, projetsLoaded: false });
   },
 
   _touch: () => set({ savedAt: new Date().toISOString() }),

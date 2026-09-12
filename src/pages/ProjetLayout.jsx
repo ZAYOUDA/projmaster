@@ -33,6 +33,7 @@ const ALL_TABS = [
 export default function ProjetLayout() {
   const { id } = useParams();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
+  const projetsLoaded = useAppStore((s) => s.projetsLoaded);
   const { roleSurProjet } = useAuth();
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -50,7 +51,12 @@ export default function ProjetLayout() {
     return () => observer.disconnect();
   }, []);
 
-  if (!projet) return <Navigate to="/" replace />;
+  // Ne redirige vers "/" que si les projets ont VRAIMENT fini de charger et que celui-ci est
+  // absent — sinon, sur la toute première navigation (ex. Client redirigé directement vers son
+  // projet par ProtectedRoute), l'abonnement Firestore n'a pas encore livré son premier snapshot :
+  // `projet` est momentanément undefined, et rediriger tout de suite vers "/" fait rebondir vers
+  // ProtectedRoute qui renvoie aussitôt ici → boucle infinie ("Maximum update depth exceeded").
+  if (!projet) return projetsLoaded ? <Navigate to="/" replace /> : null;
 
   const evm = calculerEVMProjet(projet); // null pour les projets RUN (non applicable)
   const earnedSchedule = calculerEarnedSchedule(projet);
