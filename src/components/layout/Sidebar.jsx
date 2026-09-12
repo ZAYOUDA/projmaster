@@ -272,7 +272,7 @@ export default function Sidebar() {
         </button>
         {!collapsed && (
           <p style={{ margin: '10px 4px 0', fontSize: 10, color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
-            © {new Date().getFullYear()} MZBH · {APP_VERSION}
+            © By MZBH {new Date().getFullYear()} · {APP_VERSION}
           </p>
         )}
       </div>

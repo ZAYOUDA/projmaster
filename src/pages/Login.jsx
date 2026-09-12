@@ -128,7 +128,7 @@ export default function Login() {
           Les comptes sont créés par l'administrateur.
         </p>
         <p style={{ margin: '16px 0 0', textAlign: 'center', fontSize: 11, color: '#B5B4AF' }}>
-          © {new Date().getFullYear()} MZBH · {APP_VERSION}
+          © By MZBH {new Date().getFullYear()} · {APP_VERSION}
         </p>
       </div>
     </div>
