@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { logout } from '../../config/auth';
 import { useTheme } from '../../hooks/useTheme';
 import NouveauProjetModal from './NouveauProjetModal';
+import { APP_VERSION } from '../../config/version';
 
 const STATUT_COLORS = { actif: '#1D9E75', en_pause: '#BA7517', cloture: '#888780' };
 const ROLE_BADGE = {
@@ -269,6 +270,11 @@ export default function Sidebar() {
           <LogOut size={14} />
           {!collapsed && 'Déconnexion'}
         </button>
+        {!collapsed && (
+          <p style={{ margin: '10px 4px 0', fontSize: 10, color: 'var(--color-text-tertiary)', textAlign: 'center' }}>
+            © {new Date().getFullYear()} MZBH · {APP_VERSION}
+          </p>
+        )}
       </div>
 
       {showNewProjet && (

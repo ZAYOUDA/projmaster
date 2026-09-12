@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../config/auth';
 import { useAuth } from '../hooks/useAuth';
+import { APP_VERSION } from '../config/version';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -125,6 +126,9 @@ export default function Login() {
 
         <p style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: '#888780' }}>
           Les comptes sont créés par l'administrateur.
+        </p>
+        <p style={{ margin: '16px 0 0', textAlign: 'center', fontSize: 11, color: '#B5B4AF' }}>
+          © {new Date().getFullYear()} MZBH · {APP_VERSION}
         </p>
       </div>
     </div>
