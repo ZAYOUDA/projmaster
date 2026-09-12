@@ -282,9 +282,18 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
         <td style={{ ...frozenLeft(depth), background: headerBg }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {hasChildren ? (
-              <button onClick={() => onToggleExpand(node.id)} style={chevronBtn}>
+              // <span>, pas <button> : un <fieldset disabled> (lecture seule Client, cf. plus bas
+              // dans ce fichier) désactiverait un vrai <button> alors que plier/déplier est de la
+              // pure navigation, pas une action d'édition — un Client doit pouvoir l'utiliser.
+              <span
+                onClick={() => onToggleExpand(node.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand(node.id); } }}
+                style={chevronBtn}
+              >
                 {expanded ? <ChevronDown size={12} /> : <ChevronRightIcon size={12} />}
-              </button>
+              </span>
             ) : <span style={{ width: 16, flexShrink: 0 }} />}
             <span style={{ fontSize: 10, color: 'var(--color-text-tertiary)', fontFamily: 'monospace', marginRight: 4, flexShrink: 0 }}>{numero}</span>
             <span style={{ fontSize: 12, fontWeight: depth === 0 ? 700 : 500 }}>
