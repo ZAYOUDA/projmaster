@@ -15,16 +15,18 @@ const ALL_TABS = [
   // voit que WBS/Planning/Gantt/Kanban sur un projet.
   { path: 'sanity',        label: 'Sanity Check',     icon: ClipboardCheck, roles: ROLES_GESTION,                       types: ['BUILD'] },
   { path: 'wbs',           label: 'WBS',              icon: GitBranch,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
-  { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  // Client (profil externe, lecture seule) : Planning, Kanban, RIAD, Résumé uniquement — jamais
+  // WBS/Gantt/Budget/Facturation/Parties prenantes/Paramètres.
+  { path: 'planning',      label: 'Planning',         icon: CalendarDays, roles: [...ROLES_GESTION, 'collaborateur', 'client'], types: ['BUILD'] },
   { path: 'gantt',         label: 'Gantt',            icon: BarChart2,    roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
   { path: 'budget',        label: 'Budget',           icon: DollarSign,   roles: ROLES_GESTION,                       types: ['BUILD'] },
-  { path: 'kanban',        label: 'Kanban',           icon: Columns,      roles: [...ROLES_GESTION, 'collaborateur'], types: ['BUILD'] },
+  { path: 'kanban',        label: 'Kanban',           icon: Columns,      roles: [...ROLES_GESTION, 'collaborateur', 'client'], types: ['BUILD'] },
   { path: 'suivi-mensuel', label: 'Suivi mensuel',    icon: TrendingUp,   roles: ROLES_GESTION,                       types: ['RUN'] },
-  { path: 'risques',       label: 'RIAD',             icon: AlertTriangle,roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
+  { path: 'risques',       label: 'RIAD',             icon: AlertTriangle,roles: [...ROLES_GESTION, 'client'],        types: ['BUILD', 'RUN'] },
   { path: 'stakeholders',  label: 'Parties prenantes',icon: Users,        roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
   { path: 'facturation',   label: 'Facturation',      icon: Receipt,      roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
   // Vue de synthèse pensée pour être exportée/partagée avec le client — juste avant Paramètres.
-  { path: 'resume',        label: 'Résumé',           icon: FileSpreadsheet, roles: ROLES_GESTION,                    types: ['BUILD'] },
+  { path: 'resume',        label: 'Résumé',           icon: FileSpreadsheet, roles: [...ROLES_GESTION, 'client'],     types: ['BUILD'] },
   { path: 'parametres',    label: 'Paramètres',       icon: Settings,     roles: ROLES_GESTION,                       types: ['BUILD', 'RUN'] },
 ];
 

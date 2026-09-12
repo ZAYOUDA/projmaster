@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../firebase/auth';
+import { login } from '../config/auth';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {

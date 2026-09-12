@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Settings, Plus, FolderOpen, CalendarOff, LogOut, ShieldCheck, UploadCloud, Sun, Moon, Receipt, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useAuth } from '../../hooks/useAuth';
-import { logout } from '../../firebase/auth';
+import { logout } from '../../config/auth';
 import { useTheme } from '../../hooks/useTheme';
 import NouveauProjetModal from './NouveauProjetModal';
 
@@ -13,6 +13,7 @@ const ROLE_BADGE = {
   manager:       { label: 'Manager',        bg: 'var(--color-accent-soft)',  color: 'var(--color-accent)' },
   chef_projet:   { label: 'Chef de Projet', bg: 'var(--color-warning-soft)', color: 'var(--color-warning)' },
   collaborateur: { label: 'Collaborateur',  bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)' },
+  client:        { label: 'Client',         bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)' },
 };
 // Onglet par défaut à l'ouverture d'un projet — les projets RUN n'ont pas de WBS/Sanity Check.
 // Sanity Check n'est pas dans les onglets d'un Collaborateur (cf. ProjetLayout.jsx) : on
@@ -28,7 +29,7 @@ export default function Sidebar() {
   const projets = useAppStore((s) => s.projets);
   const addProjet = useAppStore((s) => s.addProjet);
   const navigate = useNavigate();
-  const { userDoc, hasFullAccess, isChefProjet, isCollabSur } = useAuth();
+  const { userDoc, hasFullAccess, isChefProjet, isCollabSur, isClient } = useAuth();
   // Chef de Projet peut créer des projets (ils s'ajoutent automatiquement à son périmètre),
   // mais reste sans accès à la Console Admin / Import CRA — voir plus bas.
   const canCreateProjet = hasFullAccess || isChefProjet;
@@ -141,11 +142,14 @@ export default function Sidebar() {
       </div>
 
       <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '8px 8px' }}>
-        {/* Dashboard */}
-        <NavLink to="/" end style={linkStyle} title="Vue d'ensemble">
-          <LayoutDashboard size={15} />
-          {!collapsed && "Vue d'ensemble"}
-        </NavLink>
+        {/* Dashboard — jamais pour un Client (profil externe : pas de vue d'ensemble multi-projets,
+            directement redirigé vers son seul projet, cf. ProtectedRoute.jsx). */}
+        {!isClient && (
+          <NavLink to="/" end style={linkStyle} title="Vue d'ensemble">
+            <LayoutDashboard size={15} />
+            {!collapsed && "Vue d'ensemble"}
+          </NavLink>
+        )}
 
         {/* Projets */}
         {!collapsed && <div style={sectionLabelStyle}>Projets</div>}
@@ -179,38 +183,42 @@ export default function Sidebar() {
           {!collapsed && 'Nouveau projet'}
         </button>}
 
-        {/* Outils */}
-        {!collapsed && <div style={sectionLabelStyle}>Outils</div>}
-        {hasFullAccess && (
-          <NavLink to="/admin" style={linkStyle} title="Console Admin">
-            <ShieldCheck size={15} />
-            {!collapsed && 'Console Admin'}
-          </NavLink>
+        {/* Outils — aucun pour un Client (profil externe, pas d'accès aux outils d'administration). */}
+        {!isClient && (
+          <>
+            {!collapsed && <div style={sectionLabelStyle}>Outils</div>}
+            {hasFullAccess && (
+              <NavLink to="/admin" style={linkStyle} title="Console Admin">
+                <ShieldCheck size={15} />
+                {!collapsed && 'Console Admin'}
+              </NavLink>
+            )}
+            {hasFullAccess && (
+              <NavLink to="/import-cra" style={linkStyle} title="Import CRA">
+                <UploadCloud size={15} />
+                {!collapsed && 'Import CRA'}
+              </NavLink>
+            )}
+            {hasFullAccess && (
+              <NavLink to="/facturation-portefeuille" style={linkStyle} title="Facturation">
+                <Receipt size={15} />
+                {!collapsed && 'Facturation'}
+              </NavLink>
+            )}
+            <NavLink to="/collaborateurs" style={linkStyle} title="Collaborateurs">
+              <Users size={15} />
+              {!collapsed && 'Collaborateurs'}
+            </NavLink>
+            <NavLink to="/conges" style={linkStyle} title="Congés équipe">
+              <CalendarOff size={15} />
+              {!collapsed && 'Congés équipe'}
+            </NavLink>
+            <NavLink to="/parametres" style={linkStyle} title="Paramètres">
+              <Settings size={15} />
+              {!collapsed && 'Paramètres'}
+            </NavLink>
+          </>
         )}
-        {hasFullAccess && (
-          <NavLink to="/import-cra" style={linkStyle} title="Import CRA">
-            <UploadCloud size={15} />
-            {!collapsed && 'Import CRA'}
-          </NavLink>
-        )}
-        {hasFullAccess && (
-          <NavLink to="/facturation-portefeuille" style={linkStyle} title="Facturation">
-            <Receipt size={15} />
-            {!collapsed && 'Facturation'}
-          </NavLink>
-        )}
-        <NavLink to="/collaborateurs" style={linkStyle} title="Collaborateurs">
-          <Users size={15} />
-          {!collapsed && 'Collaborateurs'}
-        </NavLink>
-        <NavLink to="/conges" style={linkStyle} title="Congés équipe">
-          <CalendarOff size={15} />
-          {!collapsed && 'Congés équipe'}
-        </NavLink>
-        <NavLink to="/parametres" style={linkStyle} title="Paramètres">
-          <Settings size={15} />
-          {!collapsed && 'Paramètres'}
-        </NavLink>
       </nav>
 
       {/* Déconnexion */}

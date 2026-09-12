@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import PageHeader from '../components/layout/PageHeader';
 import { exportData, importData } from '../data/storage';
 import { defaultData } from '../data/defaultData';
-import { changeMyPassword } from '../firebase/auth';
+import { changeMyPassword } from '../config/auth';
 import { Download, Upload, Trash2, FolderInput, KeyRound } from 'lucide-react';
 
 const DB_ID = import.meta.env.VITE_FIRESTORE_DB_ID || 'default';

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import useAppStore from '../store/useAppStore';
 import { useAuth } from '../hooks/useAuth';
-import { createUserAccount, changeUserPassword } from '../firebase/auth';
+import { createUserAccount, changeUserPassword } from '../config/auth';
 import PageHeader from '../components/layout/PageHeader';
 import Modal from '../components/ui/Modal';
-import { Plus, Shield, Briefcase, UserCog, User, UserCheck, UserX, Key, Lock } from 'lucide-react';
+import { Plus, Shield, Briefcase, UserCog, User, UserCheck, UserX, Key, Lock, Contact } from 'lucide-react';
 
 const COLORS = ['#378ADD', 'var(--color-success)', 'var(--color-danger)', '#BA7517', '#8B5CF6', '#EC4899', '#0EA5E9', '#14B8A6'];
 const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
@@ -16,8 +16,12 @@ const ROLE_META = {
   manager:       { label: 'Manager',        plural: 'Managers',         icon: Briefcase, bg: 'var(--color-accent-soft)',  color: 'var(--color-accent)',  scoped: false },
   chef_projet:   { label: 'Chef de Projet', plural: 'Chefs de Projet',  icon: UserCog,   bg: 'var(--color-warning-soft)', color: 'var(--color-warning)', scoped: true },
   collaborateur: { label: 'Collaborateur',  plural: 'Collaborateurs',   icon: User,      bg: 'var(--color-bg-tertiary)',  color: 'var(--color-text-secondary)', scoped: true },
+  // Client = profil externe en lecture seule, scopé à (généralement) 1 seul projet — mêmes
+  // mécaniques que Collaborateur (projets_autorises), juste un accès plus restreint côté app
+  // (cf. ProtectedRoute.jsx / ProjetLayout.jsx : Planning, Kanban, RIAD, Résumé uniquement).
+  client:        { label: 'Client',         plural: 'Clients',          icon: Contact,   bg: 'var(--color-success-soft)', color: 'var(--color-success)', scoped: true },
 };
-const ROLE_ORDER = ['admin', 'manager', 'chef_projet', 'collaborateur'];
+const ROLE_ORDER = ['admin', 'manager', 'chef_projet', 'collaborateur', 'client'];
 
 // ── Modal création utilisateur ───────────────────────────────────
 function CreateUserModal({ projets, collaborateurs, allowedRoles, onClose, onLoadingChange }) {
@@ -120,20 +124,24 @@ function CreateUserModal({ projets, collaborateurs, allowedRoles, onClose, onLoa
 
       {scoped && (
         <>
-          <label style={labelStyle}>
-            Profil collaborateur
-            <select style={inputStyle} value={form.collaborateur_id} onChange={(e) => upd('collaborateur_id', e.target.value)}>
-              <option value="">Créer automatiquement (recommandé)</option>
-              {collaborateurs.filter((c) => c.actif && !c.user_id).map((c) => (
-                <option key={c.id} value={c.id}>Lier à : {c.prenom} {c.nom}</option>
-              ))}
-            </select>
-            <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-              {form.collaborateur_id
-                ? 'Ce compte sera lié au collaborateur existant.'
-                : 'Un profil collaborateur sera créé automatiquement et l\'utilisateur pourra être assigné aux tâches.'}
-            </span>
-          </label>
+          {/* Pas de profil collaborateur pour un Client : c'est un profil externe, jamais assigné
+              à des tâches — inutile de créer/lier une fiche collaborateur pour lui. */}
+          {form.role !== 'client' && (
+            <label style={labelStyle}>
+              Profil collaborateur
+              <select style={inputStyle} value={form.collaborateur_id} onChange={(e) => upd('collaborateur_id', e.target.value)}>
+                <option value="">Créer automatiquement (recommandé)</option>
+                {collaborateurs.filter((c) => c.actif && !c.user_id).map((c) => (
+                  <option key={c.id} value={c.id}>Lier à : {c.prenom} {c.nom}</option>
+                ))}
+              </select>
+              <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+                {form.collaborateur_id
+                  ? 'Ce compte sera lié au collaborateur existant.'
+                  : 'Un profil collaborateur sera créé automatiquement et l\'utilisateur pourra être assigné aux tâches.'}
+              </span>
+            </label>
+          )}
 
           <div>
             <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
@@ -216,7 +224,10 @@ function EditRightsModal({ user, projets, onClose }) {
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.couleur, flexShrink: 0 }} />
                 <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nom}</span>
               </label>
-              {checked && (
+              {/* Pas de surcharge de rôle par projet pour un Client : c'est un rôle global (pas
+                  d'équivalent "chef de projet"/"collaborateur" pour un profil externe en lecture
+                  seule) — cf. ConsoleAdmin.jsx ROLE_META et useAuth.jsx isClient. */}
+              {checked && user.role !== 'client' && (
                 <select
                   value={roleFor(p.id)}
                   onChange={(e) => setRoleFor(p.id, e.target.value)}

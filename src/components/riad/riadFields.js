@@ -7,8 +7,6 @@ export const RIAD_PREFIX = { risques: 'R', issues: 'I', actions: 'A', decisions:
 
 export const RIAD_FIELDS = {
   risques: [
-    { key: 'categorie', label: 'Catégorie', type: 'text' },
-    { key: 'type', label: 'Type', type: 'text' },
     { key: 'description', label: 'Description', type: 'textarea', required: true },
     { key: 'escalade', label: 'Escalade', type: 'escalade' },
     { key: 'impact', label: 'Impact', type: 'select', options: IMPACT_LEVELS },
@@ -20,8 +18,6 @@ export const RIAD_FIELDS = {
     { key: 'commentaire', label: 'Commentaire', type: 'textarea', list: false },
   ],
   issues: [
-    { key: 'categorie', label: 'Catégorie', type: 'text' },
-    { key: 'type', label: 'Type', type: 'text' },
     { key: 'description', label: 'Description', type: 'textarea', required: true },
     { key: 'escalade', label: 'Escalade', type: 'escalade' },
     { key: 'impact', label: 'Impact', type: 'select', options: IMPACT_LEVELS },
@@ -32,7 +28,6 @@ export const RIAD_FIELDS = {
     { key: 'commentaire', label: 'Commentaire', type: 'textarea', list: false },
   ],
   actions: [
-    { key: 'source', label: 'Source', type: 'text' },
     { key: 'description', label: 'Description', type: 'textarea', required: true },
     { key: 'escalade', label: 'Escalade', type: 'escalade' },
     { key: 'responsable', label: 'Responsable', type: 'text' },
@@ -41,8 +36,6 @@ export const RIAD_FIELDS = {
     { key: 'commentaire', label: 'Commentaire', type: 'textarea', list: false },
   ],
   decisions: [
-    { key: 'categorie', label: 'Catégorie', type: 'text' },
-    { key: 'type', label: 'Type', type: 'text' },
     { key: 'description', label: 'Description', type: 'textarea', required: true },
     { key: 'escalade', label: 'Escalade', type: 'escalade' },
     { key: 'responsable', label: 'Responsable', type: 'text' },

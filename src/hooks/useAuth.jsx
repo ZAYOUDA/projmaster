@@ -1,44 +1,69 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { getUserDoc } from '../firebase/auth';
+import { supabase } from '../data/supabase';
+import { getUserDoc } from '../config/auth';
+import { DATA_BACKEND } from '../config/dataBackend';
 
 const AuthContext = createContext(null);
+
+// uid de la session en cours, indépendamment du backend — utilisé par refreshUserDoc ci-dessous.
+async function currentUid() {
+  if (DATA_BACKEND === 'supabase') {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.user?.id ?? null;
+  }
+  return auth.currentUser?.uid ?? null;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = chargement en cours
   const [userDoc, setUserDoc] = useState(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
+    async function handleUser(authUser) {
+      if (authUser) {
         let doc = null;
         try {
-          doc = await getUserDoc(firebaseUser.uid);
+          doc = await getUserDoc(DATA_BACKEND === 'supabase' ? authUser.id : authUser.uid);
         } catch (e) {
           // Ne jamais laisser user/userDoc bloqués sur leur valeur précédente (undefined) :
           // sinon ProtectedRoute reste sur "Chargement…" ou rebascule sur /login indéfiniment,
           // ce qui se manifeste comme "il faut se reconnecter deux fois".
           console.error('getUserDoc a échoué (règles Firestore non déployées ?)', e);
         }
-        setUser(firebaseUser);
+        setUser(authUser);
         setUserDoc(doc);
       } else {
         setUser(null);
         setUserDoc(null);
       }
-    });
+    }
+
+    if (DATA_BACKEND === 'supabase') {
+      let cancelled = false;
+      supabase.auth.getSession().then(({ data }) => {
+        if (!cancelled) handleUser(data?.session?.user ?? null);
+      });
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        handleUser(session?.user ?? null);
+      });
+      return () => { cancelled = true; listener.subscription.unsubscribe(); };
+    }
+
+    const unsub = onAuthStateChanged(auth, handleUser);
     return unsub;
   }, []);
 
-  // userDoc n'est PAS un listener temps réel (juste un getDoc() ponctuel déclenché par
-  // onAuthStateChanged) : un write Firestore ailleurs (ex. terminerPremiereConnexion qui lève
+  // userDoc n'est PAS un listener temps réel (juste un getDoc()/select() ponctuel déclenché par
+  // le changement de session) : un write ailleurs (ex. terminerPremiereConnexion qui lève
   // doit_changer_mdp) ne met donc pas ce state à jour tout seul — d'où l'écran de mot de passe
   // qui restait affiché tant qu'on ne rafraîchissait pas la page. Permet de le refaire à la main
   // juste après un tel write, sans reload complet.
   const refreshUserDoc = async () => {
-    if (!auth.currentUser) return;
-    const doc = await getUserDoc(auth.currentUser.uid);
+    const uid = await currentUid();
+    if (!uid) return;
+    const doc = await getUserDoc(uid);
     setUserDoc(doc);
   };
 
@@ -67,6 +92,9 @@ export function useAuth() {
   const isManager = role === 'manager';
   const isChefProjet = role === 'chef_projet';
   const isCollab = role === 'collaborateur';
+  // Client = profil externe, lecture seule, scopé à (généralement) 1 seul projet via
+  // projets_autorises — jamais de vue d'ensemble, jamais d'outils d'administration.
+  const isClient = role === 'client';
   const hasFullAccess = isAdmin || isManager;
   const canManageUsers = isAdmin || isManager;
   const projetsAutorises = ctx?.userDoc?.projets_autorises || [];
@@ -84,8 +112,9 @@ export function useAuth() {
 
   return {
     ...ctx,
-    role, isAdmin, isManager, isChefProjet, isCollab,
+    role, isAdmin, isManager, isChefProjet, isCollab, isClient,
     hasFullAccess, canManageUsers, canAccessProjet, canManageProjet,
     projetsRoles, roleSurProjet, isChefProjetSur, isCollabSur, doitChangerMdp,
+    projetsAutorises,
   };
 }

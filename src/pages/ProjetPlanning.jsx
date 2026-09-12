@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import { calculerNumeroWBS, getLeaves, estCollaborateurExterne as estExterne } from '../data/calculations';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon, ChevronUp } from 'lucide-react';
 
@@ -102,11 +103,15 @@ function navigateCell(currentTd, direction) {
 }
 
 function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
+  // Profil Client (lecture seule) : cette cellule n'est PAS un <input> natif tant qu'on n'a pas
+  // cliqué dessus (juste un <td onClick>/onKeyDown) — un <fieldset disabled> ne la bloquerait donc
+  // pas. On coupe directement l'entrée en édition ici plutôt que de compter sur le fieldset englobant.
+  const { isClient } = useAuth();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const tdRef = React.useRef(null);
 
-  const startEdit = () => { setDraft(value > 0 ? String(value).replace('.', ',') : ''); setEditing(true); };
+  const startEdit = () => { if (isClient) return; setDraft(value > 0 ? String(value).replace('.', ',') : ''); setEditing(true); };
   const commit = (dir) => {
     onChange(Math.min(1, Math.max(0, parseFloat(draft.replace(',', '.')) || 0)));
     setEditing(false);
@@ -126,6 +131,7 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
       tabIndex={0}
       onClick={startEdit}
       onKeyDown={(e) => {
+        if (isClient) return;
         if (!editing) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEdit(); }
           else if (e.key === 'ArrowRight') { e.preventDefault(); navigateCell(tdRef.current, 'right'); }
@@ -141,7 +147,7 @@ function ChargeCell({ value, onChange, bg, color, colWidth, conflict }) {
         width: colWidth, minWidth: colWidth, maxWidth: colWidth,
         height: 26, padding: 0,
         border: '0.5px solid var(--color-border-soft)',
-        background: bg, cursor: 'pointer', textAlign: 'center', verticalAlign: 'middle',
+        background: bg, cursor: isClient ? 'default' : 'pointer', textAlign: 'center', verticalAlign: 'middle',
         position: 'relative', outline: 'none',
         ...conflictStyle,
       }}
@@ -509,6 +515,7 @@ function TaskRows({ node, projetId, depth, allNodes, days, colWidth, numeros, co
 // le nom de la tâche permettent de choisir lequel est "actif" (dont les jours s'affichent/éditent
 // dans la grille) sans perdre les autres — "toujours fusionner, peu importe le nombre de collabs".
 function MergedTaskRow({ node, projetId, depth, numero, headerBg, collaborateurs, days, colWidth, vue, totalJoursPrev, totalJoursReel, delta, congesParCollab, chargeParCollabJour }) {
+  const { isClient } = useAuth();
   const [explicitActive, setExplicitActive] = useState(null);
   const [filling, setFilling] = useState(false);
   const [fillVal, setFillVal] = useState('1');
@@ -585,7 +592,7 @@ function MergedTaskRow({ node, projetId, depth, numero, headerBg, collaborateurs
                   <span style={{ width: 14, height: 14, borderRadius: '50%', background: c.couleur, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 700, color: '#FFFFFF', flexShrink: 0 }}>{c.initiales}</span>
                   <span style={{ fontSize: 9, color: active ? 'var(--color-info)' : 'var(--color-text-secondary)', fontWeight: active ? 600 : 400 }}>{c.prenom}</span>
                   {estExterne(c) && <span style={{ fontSize: 8, color: 'var(--color-warning)', fontWeight: 700 }}>EXT</span>}
-                  {affs.length > 1 && (
+                  {affs.length > 1 && !isClient && (
                     <span onClick={(e) => { e.stopPropagation(); deleteAffectation(projetId, node.id, a.id); }} title="Retirer" style={{ fontSize: 9, color: 'var(--color-text-tertiary)', marginLeft: 1 }}>✕</span>
                   )}
                 </span>
@@ -835,6 +842,7 @@ const today = toISO(new Date());
 
 export default function ProjetPlanning() {
   const { id } = useParams();
+  const { isClient } = useAuth();
   const { headerHeight } = useOutletContext();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const collaborateurs = useAppStore((s) => s.collaborateurs);
@@ -1228,6 +1236,12 @@ export default function ProjetPlanning() {
           recomposition déclenchée par un overlay position:fixed (ex. modale) affiché par-dessus —
           sans ça Chrome peut afficher un damier gris (« checkerboarding ») le temps de repeindre. */}
       <div ref={gridScrollRef} onScroll={handleGridScroll} style={{ flex: 1, overflow: 'auto', contain: 'paint' }}>
+        {/* Profil Client (lecture seule) : un <fieldset disabled> désactive tous les contrôles de
+            formulaire descendants (select statut, select/bouton ajout collaborateur, input+boutons
+            "remplir"...) même à travers la table, sans avoir à toucher chaque contrôle un par un.
+            ChargeCell et le "✕ retirer" de MergedTaskRow ne sont PAS des contrôles de formulaire
+            (juste des <td>/<span> avec onClick) donc gérés séparément via isClient directement. */}
+        <fieldset disabled={isClient} style={{ border: 'none', margin: 0, padding: 0 }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, tableLayout: 'fixed' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ background: 'var(--color-bg-secondary)' }}>
@@ -1305,6 +1319,7 @@ export default function ProjetPlanning() {
             </tr>
           </tbody>
         </table>
+        </fieldset>
       </div>
     </div>
   );

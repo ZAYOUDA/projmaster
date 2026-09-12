@@ -17,6 +17,13 @@ service cloud.firestore {
     function isCollab() {
       return request.auth != null && getRole() == "collaborateur";
     }
+    // Client = profil externe en lecture seule, scopé à (généralement) 1 seul projet via
+    // projets_autorises. Toujours un rôle GLOBAL (pas de surcharge par projet comme
+    // chef_projet/collaborateur) : un compte client n'est jamais aussi collaborateur/chef de
+    // projet ailleurs.
+    function isClient() {
+      return request.auth != null && getRole() == "client";
+    }
     // Rôle EFFECTIF d'une personne sur un projet précis : surcharge dans
     // users/{uid}.projets_roles[projetId] si présente, sinon le rôle global (getRole()).
     // Permet à un même profil d'être collaborateur sur un projet et chef de projet sur un
@@ -74,7 +81,9 @@ service cloud.firestore {
     }
 
     match /collaborateurs/{collabId} {
-      allow read: if hasFullAccess() || isChefProjet() || isCollab();
+      // isClient() : Résumé/Planning/Kanban affichent les noms/initiales des collaborateurs
+      // assignés — sans cette lecture, ces onglets montreraient des profils vides pour un Client.
+      allow read: if hasFullAccess() || isChefProjet() || isCollab() || isClient();
       allow write: if hasFullAccess();
     }
 
@@ -92,6 +101,9 @@ service cloud.firestore {
       // perdrait tout accès au lieu de retomber sur les droits collaborateur.
       allow read: if isCollabSur(projetId) && canAccessProjet(projetId);
       allow update: if isCollabSur(projetId) && canAccessProjet(projetId);
+      // Client : lecture SEULE sur son (ses) projet(s) autorisé(s), jamais d'écriture — cf.
+      // useAuth.jsx isClient / ProjetLayout.jsx (Planning, Kanban, RIAD, Résumé uniquement).
+      allow read: if isClient() && canAccessProjet(projetId);
     }
 
     match /app_config/{doc} {

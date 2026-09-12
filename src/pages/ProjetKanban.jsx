@@ -91,13 +91,15 @@ const STATUT_LABELS = { non_demarre: 'Non démarré', en_cours: 'En cours', term
 
 function KanbanCard({ node, projet, numero, collaborateurs }) {
   const updateWBSNode = useAppStore((s) => s.updateWBSNode);
-  const { user, userDoc, isCollabSur } = useAuth();
+  const { user, userDoc, isCollabSur, isClient } = useAuth();
   // Rôle PAR PROJET, pas le rôle global (cf. ProjetWBS.jsx pour la même logique).
   const isCollab = isCollabSur(projet.id);
   // Cherche le profil collaborateur par user_id (plus fiable que collaborateur_id sur userDoc)
   const myCollab = collaborateurs.find((c) => c.user_id === user?.uid);
   const myCollabId = myCollab?.id || userDoc?.collaborateur_id;
-  const canDrag = !isCollab || (node.affectations || []).some((a) => a.collaborateur_id === myCollabId);
+  // Client (lecture seule) : jamais draggable, quel que soit le reste — le drag HTML5 n'est pas un
+  // contrôle de formulaire, un <fieldset disabled> ne le bloquerait pas, d'où ce check explicite.
+  const canDrag = !isClient && (!isCollab || (node.affectations || []).some((a) => a.collaborateur_id === myCollabId));
   const affs = (node.affectations || []).map((a) => collaborateurs.find((c) => c.id === a.collaborateur_id)).filter(Boolean);
 
   return (

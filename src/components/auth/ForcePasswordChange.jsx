@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KeyRound } from 'lucide-react';
-import { terminerPremiereConnexion, logout } from '../../firebase/auth';
+import { terminerPremiereConnexion, logout } from '../../config/auth';
 import { useAuth } from '../../hooks/useAuth';
 
 // Écran bloquant affiché quand userDoc.doit_changer_mdp === true (première connexion avec le

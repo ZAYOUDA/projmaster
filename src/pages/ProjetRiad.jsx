@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useOutletContext } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useAuth } from '../hooks/useAuth';
 import PageHeader from '../components/layout/PageHeader';
 import RiadDashboard from '../components/riad/RiadDashboard';
 import RiadModuleTable from '../components/riad/RiadModuleTable';
@@ -16,6 +17,7 @@ const ONGLETS = [
 
 export default function ProjetRiad() {
   const { id } = useParams();
+  const { isClient } = useAuth();
   const projet = useAppStore((s) => s.projets.find((p) => p.id === id));
   const { headerHeight } = useOutletContext();
   const [onglet, setOnglet] = useState('dashboard');
@@ -47,9 +49,14 @@ export default function ProjetRiad() {
         ))}
       </div>
 
-      {onglet === 'dashboard'
-        ? <RiadDashboard projet={projet} />
-        : <RiadModuleTable projet={projet} module={onglet} />}
+      {/* Client (lecture seule) : RiadModuleTable n'a que des <button>/<select>/<input> natifs
+          (Ajouter, Modifier, Supprimer, filtres de statut, formulaire modale) — un <fieldset
+          disabled> suffit à tout bloquer d'un coup, pas besoin de toucher le composant. */}
+      <fieldset disabled={isClient} style={{ border: 'none', margin: 0, padding: 0 }}>
+        {onglet === 'dashboard'
+          ? <RiadDashboard projet={projet} />
+          : <RiadModuleTable projet={projet} module={onglet} />}
+      </fieldset>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import {
   subscribeProjets, saveProjet, patchProjet, removeProjet,
   subscribeUsers, subscribeUserDoc, saveUser, patchUser,
   subscribeTaches, saveTache, patchTache, removeTache,
-} from '../firebase/firestore';
+} from '../config/firestore';
 import { defaultData } from '../data/defaultData';
 import { exportData, importData } from '../data/storage';
 import { deriverDatesReellesNoeud, calculerAvancementAutoNoeud } from '../data/calculations';
@@ -157,9 +157,10 @@ const useAppStore = create((set, get) => ({
     const uid = userDoc?.uid;
     // Admin + Manager : accès total, indépendant de projets_autorises.
     const hasFullAccess = role === 'admin' || role === 'manager';
-    // Collaborateur + Chef de Projet : accès limité à leur liste projets_autorises
+    // Collaborateur + Chef de Projet + Client : accès limité à leur liste projets_autorises
     // (le niveau d'accès À L'INTÉRIEUR de ces projets dépend du rôle, géré côté firestore.rules/UI).
-    const isScopedToProjets = role === 'collaborateur' || role === 'chef_projet';
+    // Client = profil externe en lecture seule sur 1 (généralement) projet précis.
+    const isScopedToProjets = role === 'collaborateur' || role === 'chef_projet' || role === 'client';
     // To-do perso : réservée aux rôles "métier PM" (pas Collaborateur), strictement personnelle.
     const canUseTaches = role === 'admin' || role === 'manager' || role === 'chef_projet';
 
