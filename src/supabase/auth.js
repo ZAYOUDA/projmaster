@@ -1,12 +1,26 @@
-// Équivalent Supabase de src/firebase/auth.js — non branché à useAuth.jsx pour l'instant.
+// Équivalent Supabase de src/firebase/auth.js.
 //
 // changeUserPassword (admin réinitialise le mot de passe d'un AUTRE utilisateur) et
-// createUserAccount nécessitent l'API Admin de Supabase (service_role key), qui ne doit jamais
-// être exposée côté navigateur. Leur équivalent ira dans une Supabase Edge Function (comme
-// changeUserPassword est aujourd'hui une Cloud Function Firebase) — pas encore écrite, cf. tâche
-// séparée. Seul le changement de SON PROPRE mot de passe (changeMyPassword) est implémenté ici,
-// car il ne nécessite que la session de l'utilisateur courant, pas de clé privilégiée.
+// createUserAccount nécessitent l'API Admin de Supabase (service_role key, jamais exposée côté
+// navigateur) : elles passent par l'Edge Function `main` (cf. supabase/functions/main/index.ts,
+// déployée manuellement sur la VPS sous ~/projmaster-infra/volumes/functions/main/index.ts —
+// équivalent Supabase de functions/index.js côté Firebase).
 import { supabase } from '../data/supabase';
+
+// Fait l'aller-retour avec l'Edge Function `main` et normalise ses erreurs : `data.error` (un
+// code, ex. "forbidden"/"email_already_in_use") devient `err.code`, pour rester dans le même
+// contrat que les erreurs Firebase Auth (`e.code === 'auth/email-already-in-use'` ailleurs dans
+// le code) même si les codes eux-mêmes diffèrent.
+async function callAdminFunction(action, payload) {
+  const { data, error } = await supabase.functions.invoke('main', { body: { action, ...payload } });
+  if (error) throw error;
+  if (data?.error) {
+    const err = new Error(data.message || data.error);
+    err.code = data.error;
+    throw err;
+  }
+  return data;
+}
 
 export async function login(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -67,4 +81,18 @@ export async function terminerPremiereConnexion(newPassword) {
   if (error) throw error;
   const { error: dbError } = await supabase.from('users').update({ doit_changer_mdp: false }).eq('id', uid);
   if (dbError) throw dbError;
+}
+
+// Admin-only : crée un compte Auth + sa fiche public.users, via l'Edge Function `main` (clé
+// service_role, jamais côté navigateur). Même contrat que createUserAccount de firebase/auth.js :
+// prend (email, password, userData) et renvoie { uid, ...userData, email }.
+export async function createUserAccount(email, password, userData) {
+  const data = await callAdminFunction('createUserAccount', { email, password, ...userData });
+  return { uid: data.uid, ...userData, email };
+}
+
+// Admin-only : réinitialise le mot de passe d'un AUTRE utilisateur (repose doit_changer_mdp côté
+// serveur, dans l'Edge Function). Même contrat que changeUserPassword de firebase/auth.js.
+export async function changeUserPassword(uid, newPassword) {
+  await callAdminFunction('changeUserPassword', { uid, newPassword });
 }
